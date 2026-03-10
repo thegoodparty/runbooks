@@ -1,5 +1,5 @@
 import sys
-from databricks_query import execute_query
+from databricks_query import execute_query, normalize_state_code
 
 if len(sys.argv) < 3:
     print('Usage: uv run query_demographics.py CITY_NAME STATE_CODE')
@@ -7,11 +7,15 @@ if len(sys.argv) < 3:
     sys.exit(1)
 
 city_name = sys.argv[1].upper()
-state_code = sys.argv[2].lower()
+try:
+    state_code = normalize_state_code(sys.argv[2])
+except ValueError as err:
+    print(f'Error: {err}')
+    sys.exit(1)
 
 result = execute_query(f'''
     SELECT
-        COUNT(*) as total_voters,
+        COUNT(DISTINCT LALVOTERID) as total_voters,
         COUNT(DISTINCT CASE WHEN Parties_Description LIKE "%Democrat%" THEN LALVOTERID END) as democrats,
         COUNT(DISTINCT CASE WHEN Parties_Description LIKE "%Republican%" THEN LALVOTERID END) as republicans,
         COUNT(DISTINCT CASE WHEN Parties_Description LIKE "%Unaffiliated%"
@@ -20,7 +24,7 @@ result = execute_query(f'''
         COUNT(DISTINCT CASE WHEN Voters_Gender = "M" THEN LALVOTERID END) as male,
         COUNT(DISTINCT CASE WHEN Voters_Gender = "F" THEN LALVOTERID END) as female
     FROM goodparty_data_catalog.dbt.stg_dbt_source__l2_s3_{state_code}_uniform
-    WHERE UPPER(Residence_Addresses_City) = "{city_name}"
-''')
+    WHERE UPPER(Residence_Addresses_City) = %(city_name)s
+''', parameters={'city_name': city_name})
 
 print(result.to_string())

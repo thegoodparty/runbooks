@@ -1,5 +1,5 @@
 import sys
-from databricks_query import execute_query
+from databricks_query import execute_query, normalize_state_code
 
 if len(sys.argv) < 3:
     print('Usage: uv run query_by_zip.py CITY_NAME STATE_CODE')
@@ -7,7 +7,11 @@ if len(sys.argv) < 3:
     sys.exit(1)
 
 city_name = sys.argv[1].upper()
-state_code = sys.argv[2].lower()
+try:
+    state_code = normalize_state_code(sys.argv[2])
+except ValueError as err:
+    print(f'Error: {err}')
+    sys.exit(1)
 
 result = execute_query(f'''
     SELECT
@@ -20,9 +24,9 @@ result = execute_query(f'''
     FROM goodparty_data_catalog.dbt.stg_dbt_source__l2_s3_{state_code}_uniform u
     JOIN goodparty_data_catalog.dbt.stg_dbt_source__l2_s3_{state_code}_haystaq_dna_scores s
       ON u.LALVOTERID = s.LALVOTERID
-    WHERE UPPER(u.Residence_Addresses_City) = "{city_name}"
+    WHERE UPPER(u.Residence_Addresses_City) = %(city_name)s
     GROUP BY u.Residence_Addresses_Zip
     ORDER BY voter_count DESC
-''')
+''', parameters={'city_name': city_name})
 
 print(result.to_string())
