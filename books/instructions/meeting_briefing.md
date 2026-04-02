@@ -59,7 +59,7 @@ Before starting any data collection:
 
 ### Before Phase 2 (Step 10) and Phase 3 (Step 12)
 
-**PAUSE and re-read.** By this point your context is long. Before generating the teaser/briefing, re-read Steps 10-11 from `/workspace/instruction.md` to refresh the exact template, banned words, community signal rules, and citation format. Before scoring, re-read Step 12 to refresh all 12 dimension rubrics.
+**PAUSE and re-read.** By this point your context is long. Before generating the teaser/briefing, re-read Steps 10-11 from `books/instructions/meeting_briefing.md` to refresh the exact template, banned words, community signal rules, and citation format. Before scoring, re-read Step 12 to refresh all 12 dimension rubrics.
 
 ---
 
@@ -424,7 +424,7 @@ This data feeds the News/Narrative Context dimension of the score.
 
 ## PHASE 2 CHECKPOINT
 
-**Stop. Re-read Steps 10 and 11 from `/workspace/instruction.md` before proceeding.** Your context is long after all the data collection. Refresh the exact teaser email format, briefing template, banned words list, community signal rules, priority logic, and citation format.
+**Stop. Re-read Steps 10 and 11 from `books/instructions/meeting_briefing.md` before proceeding.** Your context is long after all the data collection. Refresh the exact teaser email format, briefing template, banned words list, community signal rules, priority logic, and citation format.
 
 ---
 
@@ -616,7 +616,7 @@ Include ONLY when verifiable from: prior votes, staff recommendations, public st
 
 ## PHASE 3 CHECKPOINT
 
-**Stop. Re-read Step 12 from `/workspace/instruction.md` before proceeding.** Refresh all 12 scoring dimension rubrics with their exact criteria tables before evaluating your briefing.
+**Stop. Re-read Step 12 from `books/instructions/meeting_briefing.md` before proceeding.** Refresh all 12 scoring dimension rubrics with their exact criteria tables before evaluating your briefing.
 
 ---
 
@@ -857,10 +857,6 @@ for dim in s['dimensions']:
 # Check district intel reference
 print(f'Based on district intel run: {d[\"based_on_district_intel_run\"]}')
 print(f'Generated at: {d[\"generated_at\"]}')
-"
-```
-
-If any required fields are missing or word counts are far outside range, investigate and fix before completing.
 
 # Source and citation verification
 sources = d.get('sources', [])
