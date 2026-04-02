@@ -27,6 +27,8 @@ When given a task, start by reading `books/INDEX.md` to find the relevant runboo
 ### Standalone Project
 This repo is self-contained. Do not reference or link to external repositories, file paths outside this repo, or project-specific directories. Users clone this repo wherever they want — never assume a specific path.
 
+If a runbook needs a file that lives in another repo (e.g., an agent instruction, a config template), copy it into this repo rather than referencing the external path. The runbook should work without any other repo cloned. Keep copies in sync manually — staleness is acceptable, broken references are not.
+
 ### Books
 
 Books are markdown files in `books/`. There are two types:
