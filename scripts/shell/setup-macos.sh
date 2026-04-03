@@ -23,7 +23,7 @@ if command -v uv &>/dev/null; then
   echo "    uv already installed at $(which uv)"
 else
   curl -LsSf https://astral.sh/uv/install.sh | sh
-  echo "    Restart your shell or run: source \$HOME/.local/bin/env"
+  source "$HOME/.local/bin/env"
 fi
 
 echo "==> Installing Python dependencies..."
