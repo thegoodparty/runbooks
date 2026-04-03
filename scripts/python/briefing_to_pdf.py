@@ -7,10 +7,38 @@ import tempfile
 from pathlib import Path
 
 
+def build_footnote_map(sources: list) -> dict:
+    """Return {source_id: index} for all sources, 1-based."""
+    return {src["id"]: i + 1 for i, src in enumerate(sources)}
+
+
+def apply_footnotes(text: str, fn_map: dict) -> str:
+    """Replace [source-id] markers with pandoc footnote references [^N]."""
+    import re
+    def replace(m):
+        sid = m.group(1)
+        return f"[^{fn_map[sid]}]" if sid in fn_map else m.group(0)
+    return re.sub(r'\[([a-z0-9_-]+)\]', replace, text)
+
+
+def footnote_definitions(sources: list) -> list:
+    """Return pandoc footnote definition lines for each source."""
+    lines = []
+    for i, src in enumerate(sources):
+        n = i + 1
+        type_label = src.get("type", "").replace("_", " ").title()
+        title = src.get("title", "")
+        url = src.get("url", "")
+        lines.append(f"[^{n}]: *{type_label}.* {title}. <{url}>")
+    return lines
+
+
 def json_to_markdown(data: dict) -> str:
     eo = data["eo"]
     m = data["meeting"]
     s = data["score"]
+    sources = data.get("sources", [])
+    fn_map = build_footnote_map(sources)
 
     lines = [
         "---",
@@ -37,13 +65,17 @@ def json_to_markdown(data: dict) -> str:
         "",
     ]
 
-    for line in data["briefing_content"].split("\n"):
+    briefing_with_footnotes = apply_footnotes(data["briefing_content"], fn_map)
+    for line in briefing_with_footnotes.split("\n"):
         if line.startswith("# "):
             lines.append("##" + line[1:])
         elif line.startswith("## "):
             lines.append("###" + line[2:])
         else:
             lines.append(line)
+
+    lines.append("")
+    lines.extend(footnote_definitions(sources))
 
     lines.extend([
         "",
