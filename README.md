@@ -19,6 +19,9 @@ Scripts in `scripts/` are reusable code that books reference.
 git clone git@github.com-goodparty:thegoodparty/runbooks.git
 cd runbooks
 
+# Install system dependencies (macOS — pandoc, texlive, uv)
+bash scripts/shell/setup-macos.sh
+
 # Configure books (non-sensitive — paths, regions, profiles)
 cp books/.env.example books/.env
 # Edit books/.env
@@ -26,9 +29,6 @@ cp books/.env.example books/.env
 # Configure scripts (secrets — API keys, tokens)
 cp scripts/.env.example scripts/.env
 # Edit scripts/.env
-
-# Install Python script dependencies
-cd scripts/python && uv sync
 ```
 
 ## Structure

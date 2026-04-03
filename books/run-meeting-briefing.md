@@ -4,7 +4,7 @@ Run a PMF engine meeting briefing experiment for one or more cities, producing P
 
 **books/.env variables**: None
 **scripts/.env variables**: None
-**Tools**: Claude Code CLI, pandoc, xelatex (via MacTeX or texlive)
+**Tools**: Claude Code CLI, pandoc, xelatex — install via `bash scripts/shell/setup-macos.sh` (macOS) or `brew install pandoc texlive` directly. Avoid MacTeX — it requires a sudo pkg install.
 **Access**: Internet (for Legistar, LINC, WebSearch, web scraping)
 
 ## Quick Start
