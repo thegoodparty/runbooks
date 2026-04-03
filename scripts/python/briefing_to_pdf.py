@@ -33,12 +33,12 @@ def footnote_definitions(sources: list) -> list:
     return lines
 
 
-def json_to_markdown(data: dict) -> str:
+def json_to_markdown(data: dict, citations: bool = False) -> str:
     eo = data["eo"]
     m = data["meeting"]
     s = data["score"]
     sources = data.get("sources", [])
-    fn_map = build_footnote_map(sources)
+    fn_map = build_footnote_map(sources) if citations else {}
 
     lines = [
         "---",
@@ -65,8 +65,8 @@ def json_to_markdown(data: dict) -> str:
         "",
     ]
 
-    briefing_with_footnotes = apply_footnotes(data["briefing_content"], fn_map)
-    for line in briefing_with_footnotes.split("\n"):
+    briefing_text = apply_footnotes(data["briefing_content"], fn_map) if citations else data["briefing_content"]
+    for line in briefing_text.split("\n"):
         if line.startswith("# "):
             lines.append("##" + line[1:])
         elif line.startswith("## "):
@@ -74,8 +74,9 @@ def json_to_markdown(data: dict) -> str:
         else:
             lines.append(line)
 
-    lines.append("")
-    lines.extend(footnote_definitions(sources))
+    if citations:
+        lines.append("")
+        lines.extend(footnote_definitions(sources))
 
     lines.extend([
         "",
@@ -118,20 +119,21 @@ def json_to_markdown(data: dict) -> str:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: uv run python briefing_to_pdf.py <input.json> [output.pdf] [--pdf-engine=ENGINE]")
+        print("Usage: uv run python briefing_to_pdf.py <input.json> [output.pdf] [--citations] [--pdf-engine=ENGINE]")
         print("  ENGINE defaults to xelatex. Use pdflatex or lualatex if xelatex is unavailable.")
         sys.exit(1)
 
     input_path = Path(sys.argv[1])
     output_path = Path(sys.argv[2]) if len(sys.argv) > 2 and not sys.argv[2].startswith("--") else input_path.with_suffix(".pdf")
 
+    citations = "--citations" in sys.argv
     engine = "xelatex"
     for arg in sys.argv[2:]:
         if arg.startswith("--pdf-engine="):
             engine = arg.split("=", 1)[1]
 
     data = json.loads(input_path.read_text())
-    md = json_to_markdown(data)
+    md = json_to_markdown(data, citations=citations)
 
     with tempfile.NamedTemporaryFile(suffix=".md", mode="w", delete=False) as f:
         f.write(md)
