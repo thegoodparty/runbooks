@@ -120,11 +120,13 @@ def json_to_markdown(data: dict, citations: bool = False) -> str:
 def main():
     if len(sys.argv) < 2:
         print("Usage: uv run python briefing_to_pdf.py <input.json> [output.pdf] [--citations] [--pdf-engine=ENGINE]")
+        print("  ENGINE defaults to xelatex. Use pdflatex or lualatex if xelatex is unavailable.")
         sys.exit(1)
 
     input_path = Path(sys.argv[1])
     output_path = Path(sys.argv[2]) if len(sys.argv) > 2 and not sys.argv[2].startswith("--") else input_path.with_suffix(".pdf")
 
+<<<<<<< HEAD
     citations = "--citations" in sys.argv
     engine = "xelatex"
     for arg in sys.argv[2:]:
