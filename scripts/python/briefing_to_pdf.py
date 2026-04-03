@@ -94,7 +94,7 @@ def main():
     output_path = Path(sys.argv[2]) if len(sys.argv) > 2 and not sys.argv[2].startswith("--") else input_path.with_suffix(".pdf")
 
     engine = "xelatex"
-    for arg in sys.argv[3:]:
+    for arg in sys.argv[2:]:
         if arg.startswith("--pdf-engine="):
             engine = arg.split("=", 1)[1]
 
