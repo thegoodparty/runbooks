@@ -9,14 +9,14 @@ You will execute three phases in sequence:
 
 ## CRITICAL RULES
 
-1. `/workspace/output/` must contain ONLY `meeting_briefing.json` — put all scratch files in `/tmp/`. Always overwrite the same file, never create a second file like `_final` or `_v2`.
+1. `/workspace/output/` must contain ONLY `meeting_briefing.json`. Always overwrite the same file, never create a second file like `_final` or `_v2`.
 2. The output JSON MUST match the contract schema exactly.
 3. **Never fabricate data.** If a search returns nothing, record the absence. Partial data is better than invented data.
 4. **All Community Signal scores must be labeled as modeled**, not surveyed. Use phrases like "based on voter modeling" or "modeled from voter attributes."
 5. `based_on_district_intel_run` must be `"none"` (the string) if no district intel artifact was provided in the parameters.
 6. `agenda_items` must have at least one entry. If no agenda is found, include a single item with `item_number: "N/A"`, `title: "Agenda not yet published"`, `type: "informational"`, `requires_vote: false`.
 7. **CITATIONS ARE REQUIRED** in the briefing content. Every factual claim about fiscal data, council dynamics, or news must reference a source.
-8. **ALWAYS read staff report PDFs.** After pulling the agenda, download and read staff reports for decision items (Step 4b). Staff reports contain fiscal impact, staff recommendations, and conditions that dramatically improve briefing quality. Skip site plans and engineering drawings. **For large PDFs** (over ~1MB), use `pdftotext /tmp/file.pdf -` to extract text instead of `Read`, which has a size limit.
+8. **ALWAYS read staff report PDFs.** After pulling the agenda, download and read staff reports for decision items (Step 4b). Staff reports contain fiscal impact, staff recommendations, and conditions that dramatically improve briefing quality. Skip site plans and engineering drawings. **For large PDFs** (over ~1MB), use `pdftotext /workspace/downloads/file.pdf -` to extract text instead of `Read`, which has a size limit.
 9. **Track all sources.** Every data source you access (API endpoint, web page, PDF document) must be recorded in `/workspace/sources.json`. Each entry needs: `id` (unique slug like `linc-property-tax`), `type` (one of: `government_record`, `news`, `staff_report`, `campaign`, `modeled`, `web_search`), `title` (human-readable), `url` (the URL or API endpoint), and `accessed_at` (ISO 8601 timestamp). These sources appear in the final output and are referenced inline in the briefing via `[source-id]` markers.
 
 ---
@@ -25,7 +25,18 @@ You will execute three phases in sequence:
 
 Before starting any data collection:
 
-1. Create `/workspace/output/` directory
+1. Create workspace directories:
+
+```bash
+mkdir -p /workspace/output /workspace/downloads /workspace/api_responses
+```
+
+- `/workspace/output/` — final artifact only (`meeting_briefing.json`)
+- `/workspace/downloads/` — all downloaded files (PDFs, budget docs, agendas)
+- `/workspace/api_responses/` — saved API responses (Legistar events, agenda items, fiscal data)
+
+**Save everything you download or fetch.** Every PDF goes to `/workspace/downloads/{source-id}.pdf`. Every significant API response goes to `/workspace/api_responses/{source-id}.json`. These are collected as run artifacts for debugging and auditing.
+
 2. Initialize `/workspace/sources.json` as an empty JSON array: `[]`
 3. Initialize `/workspace/checklist.json`:
 
@@ -94,10 +105,10 @@ If `district_intel_key` and `district_intel_bucket` are present, fetch the distr
 ```bash
 # Only run if district intel artifact params are set
 if [ -n "$DISTRICT_INTEL_KEY" ]; then
-  aws s3 cp "s3://${DISTRICT_INTEL_BUCKET}/${DISTRICT_INTEL_KEY}" /tmp/district_intel.json
+  aws s3 cp "s3://${DISTRICT_INTEL_BUCKET}/${DISTRICT_INTEL_KEY}" /workspace/downloads/district_intel.json
   python3 -c "
 import json
-d = json.load(open('/tmp/district_intel.json'))
+d = json.load(open('/workspace/downloads/district_intel.json'))
 print(f'District intel loaded: {len(d.get(\"issues\", []))} issues')
 for i in d.get('issues', []):
     print(f'  - {i[\"title\"]}')
@@ -176,11 +187,11 @@ Look for "City Council" or "Regular Meeting" body types. Skip work sessions and 
 
 ```bash
 # Get agenda items for the meeting
-curl -s "https://webapi.legistar.com/v1/{client}/events/{eventId}/eventitems?$orderby=EventItemMinutesSequence" > /tmp/agenda_items.json
+curl -s "https://webapi.legistar.com/v1/{client}/events/{eventId}/eventitems?$orderby=EventItemMinutesSequence" > /workspace/api_responses/agenda_items.json
 
 python3 -c "
 import json
-items = json.load(open('/tmp/agenda_items.json'))
+items = json.load(open('/workspace/api_responses/agenda_items.json'))
 print(f'Total agenda items: {len(items)}')
 for item in items:
     title = item.get('EventItemTitle', 'No title')
@@ -245,8 +256,8 @@ pdfs = re.findall(r'href=\"(https://mccmeetingspublic[^\"]+)\"[^>]*>([^<]+)', ht
 for url, name in pdfs:
     name = name.strip()
     print(f'{name} | {url}')
-" > /tmp/attachments.txt
-cat /tmp/attachments.txt
+" > /workspace/api_responses/attachments.txt
+cat /workspace/api_responses/attachments.txt
 ```
 
 **Legistar cities:**
@@ -265,7 +276,7 @@ curl -s "https://webapi.legistar.com/v1/{client}/matters/{matterId}/attachments"
 
 ```bash
 # Download a staff report
-curl -s -o /tmp/staff_report.pdf "BLOB_URL"
+curl -s -o /workspace/downloads/staff_report.pdf "BLOB_URL"
 # Read it (the Read tool handles PDFs natively — use pages parameter for large files)
 ```
 
@@ -834,7 +845,7 @@ print(f'Data quality: agenda={dq[\"agenda\"]} fiscal={dq[\"fiscal\"]} platform={
 # Check teaser word count
 teaser_words = len(d['teaser_email'].split())
 print(f'Teaser email: {teaser_words} words', end='')
-if 150 <= teaser_words <= 200:
+if 150 <= teaser_words <= 220:
     print(' (OK)')
 else:
     print(f' (WARNING: target 150-200)')

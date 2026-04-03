@@ -153,18 +153,22 @@ for dir in /tmp/pmf-*/; do
   cp "$dir"checklist.json "/tmp/pmf-briefings/$city/" 2>/dev/null
   cp "$dir"sources.json "/tmp/pmf-briefings/$city/" 2>/dev/null
   cp "$dir"params.json "/tmp/pmf-briefings/$city/" 2>/dev/null
+  cp -r "$dir"downloads "/tmp/pmf-briefings/$city/" 2>/dev/null
+  cp -r "$dir"api_responses "/tmp/pmf-briefings/$city/" 2>/dev/null
 done
 ```
 
 Each city folder will contain:
 
-| File | Contents |
-|------|----------|
+| File/Dir | Contents |
+|----------|----------|
 | `meeting_briefing.json` | Full artifact (briefing, teaser, score, sources, agenda) |
 | `briefing.pdf` | Formatted PDF for sharing |
 | `checklist.json` | Step-by-step progress log |
 | `sources.json` | All data sources accessed with URLs |
 | `params.json` | Input parameters used |
+| `downloads/` | All downloaded files (PDFs, budget docs, agendas, staff reports) |
+| `api_responses/` | Saved API responses (Legistar events, agenda items, fiscal data) |
 
 ## Expected Results
 
