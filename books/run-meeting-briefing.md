@@ -169,5 +169,7 @@ cp /tmp/pmf-*/briefing.pdf /tmp/pmf-briefings/
 | Agent stuck on Step 2 | City has no discoverable platform | Agent should fall back to web_search. If stuck >5 min, check logs. |
 | Checklist not updating | Some agents skip checklist writes | Known issue. Output may still be correct. |
 | 403 on city website | Anti-bot blocking | Agent should fall back to news/web search. Less data but still functional. |
+| 403 on `webapi.legistar.com/v1/nyc` | NYC blocks the generic Legistar API | Use `legistar.council.nyc.gov` directly via WebFetch. The web interface works; the REST API does not. |
+| Spawned agent can't use Bash or read `/tmp/` | Subagent doesn't inherit parent session permissions | Run the briefing in the main session instead of spawning a background agent, or pre-approve Bash/Read/Write for the subagent before launching. |
 | Score below 40 (hold) | Very small city, no data | Expected for tiny municipalities. Review the briefing manually. |
 | Agent errors out | API overload or max turns | Re-run. Consider reducing scope (fewer news searches). |

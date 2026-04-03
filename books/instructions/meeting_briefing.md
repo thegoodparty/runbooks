@@ -834,7 +834,7 @@ print(f'Data quality: agenda={dq[\"agenda\"]} fiscal={dq[\"fiscal\"]} platform={
 # Check teaser word count
 teaser_words = len(d['teaser_email'].split())
 print(f'Teaser email: {teaser_words} words', end='')
-if 150 <= teaser_words <= 220:
+if 150 <= teaser_words <= 200:
     print(' (OK)')
 else:
     print(f' (WARNING: target 150-200)')

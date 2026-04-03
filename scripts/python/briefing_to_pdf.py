@@ -86,11 +86,17 @@ def json_to_markdown(data: dict) -> str:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: uv run python briefing_to_pdf.py <input.json> [output.pdf]")
+        print("Usage: uv run python briefing_to_pdf.py <input.json> [output.pdf] [--pdf-engine=ENGINE]")
+        print("  ENGINE defaults to xelatex. Use pdflatex or lualatex if xelatex is unavailable.")
         sys.exit(1)
 
     input_path = Path(sys.argv[1])
-    output_path = Path(sys.argv[2]) if len(sys.argv) > 2 else input_path.with_suffix(".pdf")
+    output_path = Path(sys.argv[2]) if len(sys.argv) > 2 and not sys.argv[2].startswith("--") else input_path.with_suffix(".pdf")
+
+    engine = "xelatex"
+    for arg in sys.argv[3:]:
+        if arg.startswith("--pdf-engine="):
+            engine = arg.split("=", 1)[1]
 
     data = json.loads(input_path.read_text())
     md = json_to_markdown(data)
@@ -104,7 +110,7 @@ def main():
             [
                 "pandoc", md_path,
                 "-o", str(output_path),
-                "--pdf-engine=xelatex",
+                f"--pdf-engine={engine}",
                 "-V", "geometry:margin=1in",
                 "-V", "fontsize=11pt",
                 "-V", "mainfont=Helvetica",
