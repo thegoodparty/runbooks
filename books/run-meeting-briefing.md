@@ -139,12 +139,32 @@ Use `scripts/python/briefing_to_pdf.py` to convert each briefing JSON to PDF:
 cd "$(git rev-parse --show-toplevel)/scripts" && uv run python/briefing_to_pdf.py /tmp/pmf-{city-slug}/output/meeting_briefing.json /tmp/pmf-{city-slug}/briefing.pdf
 ```
 
-### 6. Collect PDFs
+### 6. Collect all artifacts
+
+Gather everything from each run into a single directory:
 
 ```bash
 mkdir -p /tmp/pmf-briefings
-cp /tmp/pmf-*/briefing.pdf /tmp/pmf-briefings/
+for dir in /tmp/pmf-*/; do
+  city=$(basename "$dir")
+  mkdir -p "/tmp/pmf-briefings/$city"
+  cp "$dir"output/meeting_briefing.json "/tmp/pmf-briefings/$city/" 2>/dev/null
+  cp "$dir"briefing.pdf "/tmp/pmf-briefings/$city/" 2>/dev/null
+  cp "$dir"checklist.json "/tmp/pmf-briefings/$city/" 2>/dev/null
+  cp "$dir"sources.json "/tmp/pmf-briefings/$city/" 2>/dev/null
+  cp "$dir"params.json "/tmp/pmf-briefings/$city/" 2>/dev/null
+done
 ```
+
+Each city folder will contain:
+
+| File | Contents |
+|------|----------|
+| `meeting_briefing.json` | Full artifact (briefing, teaser, score, sources, agenda) |
+| `briefing.pdf` | Formatted PDF for sharing |
+| `checklist.json` | Step-by-step progress log |
+| `sources.json` | All data sources accessed with URLs |
+| `params.json` | Input parameters used |
 
 ## Expected Results
 
