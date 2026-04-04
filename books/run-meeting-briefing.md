@@ -23,7 +23,7 @@ Run meeting briefings for Palestine TX, Westerville OH, Greenville NC, Greensbor
 
 ## How It Works
 
-Each briefing spawns an Opus agent that:
+Each briefing spawns an agent that:
 1. Discovers a real council member via web search
 2. Finds the city's legislative platform (Legistar, Granicus, eSCRIBE, CivicPlus, or web fallback)
 3. Pulls the next meeting date and agenda (or projects from recent meetings if not yet posted)
@@ -35,17 +35,20 @@ Each briefing spawns an Opus agent that:
 9. Self-scores against 12 quality dimensions (max 120)
 10. Produces a JSON artifact with structured sources and inline citations
 
+All outputs are saved to `outputs/` in this repo (gitignored).
+
 ## Steps
 
-### 1. Create workspace and params
+### 1. Create run directory and params
 
-For each city, create a workspace directory and params file:
+Each run gets a timestamped directory inside `outputs/`:
 
 ```bash
-mkdir -p /tmp/pmf-{city-slug}/output
+RUN_DIR="outputs/$(date +%Y%m%d-%H%M)-{city-slug}"
+mkdir -p "$RUN_DIR"
 ```
 
-Write `/tmp/pmf-{city-slug}/params.json`:
+Write `$RUN_DIR/params.json`:
 
 ```json
 {
@@ -63,9 +66,9 @@ Write `/tmp/pmf-{city-slug}/params.json`:
 
 Spawn one background agent per city. Each agent needs:
 - The instruction file: `books/instructions/meeting_briefing.md`
-- The params file: `/tmp/pmf-{city-slug}/params.json`
-- Workspace: `/tmp/pmf-{city-slug}/` (replaces `/workspace/` in the instruction)
-- Output: `/tmp/pmf-{city-slug}/output/meeting_briefing.json`
+- The params file: `$RUN_DIR/params.json`
+- Workspace: `$RUN_DIR/` (replaces `/workspace/` in the instruction)
+- Output: `$RUN_DIR/output/meeting_briefing.json`
 - Mode: `auto` (needs Bash, Read, Write, WebSearch, WebFetch)
 
 Agent prompt template:
@@ -76,9 +79,9 @@ You are running a meeting briefing experiment for a city council.
 ## Setup
 
 1. Read the instruction from: books/instructions/meeting_briefing.md
-2. Read your params from: /tmp/pmf-{city-slug}/params.json
-3. Your workspace is /tmp/pmf-{city-slug}/. Wherever the instruction says /workspace/, use /tmp/pmf-{city-slug}/ instead.
-4. Write final output to /tmp/pmf-{city-slug}/output/meeting_briefing.json
+2. Read your params from: $RUN_DIR/params.json
+3. Your workspace is $RUN_DIR/. Wherever the instruction says /workspace/, use $RUN_DIR/ instead.
+4. Write final output to $RUN_DIR/output/meeting_briefing.json
 
 ## Important
 
@@ -97,14 +100,15 @@ Start now.
 
 ### 3. Monitor progress
 
-Check checklist status across all cities:
+Check checklist status across all runs:
 
 ```bash
-for city in city1 city2 city3; do
-  echo "=== $city ==="
+for dir in outputs/*/; do
+  name=$(basename "$dir")
+  echo "=== $name ==="
   python3 -c "
 import json
-cl = json.load(open('/tmp/pmf-$city/checklist.json'))
+cl = json.load(open('${dir}checklist.json'))
 done = sum(1 for s in cl['steps'] if s['status'] == 'done')
 print(f'  {done}/15 steps done')
 for s in cl['steps']:
@@ -116,12 +120,12 @@ done
 
 ### 4. Review results
 
-Parse output JSON for each city:
+Parse output JSON:
 
 ```bash
 python3 -c "
 import json
-d = json.load(open('/tmp/pmf-{city-slug}/output/meeting_briefing.json'))
+d = json.load(open('$RUN_DIR/output/meeting_briefing.json'))
 s = d['score']
 print(f'Official: {d[\"eo\"][\"name\"]}')
 print(f'Meeting: {d[\"meeting\"][\"body\"]} | {d[\"meeting\"][\"date\"]}')
@@ -136,39 +140,23 @@ print(f'Briefing: {len(d[\"briefing_content\"].split())} words')
 Use `scripts/python/briefing_to_pdf.py` to convert each briefing JSON to PDF:
 
 ```bash
-cd "$(git rev-parse --show-toplevel)/scripts" && uv run python/briefing_to_pdf.py /tmp/pmf-{city-slug}/output/meeting_briefing.json /tmp/pmf-{city-slug}/briefing.pdf
+cd "$(git rev-parse --show-toplevel)/scripts" && uv run python/briefing_to_pdf.py $RUN_DIR/output/meeting_briefing.json $RUN_DIR/briefing.pdf
 ```
 
-### 6. Collect all artifacts
+### 6. Verify artifacts
 
-Gather everything from each run into a single directory:
-
-```bash
-mkdir -p /tmp/pmf-briefings
-for dir in /tmp/pmf-*/; do
-  city=$(basename "$dir")
-  mkdir -p "/tmp/pmf-briefings/$city"
-  cp "$dir"output/meeting_briefing.json "/tmp/pmf-briefings/$city/" 2>/dev/null
-  cp "$dir"briefing.pdf "/tmp/pmf-briefings/$city/" 2>/dev/null
-  cp "$dir"checklist.json "/tmp/pmf-briefings/$city/" 2>/dev/null
-  cp "$dir"sources.json "/tmp/pmf-briefings/$city/" 2>/dev/null
-  cp "$dir"params.json "/tmp/pmf-briefings/$city/" 2>/dev/null
-  cp -r "$dir"downloads "/tmp/pmf-briefings/$city/" 2>/dev/null
-  cp -r "$dir"api_responses "/tmp/pmf-briefings/$city/" 2>/dev/null
-done
-```
-
-Each city folder will contain:
+Each run directory should contain:
 
 | File/Dir | Contents |
 |----------|----------|
-| `meeting_briefing.json` | Full artifact (briefing, teaser, score, sources, agenda) |
+| `params.json` | Input parameters used |
+| `output/meeting_briefing.json` | Full artifact (briefing, teaser, score, sources, agenda) |
 | `briefing.pdf` | Formatted PDF for sharing |
 | `checklist.json` | Step-by-step progress log |
 | `sources.json` | All data sources accessed with URLs |
-| `params.json` | Input parameters used |
 | `downloads/` | All downloaded files (PDFs, budget docs, agendas, staff reports) |
 | `api_responses/` | Saved API responses (Legistar events, agenda items, fiscal data) |
+| `instruction.md` | Copy of instruction the agent used (written by agent at Step 0) |
 
 ## Expected Results
 
