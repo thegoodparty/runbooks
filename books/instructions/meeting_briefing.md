@@ -37,7 +37,19 @@ touch /workspace/conversation.log
 - `/workspace/api_responses/` — saved API responses (Legistar events, agenda items, fiscal data)
 - `/workspace/conversation.log` — turn-by-turn log of every action taken
 
-**Save everything you download or fetch.** Every PDF goes to `/workspace/downloads/{source-id}.pdf`. Every significant API response goes to `/workspace/api_responses/{source-id}.json`. These are collected as run artifacts for debugging and auditing.
+**Save everything you download or fetch.** Use `curl -o` (not WebFetch) when downloading files so they persist on disk:
+
+- **PDFs**: `curl -s -o /workspace/downloads/{source-id}.pdf "URL"`
+- **API responses**: `curl -s "URL" > /workspace/api_responses/{source-id}.json`
+- **Web pages with useful data**: `curl -s "URL" > /workspace/downloads/{source-id}.html`
+
+Do NOT use WebFetch for downloads — it returns content to your context but does not save to disk. Use WebFetch only for quick page reads where you don't need to keep the file. If you read something useful with WebFetch, save it afterward:
+
+```bash
+echo 'DATA_YOU_EXTRACTED' > /workspace/api_responses/{source-id}.txt
+```
+
+These files are collected as run artifacts for debugging and auditing.
 
 ### Conversation logging
 
