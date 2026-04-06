@@ -29,13 +29,38 @@ Before starting any data collection:
 
 ```bash
 mkdir -p /workspace/output /workspace/downloads /workspace/api_responses
+touch /workspace/conversation.log
 ```
 
 - `/workspace/output/` — final artifact only (`meeting_briefing.json`)
 - `/workspace/downloads/` — all downloaded files (PDFs, budget docs, agendas)
 - `/workspace/api_responses/` — saved API responses (Legistar events, agenda items, fiscal data)
+- `/workspace/conversation.log` — turn-by-turn log of every action taken
 
 **Save everything you download or fetch.** Every PDF goes to `/workspace/downloads/{source-id}.pdf`. Every significant API response goes to `/workspace/api_responses/{source-id}.json`. These are collected as run artifacts for debugging and auditing.
+
+### Conversation logging
+
+After **every tool call**, append a log entry to `/workspace/conversation.log`:
+
+```bash
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] TOOL: {tool_name} | {brief description of what you did and why}" >> /workspace/conversation.log
+echo "  RESULT: {1-2 line summary of what was returned}" >> /workspace/conversation.log
+```
+
+For example:
+```
+[2026-04-06T14:32:00Z] TOOL: WebSearch | searched "Palestine TX city council members"
+  RESULT: Found 7 council members. Selected Angela Woodard (District 5, elected 2024).
+[2026-04-06T14:32:15Z] TOOL: Bash(curl) | fetched Legistar events API for palestine
+  RESULT: 404 - Palestine does not use Legistar.
+[2026-04-06T14:33:00Z] TOOL: WebSearch | searched "Palestine TX" legistar OR granicus OR escribemeetings
+  RESULT: Found CivicPlus AgendaCenter at cityofpalestinetx.com/AgendaCenter
+[2026-04-06T14:34:00Z] TOOL: Read | read budget PDF pages 1-5
+  RESULT: FY2026 total budget $70.4M, tax rate $0.614285/$100, General Fund $24.5M
+```
+
+This log is the full audit trail of the run. Keep entries concise but include what was attempted, what was found (or not found), and key data points extracted.
 
 2. Initialize `/workspace/sources.json` as an empty JSON array: `[]`
 3. Initialize `/workspace/checklist.json`:

@@ -157,6 +157,7 @@ Each run directory should contain:
 | `downloads/` | All downloaded files (PDFs, budget docs, agendas, staff reports) |
 | `api_responses/` | Saved API responses (Legistar events, agenda items, fiscal data) |
 | `instruction.md` | Copy of instruction the agent used (written by agent at Step 0) |
+| `conversation.log` | Turn-by-turn log of every tool call, result, and decision |
 
 ## Expected Results
 
