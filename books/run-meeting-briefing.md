@@ -64,24 +64,42 @@ Write `$RUN_DIR/params.json`:
 
 ### 2. Spawn agents
 
-Spawn one background agent per city. Each agent needs:
-- The instruction file: `books/instructions/meeting_briefing.md`
-- The params file: `$RUN_DIR/params.json`
-- Workspace: `$RUN_DIR/` (replaces `/workspace/` in the instruction)
-- Output: `$RUN_DIR/output/meeting_briefing.json`
-- Mode: `auto` (needs Bash, Read, Write, WebSearch, WebFetch)
+Run agents via the Claude CLI with `--output-format stream-json` piped through `tee` to capture the full conversation. This is the only reliable way to get every tool call — agents won't log their own turns consistently.
 
-Agent prompt template:
+```bash
+INSTRUCTION=$(cat books/instructions/meeting_briefing.md)
 
-```
+cat <<PROMPT | claude -p \
+  --output-format stream-json \
+  --allowedTools "Bash Read Write Edit Glob Grep WebFetch WebSearch" \
+  --model sonnet \
+  2>"$RUN_DIR/agent-stderr.log" \
+  | tee "$RUN_DIR/conversation.jsonl" \
+  | python3 -c "
+import sys, json
+for line in sys.stdin:
+    try:
+        d = json.loads(line.strip())
+        if d.get('type') == 'assistant':
+            for c in d.get('message',{}).get('content',[]):
+                if c.get('type') == 'tool_use':
+                    print(f'  TOOL: {c[\"name\"]}')
+                elif c.get('type') == 'text' and len(c.get('text','').strip()) > 20:
+                    print(f'  >>> {c[\"text\"][:120]}')
+        elif d.get('type') == 'result':
+            cost = d.get('total_cost_usd', 0)
+            turns = d.get('num_turns', 0)
+            print(f'  === DONE: {turns} turns, \${cost:.2f} ===')
+    except: pass
+"
 You are running a meeting briefing experiment for a city council.
 
 ## Setup
 
-1. Read the instruction from: books/instructions/meeting_briefing.md
-2. Read your params from: $RUN_DIR/params.json
-3. Your workspace is $RUN_DIR/. Wherever the instruction says /workspace/, use $RUN_DIR/ instead.
-4. Write final output to $RUN_DIR/output/meeting_briefing.json
+1. Your instruction is below (also save it to \$RUN_DIR/instruction.md for mid-run reference).
+2. Read your params from: \$RUN_DIR/params.json
+3. Your workspace is \$RUN_DIR/. Wherever the instruction says /workspace/, use \$RUN_DIR/ instead.
+4. Write final output to \$RUN_DIR/output/meeting_briefing.json
 
 ## Important
 
@@ -95,7 +113,25 @@ You are running a meeting briefing experiment for a city council.
   - Voting records: try local news coverage of contentious votes, even if there's no API
   - A step should only be marked "skipped" if 3+ different approaches have failed
 
-Start now.
+## Instruction
+
+$INSTRUCTION
+PROMPT
+```
+
+This produces:
+- `$RUN_DIR/conversation.jsonl` — **complete turn-by-turn trace** (every tool call, input, and result as JSON lines)
+- Live progress printed to terminal as the agent runs
+- `$RUN_DIR/agent-stderr.log` — any CLI errors
+
+For multiple cities, run in parallel with `&` and `wait`:
+
+```bash
+# Launch each city in background
+for slug in city1 city2 city3; do
+  (run the above command with RUN_DIR=outputs/$(date +%Y%m%d)-$slug) &
+done
+wait
 ```
 
 ### 3. Monitor progress
@@ -157,7 +193,8 @@ Each run directory should contain:
 | `downloads/` | All downloaded files (PDFs, budget docs, agendas, staff reports) |
 | `api_responses/` | Saved API responses (Legistar events, agenda items, fiscal data) |
 | `instruction.md` | Copy of instruction the agent used (written by agent at Step 0) |
-| `conversation.log` | Turn-by-turn log of every tool call, result, and decision |
+| `conversation.jsonl` | Complete turn-by-turn trace — every tool call, input, and result as JSON lines |
+| `agent-stderr.log` | CLI errors (if any) |
 
 ## Expected Results
 
