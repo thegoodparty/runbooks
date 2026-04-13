@@ -905,18 +905,13 @@ for dim in s['dimensions']:
 # Check district intel reference
 print(f'Based on district intel run: {d[\"based_on_district_intel_run\"]}')
 print(f'Generated at: {d[\"generated_at\"]}')
-"
-```
-
-If any required fields are missing or word counts are far outside range, investigate and fix before completing.
-
 # Source and citation verification
 sources = d.get('sources', [])
 print(f'Sources tracked: {len(sources)}')
 if len(sources) < 3:
     print('WARNING: fewer than 3 sources tracked')
 for s in sources[:10]:
-    print(f'  [{s["id"]}] {s["type"]}: {s["title"][:50]}')
+    print(f'  [{s[\"id\"]}] {s[\"type\"]}: {s[\"title\"][:50]}')
 
 # Check inline citations in briefing
 import re
@@ -934,7 +929,7 @@ if os.path.exists('/workspace/checklist.json'):
     cl = json.load(open('/workspace/checklist.json'))
     incomplete = [s for s in cl['steps'] if s['status'] != 'done']
     if incomplete:
-        print(f'WARNING: {len(incomplete)} steps not done: {[s["id"] for s in incomplete]}')
+        print(f'WARNING: {len(incomplete)} steps not done: {[s[\"id\"] for s in incomplete]}')
     else:
         print('Checklist: all steps done')
 "

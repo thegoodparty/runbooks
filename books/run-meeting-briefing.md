@@ -176,7 +176,7 @@ print(f'Briefing: {len(d[\"briefing_content\"].split())} words')
 Use `scripts/python/briefing_to_pdf.py` to convert each briefing JSON to PDF:
 
 ```bash
-cd "$(git rev-parse --show-toplevel)/scripts" && uv run python/briefing_to_pdf.py $RUN_DIR/output/meeting_briefing.json $RUN_DIR/briefing.pdf
+cd "$(git rev-parse --show-toplevel)/scripts" && uv run python/briefing_to_pdf.py "../$RUN_DIR/output/meeting_briefing.json" "../$RUN_DIR/briefing.pdf"
 ```
 
 ### 6. Verify artifacts
