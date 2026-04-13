@@ -14,10 +14,13 @@ You will execute three phases in sequence:
 3. **Never fabricate data.** If a search returns nothing, record the absence. Partial data is better than invented data.
 4. **All Community Signal scores must be labeled as modeled**, not surveyed. Use phrases like "based on voter modeling" or "modeled from voter attributes."
 5. `based_on_district_intel_run` must be `"none"` (the string) if no district intel artifact was provided in the parameters.
-6. `agenda_items` must have at least one entry. If no agenda is found, include a single item with `item_number: "N/A"`, `title: "Agenda not yet published"`, `type: "informational"`, `requires_vote: false`.
+6. `agenda_items` must have at least one entry. If no agenda is found, include a single item with `item_number: "N/A"`, `title: "Agenda not yet published"`, `type: "informational"`, `requires_vote: false`. Agenda items must be substantive — items where council takes action, holds a hearing, receives a report, or makes a decision. Do not include meeting logistics (roll call, pledge, invocation, adjournment, approval of minutes).
 7. **CITATIONS ARE REQUIRED** in the briefing content. Every factual claim about fiscal data, council dynamics, or news must reference a source.
 8. **ALWAYS read staff report PDFs.** After pulling the agenda, download and read staff reports for decision items (Step 4b). Staff reports contain fiscal impact, staff recommendations, and conditions that dramatically improve briefing quality. Skip site plans and engineering drawings. **For large PDFs** (over ~1MB), use `pdftotext /workspace/downloads/file.pdf -` to extract text instead of `Read`, which has a size limit.
 9. **Track all sources.** Every data source you access (API endpoint, web page, PDF document) must be recorded in `/workspace/sources.json`. Each entry needs: `id` (unique slug like `linc-property-tax`), `type` (one of: `government_record`, `news`, `staff_report`, `campaign`, `modeled`, `web_search`), `title` (human-readable), `url` (the URL or API endpoint), and `accessed_at` (ISO 8601 timestamp). These sources appear in the final output and are referenced inline in the briefing via `[source-id]` markers.
+10. **Do NOT remove or omit any fields from the output template.** Every field in the contract schema must appear in the output. If data is unavailable, use sensible defaults: `""` for strings, `0` for numbers, `[]` for arrays. Never use `null`.
+11. **`eo.name`**: If no `officialName` is provided in params, research the governing body and use the name of a real sitting council member or official. Never use generic values like "Council Member" or the body name itself.
+12. **Scoring dimension IDs are fixed.** The `score.dimensions` array MUST contain exactly 12 entries with these exact IDs (in this order): `legislative_record`, `fiscal_depth`, `voter_constituent_intelligence`, `gap_analysis`, `political_intelligence`, `strategic_roadmap`, `procedural_guidance`, `personal_tailoring`, `news_narrative_context`, `state_policy_integration`, `source_transparency`, `accuracy_risk_management`. Do not rename, abbreviate, or reorder them.
 
 ---
 
@@ -178,13 +181,15 @@ else:
 "
 ```
 
-5. If the city doesn't use Legistar, search for:
+5. If the city doesn't use Legistar, search for these platforms **in order** (try ALL of them before falling back to web_search):
+   - PrimeGov: `"[city]" primegov.com` → URL pattern: `cityof{city}.primegov.com` or `{city}.primegov.com`
    - eSCRIBE: `"[city]" escribemeetings.com`
    - CivicPlus AgendaCenter: `"[city]" AgendaCenter`
    - BoardDocs: `"[city]" boarddocs`
    - Granicus: `"[city]" granicus.com`
    - Municode/CivicPlus Meetings: `"[city]" meetings civicplus`
-6. Record which platform was found (or "web_search" if none)
+6. **Verify the platform actually works** before moving on. Load the agenda page and confirm it shows real meeting items. If it returns a login wall or empty page, try the next platform.
+7. Record which platform was found (or "web_search" if none)
 
 ---
 
@@ -269,11 +274,32 @@ if text:
 | Everything else with `EventItemRollCallFlag > 0` | `business` |
 | Everything else | `informational` |
 
+**PrimeGov cities:** PrimeGov hosts agendas at `https://{client}.primegov.com/Portal/Meeting?meetingTemplateId=XXX`. To find meetings:
+
+```bash
+# List upcoming meetings — PrimeGov uses a public portal page
+curl -s "https://{client}.primegov.com/Portal/Meeting" > /workspace/api_responses/primegov_meetings.html
+
+# Extract meeting links and dates from the HTML
+python3 -c "
+import re
+html = open('/workspace/api_responses/primegov_meetings.html').read()
+# Find meeting links with dates
+meetings = re.findall(r'href=\"(/Portal/Meeting\?compiledMeetingDocumentFileId=\d+)\"[^>]*>.*?(\d{1,2}/\d{1,2}/\d{4})', html, re.DOTALL)
+for url, date in meetings[:10]:
+    print(f'{date} | https://{client}.primegov.com{url}')
+"
+```
+
+Download the compiled meeting document (PDF) for the target meeting and extract agenda items with `pdftotext`. PrimeGov PDFs typically have numbered items with section headers (Consent Agenda, Public Hearings, Action Items, etc.).
+
 **eSCRIBE cities:** POST to the meetings endpoint, parse HTML for item titles, numbers, attachments. Mark items under "Consent Agenda" header as consent.
 
 **CivicPlus AgendaCenter:** Scrape the AgendaCenter page, download agenda PDF, extract text. Parse by numbered items and section headers.
 
 **Fallback:** Search `"[city]" "[state]" city council agenda [meeting date]` and extract what you can. Record `agenda_source: "web_search"`.
+
+**IMPORTANT: If you cannot find an agenda through any platform, do NOT fabricate agenda items.** Use the fallback entry from Critical Rule 6 (`"Agenda not yet published"`). A single honest placeholder is far better than 5 plausible-but-wrong items. The scoring rubric will reflect the missing data honestly.
 
 ---
 
@@ -670,6 +696,16 @@ Include ONLY when verifiable from: prior votes, staff recommendations, public st
 
 ## STEP 12: Score the briefing
 
+### Pre-scoring verification
+
+Before scoring, verify the core data quality. Read `/workspace/checklist.json` and check:
+
+1. **Agenda verification**: Was the agenda pulled from a real source (Legistar, PrimeGov, city website PDF), or was it fabricated/extrapolated? If the agenda step status is "failed" or "skipped" but `agenda_items` has entries other than the "not yet published" placeholder, **your agenda is fabricated — set `data_quality.agenda` to `"low"` and score `legislative_record` at 0-2.**
+2. **Source count**: How many entries are in `/workspace/sources.json`? If fewer than 3 real sources, the briefing cannot score above 5 on `source_transparency`.
+3. **Fiscal data**: Did you pull fiscal data from a government source (CAFR, budget document, property tax portal), or only from news? If news-only, `fiscal_depth` cannot score above 4.
+
+**Be brutally honest.** A low score with accurate justification is more valuable than an inflated score that misleads the campaign. The score determines whether this briefing gets sent to an elected official.
+
 Read the briefing content you just generated. Score it against 12 dimensions on a 0-10 scale. **Score what is actually in the document, not what could be there.** Do not inflate scores.
 
 ### Dimension 1: Legislative Record (HIGH)
@@ -832,7 +868,7 @@ The JSON must include these top-level fields:
 - `data_quality` — quality assessment (agenda, fiscal, platform, overall: high/medium/low)
 - `teaser_email` — full markdown string of the teaser email
 - `briefing_content` — full markdown string of the briefing (must include inline `[source-id]` citations and a Sources table at the end)
-- `score` — scoring results (total, max: 120, recommendation, dimensions array)
+- `score` — scoring results (total, max: 120, recommendation, dimensions array). **Dimension IDs must be exactly**: `legislative_record`, `fiscal_depth`, `voter_constituent_intelligence`, `gap_analysis`, `political_intelligence`, `strategic_roadmap`, `procedural_guidance`, `personal_tailoring`, `news_narrative_context`, `state_policy_integration`, `source_transparency`, `accuracy_risk_management`. The contract validator will reject any other IDs.
 - `sources` — the full array from `/workspace/sources.json` (every data source accessed during collection)
 - `generated_at` — ISO 8601 timestamp
 - `based_on_district_intel_run` — the run ID or `"none"`
@@ -841,7 +877,17 @@ You may include additional fields beyond these (platform details, committee assi
 
 ---
 
-## STEP 14: Verify output
+## STEP 14: Validate and verify
+
+First, run the contract validator:
+
+```bash
+python3 /workspace/validate_output.py
+```
+
+If it prints FAIL, read the errors, fix, and re-run. Do NOT proceed until it prints PASS.
+
+Then spot-check content quality:
 
 ```bash
 python3 -c "

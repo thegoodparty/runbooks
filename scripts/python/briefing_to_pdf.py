@@ -40,6 +40,15 @@ def json_to_markdown(data: dict, citations: bool = False) -> str:
     sources = data.get("sources", [])
     fn_map = build_footnote_map(sources) if citations else {}
 
+    # teaser_email may be a plain string or a dict with subject/body keys
+    teaser_raw = data["teaser_email"]
+    if isinstance(teaser_raw, dict):
+        teaser_subject = teaser_raw.get("subject", "")
+        teaser_body = teaser_raw.get("body", "")
+        teaser_block = (f"**Subject:** {teaser_subject}\n\n{teaser_body}" if teaser_subject else teaser_body)
+    else:
+        teaser_block = teaser_raw
+
     lines = [
         "---",
         "geometry: margin=1in",
@@ -57,7 +66,7 @@ def json_to_markdown(data: dict, citations: bool = False) -> str:
         "",
         "# Teaser Email",
         "",
-        data["teaser_email"],
+        teaser_block,
         "",
         "---",
         "",
@@ -90,7 +99,7 @@ def json_to_markdown(data: dict, citations: bool = False) -> str:
         "|-----------|-------|---------------|",
     ])
     for dim in s["dimensions"]:
-        just = dim.get("justification", "").replace("|", "/").replace("\n", " ")[:120]
+        just = dim.get("justification", dim.get("notes", "")).replace("|", "/").replace("\n", " ")[:120]
         lines.append(f'| {dim["name"]} | {dim["score"]}/10 | {just} |')
 
     lines.extend([

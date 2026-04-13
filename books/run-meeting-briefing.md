@@ -67,7 +67,7 @@ Write `$RUN_DIR/params.json`:
 Run agents via the Claude CLI with `--output-format stream-json` piped through `tee` to capture the full conversation. This is the only reliable way to get every tool call — agents won't log their own turns consistently.
 
 ```bash
-INSTRUCTION=$(cat books/instructions/meeting_briefing.md)
+INSTRUCTION=$(cat books/pmf-engine/instructions/meeting_briefing.md)
 
 cat <<PROMPT | claude -p \
   --output-format stream-json \

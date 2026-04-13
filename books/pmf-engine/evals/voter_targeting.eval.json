@@ -1,0 +1,22 @@
+{
+  "experiment": "voter_targeting",
+  "structural": [
+    {"id": "segment_count", "path": "segments", "metric": "array_length"},
+    {"id": "total_voters", "path": "summary.total_voters_in_district", "metric": "value"},
+    {"id": "win_number", "path": "summary.win_number", "metric": "value"},
+    {"id": "voter_sum_accuracy", "metric": "custom", "check": "sum(segments[].count) <= summary.total_voters_in_district"},
+    {"id": "geographic_cluster_count", "path": "geographic_clusters", "metric": "array_length"},
+    {"id": "avg_voters_per_segment", "path": "segments[].count", "metric": "numeric_avg"},
+    {"id": "methodology_length", "path": "methodology", "metric": "string_length"},
+    {"id": "has_demographics", "metric": "custom", "check": "all segments have non-empty demographics.party_breakdown and demographics.age_distribution"},
+    {"id": "tier_coverage", "path": "segments[].tier", "metric": "unique_values"},
+    {"id": "avg_channels_per_segment", "path": "segments[].recommended_channels", "metric": "array_length_avg"}
+  ],
+  "http": [],
+  "judge": [
+    {"id": "segment_logic", "description": "Do the voter segments represent meaningful, distinct groups? Are tier assignments (priority ordering) reasonable? Rate 1-5."},
+    {"id": "outreach_strategy", "description": "Are recommended_channels and outreach_priority appropriate for each segment's demographics? Rate 1-5."},
+    {"id": "geographic_insight", "description": "Do geographic_clusters provide useful canvassing prioritization? Are density rankings reasonable? Rate 1-5."},
+    {"id": "voter_data_quality", "description": "Do individual voter records look plausible (real addresses, reasonable ages, consistent party labels)? Rate 1-5."}
+  ]
+}

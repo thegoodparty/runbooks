@@ -1,0 +1,55 @@
+{
+  "official_name": "string",
+  "office": "string",
+  "district": {
+    "state": "string",
+    "type": "string",
+    "name": "string"
+  },
+  "generated_at": "string",
+  "summary": {
+    "total_constituents": "number",
+    "issues_identified": "number",
+    "meetings_analyzed": "number",
+    "sources_consulted": "number"
+  },
+  "issues": [
+    {
+      "title": "string",
+      "summary": "string",
+      "status": "string",
+      "affected_constituents": "number",
+      "affected_segments": [
+        {
+          "name": "string",
+          "count": "number",
+          "description": "string"
+        }
+      ],
+      "sources": [
+        {
+          "id": "number",
+          "name": "string",
+          "url": "string",
+          "date": "string"
+        }
+      ]
+    }
+  ],
+  "demographic_snapshot": {
+    "total_voters": "number",
+    "party_breakdown": [
+      {
+        "party": "string",
+        "count": "number"
+      }
+    ],
+    "age_distribution": [
+      {
+        "range": "string",
+        "count": "number"
+      }
+    ]
+  },
+  "methodology": "string"
+}

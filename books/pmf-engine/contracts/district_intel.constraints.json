@@ -1,0 +1,16 @@
+{
+  "enums": [
+    {
+      "path": "issues[].status",
+      "values": ["active", "upcoming", "recently_decided"]
+    }
+  ],
+  "array_length": [
+    {"path": "issues", "min": 1},
+    {"path": "issues[].affected_segments", "min": 1},
+    {"path": "issues[].sources", "min": 1}
+  ],
+  "equals": [
+    {"left": "summary.issues_identified", "right": {"count": "issues"}}
+  ]
+}

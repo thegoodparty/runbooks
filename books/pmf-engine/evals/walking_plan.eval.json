@@ -1,0 +1,23 @@
+{
+  "experiment": "walking_plan",
+  "structural": [
+    {"id": "area_count", "path": "areas", "metric": "array_length"},
+    {"id": "total_doors", "path": "summary.total_doors", "metric": "value"},
+    {"id": "estimated_hours", "path": "summary.estimated_total_hours", "metric": "value"},
+    {"id": "doors_per_hour", "metric": "custom", "check": "summary.total_doors / summary.estimated_total_hours"},
+    {"id": "door_count_accuracy", "metric": "custom", "check": "sum(areas[].door_count) == summary.total_doors"},
+    {"id": "avg_voters_per_area", "path": "areas[].door_count", "metric": "numeric_avg"},
+    {"id": "talking_points_per_voter", "path": "areas[].voters[].talking_points", "metric": "array_length_avg"},
+    {"id": "methodology_length", "path": "methodology", "metric": "string_length"},
+    {"id": "priority_rank_coverage", "path": "areas[].priority_rank", "metric": "unique_values"}
+  ],
+  "http": [
+    {"id": "maps_url_validity", "path": "areas[].maps_url", "metric": "url_liveness", "sample_size": 10}
+  ],
+  "judge": [
+    {"id": "route_efficiency", "description": "Are areas geographically coherent (voters on nearby streets grouped together)? Are estimated_minutes reasonable for the door count? Rate 1-5."},
+    {"id": "talking_point_relevance", "description": "Are talking points tailored to each voter's party/age, or generic? Do they reference the candidate's top issues? Rate 1-5."},
+    {"id": "geographic_coverage", "description": "Do areas cover the district well or cluster in one part? Is prioritization logical (high-density areas ranked higher)? Rate 1-5."},
+    {"id": "voter_ordering", "description": "Within each area, are voters ordered in a walkable sequence (sequential addresses on same street)? Rate 1-5."}
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "enums": [
+    {
+      "path": "score.recommendation",
+      "values": ["send", "review", "hold"]
+    },
+    {
+      "path": "data_quality.agenda",
+      "values": ["high", "medium", "low", "not_applicable"]
+    },
+    {
+      "path": "data_quality.fiscal",
+      "values": ["high", "medium", "low", "not_applicable"]
+    },
+    {
+      "path": "data_quality.platform",
+      "values": ["high", "medium", "low", "not_applicable"]
+    },
+    {
+      "path": "data_quality.overall",
+      "values": ["high", "medium", "low", "not_applicable"]
+    },
+    {
+      "path": "sources[].type",
+      "values": ["government_record", "news", "staff_report", "campaign", "modeled", "web_search"]
+    },
+    {
+      "path": "agenda_items[].type",
+      "values": ["consent", "public_hearing", "ordinance", "resolution", "discussion", "presentation", "business", "informational"]
+    }
+  ],
+  "ranges": [
+    {"path": "score.dimensions[].score", "min": 0, "max": 10},
+    {"path": "score.total", "min": 0, "max": 120},
+    {"path": "score.max", "min": 120, "max": 120}
+  ],
+  "array_length": [
+    {"path": "score.dimensions", "exact": 12},
+    {"path": "agenda_items", "min": 1},
+    {"path": "sources", "min": 1}
+  ],
+  "exact_ids": [
+    {
+      "path": "score.dimensions[].id",
+      "values": [
+        "legislative_record",
+        "fiscal_depth",
+        "voter_constituent_intelligence",
+        "gap_analysis",
+        "political_intelligence",
+        "strategic_roadmap",
+        "procedural_guidance",
+        "personal_tailoring",
+        "news_narrative_context",
+        "state_policy_integration",
+        "source_transparency",
+        "accuracy_risk_management"
+      ]
+    }
+  ],
+  "equals": [
+    {"left": "score.total", "right": {"sum": "score.dimensions[].score"}}
+  ]
+}

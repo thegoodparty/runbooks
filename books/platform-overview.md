@@ -601,6 +601,168 @@ Catalog: `goodparty_data_catalog`. Read-only from app code (SELECT only). Write 
 
 ---
 
+## Data Layer
+
+Complete inventory of all data stores, how data flows between them, and what each holds. Derived from live AWS account as of March 2026.
+
+### Overview
+
+The platform uses **no AWS-native analytics warehouse** (no Redshift, Glue, Kinesis, or EMR). All analytics and ML happen in **Databricks** (external). Operational data lives in **Aurora PostgreSQL**. Raw/staged data lives in **S3**. Events flow through **SQS FIFO queues**.
+
+```
+External Sources                    Databricks (warehouse + ML)              Operational Databases
+─────────────────                   ───────────────────────────              ─────────────────────
+L2 (SFTP) ──→ S3 ──→ Airbyte ──→  goodparty_data_catalog                   ┌─ gp-api-db-prod
+BallotReady ────────→ Airbyte ──→    ├── staging (387 views)                │    20+ Prisma models
+HubSpot ────────────→ Airbyte ──→    ├── intermediate (52 views)            │    campaigns, users, P2V,
+Amplitude ──────────→ Airbyte ──→    ├── marts (23 tables)          ──────→ │    AI chat, websites, polls
+Stripe ─────────────→ Airbyte ──→    │     election_api (8)         write   │
+gp-api PG ──────────→ Airbyte ──→    │     general (9)              models  ├─ election-api-db-prod
+DDHQ (GDrive) ──────→ Airbyte ──→    │     people_api (3)           (JDBC)  │    places, races, candidacies,
+TechSpeed (GDrive) ──→ Airbyte ──→   │     ballotready_internal (2) ──────→ │    districts, turnout, positions
+BallotReady S3 ─────→ Airbyte ──→    │     techspeed (1)                    │
+                                     ├── load (3 PySpark)                   ├─ gp-people-db-prod
+                                     ├── write (4 PySpark → PG)    ──────→  │    200M+ voters, districts,
+                                     └── model_predictions                  │    district-voter junctions,
+                                          ├── turnout projections           │    district stats
+                                          └── LLM L2-BR matches            │
+                                                                            ├─ gp-voter-db
+                                                                            │    per-state Voter{ST} tables
+                                                                            │    ~365 columns per voter
+                                                                            │
+                                                                            └─ campaign-plan-db-dev (NEW)
+                                                                                 campaign plan service data
+```
+
+### All Databases (21 Aurora PostgreSQL Clusters)
+
+#### Application Databases
+
+| Cluster | Service | Data | Instance Class | Instances |
+|---------|---------|------|---------------|-----------|
+| `gp-api-db-prod` | gp-api prod | Campaigns, users, P2V, AI chat, websites, polls, outreach, compliance (20+ models) | db.serverless | 1 |
+| `gp-api-db` | gp-api dev | Same schema, dev data | db.serverless | 1 |
+| `gp-api-db-qa` | gp-api qa | Same schema, QA data | db.serverless | 1 |
+| `election-api-db-prod` | election-api prod | Places, races, candidacies, stances, issues, districts, positions, projected turnout (8 models). All written by dbt, read-only from app. | db.serverless | 1 |
+| `election-api-db-develop` | election-api dev/qa | Same schema, dev data | db.serverless | 1 |
+| `gp-people-db-prod` | people-api prod | 200M+ L2 voter records (159 fields), districts, district-voter junctions, district stats. Multi-schema: `green` + `public`. 31 indexes on Voter table. | **db.r6g.4xlarge** | **2** (reader + writer) |
+| `gp-people-db-dev` | people-api dev | Same schema, downsampled to 6 small states (WY, ND, VT, DC, AK, SD) | db.t4g.medium | 1 |
+| `gp-voter-db` | L2 voter data | Per-state `Voter{STATE}` tables (~365 columns each), written by `write__l2_databricks_to_gp_api` | db.serverless | 1 |
+| `gp-voter-db-develop` | L2 voter dev | Same structure, subset of states | db.serverless | 1 |
+| `campaign-plan-db-dev` | Campaign plan service (NEW, Mar 2026) | Dedicated DB for the new campaign plan generation service | db.serverless | 1 |
+
+#### Auxiliary / Dev Databases
+
+| Cluster | Purpose | Notes |
+|---------|---------|-------|
+| `gp-api-pr-{1033,1080,1185,1206,1250,1300,1301,1312,1316}` | PR preview environments (9 clusters) | db.serverless, auto-provisioned per PR, cloned from dev |
+| `gp-voter-db-20250728` | Voter DB snapshot/clone from July 2025 | db.serverless, likely retained for data comparison or rollback |
+| `swain-people-db-instance-1-cluster` | Developer test clone of people-api | db.t4g.medium |
+
+### S3 Data Buckets
+
+#### Raw / Ingestion
+
+| Bucket | Purpose | Writer | Reader |
+|--------|---------|--------|--------|
+| `normalized-voter-files` | L2 voter data by state (SFTP dumps) | L2 SFTP sync | Airbyte → Databricks |
+| `goodparty-ballotready` | BallotReady election data (S3 dumps) | BallotReady | Airbyte → Databricks, `s3-ballotready` Lambda |
+| `goodparty-external-data-share` | External data sharing | External partners | Data team |
+
+#### Warehouse / Analytics
+
+| Bucket | Purpose | Writer | Reader |
+|--------|---------|--------|--------|
+| `goodparty-warehouse-databricks` | Databricks managed storage | Databricks | Databricks |
+| `goodparty-databricks-workspace` | Databricks workspace config | Databricks | Databricks |
+
+#### Pipeline / Processing
+
+| Bucket | Purpose | Writer | Reader |
+|--------|---------|--------|--------|
+| `serve-analyze-data-{dev,qa,prod}` | Poll analysis pipeline data | gp-ai-projects serve-analyze | gp-ai-projects serve-analyze |
+| `ddhq-matcher-output-{dev,qa,prod}` | DDHQ race matching results | gp-ai-projects ddhq-matcher | Data team |
+| `tevyn-poll-csvs-{stage}` | Poll CSVs for Tevyn SMS delivery (13 buckets: per env + per PR) | gp-api poll service | Tevyn (via Slack) |
+| `poll-text-images` | Poll text message images | gp-api | gp-api |
+| `zip-to-area-code-mappings-{stage}` | Zip → area code lookup data for P2P/outreach (per env + per PR) | gp-api deploy | gp-api runtime |
+
+#### Application Assets
+
+| Bucket | Purpose | CloudFront |
+|--------|---------|------------|
+| `assets.goodparty.org` | Prod assets (images, uploads) | `E2LRA7IV6F5YST` → `djw61x9sa5ao2.cloudfront.net` |
+| `assets-dev.goodparty.org` | Dev assets | `E36KMJW5P8DIM` → `dqzbgoh0ovf5e.cloudfront.net` |
+| `assets-qa.goodparty.org` | QA assets | `E1WAH0DQBZR2T1` → `d1vqxnffjoy7in.cloudfront.net` |
+| `admin-assets.goodparty.org` | Admin assets | — |
+| `documents.goodparty.org` | Document storage | — |
+
+#### Infrastructure / State
+
+| Bucket | Purpose |
+|--------|---------|
+| `goodparty-terraform-state-$AWS_REGION` | Terraform state for gp-ai-projects |
+| `goodparty-iac-state` | IaC state |
+| `sst-state-arrucndrnnsk` | SST state (people-api) |
+| `aws-cloudtrail-logs-333022194791-*` | CloudTrail audit logs |
+| `config-bucket-333022194791` | AWS Config |
+
+### Databricks
+
+| Property | Value |
+|----------|-------|
+| Catalog | `goodparty_data_catalog` |
+| Access from apps | Read-only (SELECT only) |
+| Write operations | dbt PySpark models only |
+| Used by | gp-data-platform (dbt transforms, mart builds), gp-ai-projects (read-only queries for campaign plans, engineer agent) |
+| AWS integration | `goodparty-warehouse-databricks` S3 bucket, `databricks-s3-ingest` Lambdas (x2) |
+
+**Key schemas**: staging views (organized by source), intermediate views, mart tables (Liquid Clustering), model_predictions (turnout projections, LLM L2-BR matches)
+
+### Message Queues (53 SQS FIFO Queues)
+
+#### Application Queues
+
+| Queue Pattern | Count | Purpose |
+|---------------|-------|---------|
+| `{stage}-Queue.fifo` + `{stage}-DLQ.fifo` | 24 | Campaign background jobs (7 message types). Stages: develop, master, qa, pr-{1033,1080,1185,1206,1250,1300,1301,1312,1316} |
+| `{DevName}_Queue.fifo` + `{DevName}_DLQ.fifo` | 24 | Per-developer local queues: AaronW, Collin, Daniel, Dustin, Felicks, Hugh, Israel, Matthew, Nikao, Patrick, StephenT, Swain, Tomer (note: Collin has no DLQ) |
+| `dev-CampaignPlan-Jobs.fifo` | 1 | Campaign plan generation job queue (NEW) |
+| `dev-CampaignPlan-Completed.fifo` | 1 | Campaign plan completion events (NEW) |
+| `dev-CampaignPlan-DLQ.fifo` | 1 | Campaign plan dead letter queue (NEW) |
+
+#### Legacy
+
+| Queue | Purpose |
+|-------|---------|
+| `SmsQuickStartStack-*-SmsSQSQueue-*` | Legacy SMS queue (non-FIFO, from older SMS setup) |
+
+### DynamoDB
+
+| Table | Purpose |
+|-------|---------|
+| `master-poll-insights-740c043` | Poll insights data (SST-managed) |
+
+### Data Flow Summary
+
+```
+                    INGEST                          TRANSFORM                      SERVE
+                    ──────                          ─────────                      ─────
+
+L2 voter files ──→ S3 ──→ Airbyte ──→ Databricks ──→ dbt ──→ people-api PG ──→ people-api ──→ gp-api
+                                                         └──→ election-api PG ──→ election-api ──→ gp-api
+                                                         └──→ gp-voter-db ──→ gp-api (direct voter queries)
+
+BallotReady ──→ Airbyte ──→ Databricks ──→ dbt ──→ election-api PG (positions, districts, turnout)
+HubSpot ──→ Airbyte ──→ Databricks ──→ dbt ──→ general marts (reporting)
+
+gp-api writes ──→ gp-api-db (campaigns, users, P2V, polls, outreach, compliance)
+gp-api reads  ←── people-api (voter contacts, stats, sampling)
+gp-api reads  ←── election-api (positions, turnout, districts, races)
+gp-api events ──→ SQS ──→ gp-ai-projects (poll analysis) ──→ SQS ──→ gp-api (results)
+```
+
+---
+
 ## Secrets & Config Reference
 
 ### AWS Secrets Manager (10 secrets)
@@ -647,82 +809,92 @@ Read a secret: `AWS_PROFILE=$AWS_PROFILE aws secretsmanager get-secret-value --s
 
 ## AWS Infrastructure
 
-### ECS Clusters & Services (14 active)
+### ECS Clusters & Services (30 clusters)
+
+**Always-on services:**
 
 | Cluster | Service | Tasks (prod) |
 |---------|---------|-------------|
 | `gp-master-fargateCluster` | `gp-api-master` | 2 |
 | `gp-develop-fargateCluster` | `gp-api-develop` | — |
 | `gp-qa-fargateCluster` | `gp-api-qa` | — |
-| `gp-pr-{1033,1052,1062,1080,1087}-fargateCluster` | `gp-api-pr-*` | 1 each |
+| `gp-pr-{1033,1080,1185,1206,1250,1300,1301,1312,1316}-fargateCluster` | `gp-api-pr-*` | 1 each |
 | `election-api-master-fargateCluster` | `election-api-master` | 2 (1024 CPU, 4096 MB) |
 | `election-api-develop-fargateCluster` | `election-api-develop` | 1 (512 CPU, 2048 MB) |
 | `election-api-qa-fargateCluster` | `election-api-qa` | — |
 | `people-api-master-fargateCluster` | `people-api-master` | 2-16 (1 vCPU, 4 GB, auto-scale 50% CPU/mem) |
 | `people-api-develop-fargateCluster` | `people-api-develop` | 1-4 (0.5 vCPU, 2 GB) |
+| `campaign-plan-cluster-*` | campaign-plan-service | NEW — Feb 2026 |
+| `delegates` | delegates service | NEW — Mar 2026 |
 | `vpn-cluster` | `vpn-service` | 1 |
 
-On-demand ECS (Lambda-triggered): `serve-analyze-{dev,qa,prod}`, `ddhq-matcher-{dev,qa,prod}`, `engineer-agent-{dev,qa,prod}`
+**On-demand ECS (Lambda-triggered):** `serve-analyze-{dev,qa,prod}`, `ddhq-matcher-{dev,qa,prod}`, `engineer-agent-{dev,qa,prod}`
 
-### RDS Aurora PostgreSQL Clusters
+### RDS Aurora PostgreSQL Clusters (21 clusters)
+
+See the **Data Layer** section for detailed schema and data volume information per database.
 
 | Cluster | Used By | Instance Class |
 |---------|---------|---------------|
 | `gp-api-db-prod` | gp-api prod | db.serverless |
 | `gp-api-db` | gp-api dev | db.serverless |
 | `gp-api-db-qa` | gp-api qa | db.serverless |
-| `gp-api-pr-{1033,1052,1062,1080,1087}` | PR previews | db.serverless |
-| `election-api-db-prod` | election-api prod | Serverless v2 (1-64 ACU, 14-day backup) |
-| `election-api-db-develop` | election-api dev/qa | Serverless v2 (0.5-64 ACU, 7-day backup) |
-| `gp-people-db-prod` | people-api prod | db.r6g.4xlarge (x2), Performance Insights advanced |
+| `gp-api-pr-{1033,1080,1185,1206,1250,1300,1301,1312,1316}` | PR previews (9 clusters) | db.serverless |
+| `election-api-db-prod` | election-api prod | db.serverless |
+| `election-api-db-develop` | election-api dev/qa | db.serverless |
+| `gp-people-db-prod` | people-api prod (200M+ voters) | db.r6g.4xlarge (x2) |
 | `gp-people-db-dev` | people-api dev | db.t4g.medium |
-| `gp-voter-db` | Voter data (L2) — per-state tables | db.r6g.4xlarge (x2) |
+| `gp-voter-db` | Voter data (L2) — per-state tables | db.serverless |
 | `gp-voter-db-develop` | Voter data dev | db.serverless |
+| `gp-voter-db-20250728` | Voter DB snapshot from July 2025 | db.serverless |
+| `campaign-plan-db-dev` | Campaign plan service (NEW, Mar 2026) | db.serverless |
+| `swain-people-db-instance-1-cluster` | Developer test clone | db.t4g.medium |
 
-### S3 Buckets (key ones)
+### S3 Buckets (60+)
 
-| Bucket | Purpose |
-|--------|---------|
-| `assets.goodparty.org` | Production assets (fronted by CloudFront) |
-| `assets-dev.goodparty.org` | Dev assets (fronted by CloudFront) |
-| `assets-qa.goodparty.org` | QA assets (fronted by CloudFront) |
-| `normalized-voter-files` | L2 voter data by state |
-| `goodparty-ballotready` | BallotReady election data |
-| `goodparty-warehouse-databricks` | Databricks warehouse data |
-| `tevyn-poll-csvs-{stage}` | Poll CSV data per environment |
-| `serve-analyze-data-{env}` | Serve-analyze pipeline data |
-| `ddhq-matcher-output-{env}` | DDHQ matcher results |
-| `goodparty-terraform-state-$AWS_REGION` | Terraform state |
-| `goodparty-iac-state` | IaC state |
+See the **Data Layer** section for detailed bucket categorization (raw/ingestion, warehouse, pipeline, assets, infrastructure).
 
 ```bash
-# Look up CloudFront distributions
-aws cloudfront list-distributions --query 'DistributionList.Items[].{Id:Id,Domain:DomainName,Origins:Origins.Items[0].DomainName}' --output table
+# List all buckets
+AWS_PROFILE=$AWS_PROFILE aws s3 ls
 
-# Look up S3 buckets
-aws s3 ls | grep -i assets
+# Look up CloudFront distributions
+AWS_PROFILE=$AWS_PROFILE aws cloudfront list-distributions --query 'DistributionList.Items[].{Id:Id,Domain:DomainName,Origins:Origins.Items[0].DomainName}' --output table
 ```
 
-### SQS (42 FIFO queues)
+### SQS (53 FIFO queues)
 
-Per-stage: `{stage}-campaign-queue.fifo` + DLQ for develop, master, qa, PR previews
-Per-developer: `{DevName}-campaign-queue.fifo` + DLQ (one per team member)
+See the **Data Layer** section for detailed queue breakdown.
 
-### Lambda Functions (15)
+Per-stage: `{stage}-Queue.fifo` + DLQ for develop, master, qa, PR previews (9 PR envs)
+Per-developer: `{DevName}_Queue.fifo` + DLQ (13 developers)
+Campaign plan: `dev-CampaignPlan-{Jobs,Completed,DLQ}.fifo` (NEW)
 
-| Function | Purpose |
-|----------|---------|
-| `newrelic-log-forwarder-{dev,qa,prod}` | Forward logs to New Relic |
-| `serve-analyze-trigger-{dev,qa,prod}` | Trigger serve-analyze ECS tasks |
-| `ddhq-matcher-trigger-{dev,qa,prod}` | Trigger DDHQ matcher ECS tasks |
-| `clickup-bot-prod` | ClickUp webhook → engineer agent ECS trigger |
-| `shared-slack-notifier` | Slack notifications for deploys |
-| `databricks-s3-ingest` (x2) | S3 → Databricks ingestion |
-| `s3-ballotready` | BallotReady S3 processing |
+### Lambda Functions (13)
 
-### ECR Repositories
+| Function | Runtime | Purpose |
+|----------|---------|---------|
+| `serve-analyze-trigger-{dev,qa,prod}` | nodejs22.x | Trigger serve-analyze ECS tasks |
+| `ddhq-matcher-trigger-{dev,qa,prod}` | python3.12 | Trigger DDHQ matcher ECS tasks |
+| `clickup-bot-prod` | python3.12 | ClickUp webhook → engineer agent ECS trigger |
+| `delegates-webhook` | nodejs22.x | Delegates service webhook (NEW, Mar 2026) |
+| `shared-slack-notifier` | nodejs22.x | Slack notifications for deploys |
+| `databricks-s3-ingest-*` (x2) | python3.8 | S3 → Databricks ingestion (CopyZips + API) |
+| `s3-ballotready` | nodejs20.x | BallotReady S3 processing |
 
-`gp-api`, `election-api`, `gp-ai-projects` (shared by serve-analyze, ddhq-matcher, engineer-agent with different tags), `sst-asset`, `vpn-repo`
+### ECR Repositories (9)
+
+| Repository | Used By |
+|------------|---------|
+| `gp-api` | gp-api service |
+| `election-api` | election-api service |
+| `people-api` | people-api service |
+| `gp-ai-projects` | Shared: serve-analyze, ddhq-matcher, engineer-agent (different tags) |
+| `campaign-plan-service` | Campaign plan service (NEW, Feb 2026) |
+| `delegates` | Delegates service (NEW, Mar 2026) |
+| `sst-asset` | SST deployment assets |
+| `vpn-repo` | VPN service |
+| `tgp-vpn-repo` | VPN service (secondary) |
 
 ### CodeBuild Projects
 
@@ -738,7 +910,7 @@ Per-developer: `{DevName}-campaign-queue.fifo` + DLQ (one per team member)
 
 ### SNS Topics (failure alerts)
 
-`ddhq-matcher-failures-{dev,qa,prod}`, `serve-analyze-pipeline-failures-{dev,qa,prod}`, `engineer-agent-failures-{dev,qa,prod}`, `GP-Prod-SNS`
+`ddhq-matcher-failures-{dev,qa,prod}`, `serve-analyze-pipeline-failures-{dev,qa,prod}`, `engineer-agent-failures-{dev,qa,prod}` (9 total)
 
 ### DynamoDB
 
