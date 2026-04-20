@@ -1,0 +1,59 @@
+{
+  "eo": {
+    "name": "string",
+    "city": "string",
+    "state": "string",
+    "office": "string"
+  },
+  "meeting": {
+    "body": "string",
+    "date": "string",
+    "time": "string",
+    "agenda_source": "string"
+  },
+  "agenda_items": [
+    {
+      "item_number": "string",
+      "title": "string",
+      "type": "string",
+      "requires_vote": "boolean"
+    }
+  ],
+  "fiscal": {
+    "tax_rate": "string",
+    "budget_total": "string",
+    "source": "string"
+  },
+  "data_quality": {
+    "agenda": "string",
+    "fiscal": "string",
+    "platform": "string",
+    "overall": "string"
+  },
+  "teaser_email": "string",
+  "briefing_content": "string",
+  "score": {
+    "total": "number",
+    "max": "number",
+    "recommendation": "string",
+    "dimensions": [
+      {
+        "id": "string",
+        "name": "string",
+        "score": "number",
+        "justification": "string"
+      }
+    ]
+  },
+  "sources": [
+    {
+      "id": "string",
+      "type": "string",
+      "title": "string",
+      "url": "string",
+      "accessed_at": "string"
+    }
+  ],
+  "generated_at": "string",
+  "based_on_district_intel_run": "string"
+}

@@ -1,0 +1,54 @@
+{
+  "official_name": "string",
+  "office": "string",
+  "district": {
+    "state": "string",
+    "name": "string"
+  },
+  "generated_at": "string",
+  "based_on_district_intel_run": "string",
+  "summary": {
+    "home_city_population": "number",
+    "peer_cities_analyzed": "number",
+    "issues_compared": "number",
+    "sources_consulted": "number"
+  },
+  "home_city": {
+    "name": "string",
+    "state": "string",
+    "population": "number"
+  },
+  "peer_cities": [
+    {
+      "name": "string",
+      "state": "string",
+      "population": "number",
+      "similarity_reason": "string"
+    }
+  ],
+  "comparisons": [
+    {
+      "issue": "string",
+      "home_city_approach": "string",
+      "peer_approaches": [
+        {
+          "city": "string",
+          "approach": "string",
+          "outcome": "string",
+          "budget": "string",
+          "timeline": "string",
+          "sources": [
+            {
+              "id": "number",
+              "name": "string",
+              "url": "string",
+              "date": "string"
+            }
+          ]
+        }
+      ],
+      "takeaways": "string"
+    }
+  ],
+  "methodology": "string"
+}

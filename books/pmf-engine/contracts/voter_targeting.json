@@ -1,0 +1,51 @@
+{
+  "candidate_id": "string",
+  "district": {
+    "state": "string",
+    "type": "string",
+    "name": "string"
+  },
+  "generated_at": "string",
+  "summary": {
+    "total_voters_in_district": "number",
+    "win_number": "number",
+    "projected_turnout": "number"
+  },
+  "segments": [
+    {
+      "tier": "number",
+      "name": "string",
+      "description": "string",
+      "count": "number",
+      "demographics": {
+        "party_breakdown": {},
+        "age_distribution": {},
+        "gender_split": {}
+      },
+      "outreach_priority": "string",
+      "recommended_channels": ["string"],
+      "voters": [
+        {
+          "voter_id": "string",
+          "first_name": "string",
+          "last_name": "string",
+          "address": "string",
+          "city": "string",
+          "zip": "string",
+          "age": "number",
+          "gender": "string",
+          "party": "string",
+          "voter_status": "string"
+        }
+      ]
+    }
+  ],
+  "geographic_clusters": [
+    {
+      "area": "string",
+      "voter_count": "number",
+      "density_rank": "number"
+    }
+  ],
+  "methodology": "string"
+}

@@ -1,0 +1,30 @@
+{
+  "experiment": "district_intel",
+  "structural": [
+    {"id": "issue_count", "path": "issues", "metric": "array_length"},
+    {"id": "source_count", "path": "summary.sources_consulted", "metric": "value"},
+    {"id": "meetings_analyzed", "path": "summary.meetings_analyzed", "metric": "value"},
+    {"id": "avg_sources_per_issue", "path": "issues[].sources", "metric": "array_length_avg"},
+    {"id": "citation_density", "metric": "citation_density", "summary_path": "issues[].summary", "source_path": "issues[].sources"},
+    {"id": "citation_accuracy", "metric": "citation_accuracy", "summary_path": "issues[].summary", "source_path": "issues[].sources"},
+    {"id": "avg_summary_length", "path": "issues[].summary", "metric": "string_length_avg"},
+    {"id": "methodology_length", "path": "methodology", "metric": "string_length"},
+    {"id": "avg_segments_per_issue", "path": "issues[].affected_segments", "metric": "array_length_avg"},
+    {"id": "segment_description_avg_length", "path": "issues[].affected_segments[].description", "metric": "string_length_avg"},
+    {"id": "source_domain_diversity", "path": "issues[].sources[].url", "metric": "unique_domains"},
+    {"id": "temporal_span_days", "path": "issues[].sources[].date", "metric": "date_range_days"},
+    {"id": "district_info_completeness", "metric": "field_completeness", "paths": ["district.state", "district.type", "district.name", "official_name"]},
+    {"id": "affected_lte_total", "metric": "custom", "check": "all issues[].affected_constituents <= demographic_snapshot.total_voters"}
+  ],
+  "http": [
+    {"id": "source_url_liveness", "path": "issues[].sources[].url", "metric": "url_liveness"}
+  ],
+  "judge": [
+    {"id": "factual_grounding", "description": "Every factual claim in each issue summary has a [N] citation. Rate 1-5."},
+    {"id": "segment_relevance", "description": "Are affected_segments logically related to each issue? Are the demographic groups chosen sensible for the topic? Rate 1-5."},
+    {"id": "issue_relevance_to_locale", "description": "Are all issues genuinely about this city/district? No generic filler or wrong-geography content? Rate 1-5."},
+    {"id": "source_quality", "description": "Are sources from authoritative origins (government sites, major news)? Any suspicious/generic domains? Rate 1-5."},
+    {"id": "issue_diversity", "description": "Do issues cover distinct policy areas (not 2 issues about the same thing)? Rate 1-5."},
+    {"id": "demographic_cross_referencing", "description": "Do affected_constituent counts align with the demographic_snapshot age/party data? Are segment counts plausible? Rate 1-5."}
+  ]
+}

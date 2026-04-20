@@ -1,0 +1,38 @@
+{
+  "candidate_id": "string",
+  "district": {
+    "state": "string"
+  },
+  "generated_at": "string",
+  "summary": {
+    "total_areas": "number",
+    "total_doors": "number",
+    "estimated_total_hours": "number",
+    "top_issues": ["string"]
+  },
+  "areas": [
+    {
+      "name": "string",
+      "zip": "string",
+      "city": "string",
+      "priority_rank": "number",
+      "door_count": "number",
+      "estimated_minutes": "number",
+      "maps_url": "string",
+      "voters": [
+        {
+          "order": "number",
+          "address": "string",
+          "voter_name": "string",
+          "party": "string",
+          "voter_status": "string",
+          "age": "number",
+          "talking_points": [
+            "string"
+          ]
+        }
+      ]
+    }
+  ],
+  "methodology": "string"
+}

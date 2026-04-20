@@ -1,0 +1,29 @@
+{
+  "experiment": "meeting_briefing",
+  "structural": [
+    {"id": "self_score_total", "path": "score.total", "metric": "value"},
+    {"id": "self_score_pct", "metric": "custom", "check": "score.total / score.max"},
+    {"id": "agenda_item_count", "path": "agenda_items", "metric": "array_length"},
+    {"id": "source_count", "path": "sources", "metric": "array_length"},
+    {"id": "briefing_content_length", "path": "briefing_content", "metric": "string_length"},
+    {"id": "teaser_email_length", "path": "teaser_email", "metric": "string_length"},
+    {"id": "data_quality_overall", "path": "data_quality.overall", "metric": "value"},
+    {"id": "source_type_diversity", "path": "sources[].type", "metric": "unique_values"}
+  ],
+  "extract_self_scores": {
+    "path": "score.dimensions",
+    "id_field": "id",
+    "score_field": "score",
+    "max_per_dimension": 10
+  },
+  "http": [
+    {"id": "source_url_liveness", "path": "sources[].url", "metric": "url_liveness"}
+  ],
+  "judge": [
+    {"id": "briefing_actionability", "description": "Is the briefing_content useful for an elected official preparing for a meeting? Does it highlight what they need to know and do? Rate 1-5."},
+    {"id": "agenda_completeness", "description": "Does the agenda_items list appear complete relative to the meeting? Any obvious gaps? Rate 1-5."},
+    {"id": "fiscal_accuracy", "description": "Are the fiscal data points (tax_rate, budget_total) plausible and sourced? Rate 1-5."},
+    {"id": "teaser_quality", "description": "Is the teaser_email compelling and concise? Would an elected official open this? Rate 1-5."},
+    {"id": "self_score_calibration", "description": "Compare the agent's self-scored dimensions against actual content quality. Are scores inflated, deflated, or fair? Rate 1-5."}
+  ]
+}

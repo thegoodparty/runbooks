@@ -1,0 +1,22 @@
+{
+  "experiment": "peer_city_benchmarking",
+  "structural": [
+    {"id": "peer_city_count", "path": "peer_cities", "metric": "array_length"},
+    {"id": "comparison_count", "path": "comparisons", "metric": "array_length"},
+    {"id": "avg_peer_approaches_per_comparison", "path": "comparisons[].peer_approaches", "metric": "array_length_avg"},
+    {"id": "avg_sources_per_approach", "path": "comparisons[].peer_approaches[].sources", "metric": "array_length_avg"},
+    {"id": "takeaway_avg_length", "path": "comparisons[].takeaways", "metric": "string_length_avg"},
+    {"id": "methodology_length", "path": "methodology", "metric": "string_length"},
+    {"id": "home_city_approach_avg_length", "path": "comparisons[].home_city_approach", "metric": "string_length_avg"},
+    {"id": "citation_accuracy", "metric": "citation_accuracy", "summary_path": "comparisons[].peer_approaches[].approach", "source_path": "comparisons[].peer_approaches[].sources"}
+  ],
+  "http": [
+    {"id": "source_url_liveness", "path": "comparisons[].peer_approaches[].sources[].url", "metric": "url_liveness", "sample_size": 10}
+  ],
+  "judge": [
+    {"id": "peer_city_selection", "description": "Are peer cities genuinely comparable (similar population, region, governance structure)? Are similarity_reasons convincing? Rate 1-5."},
+    {"id": "comparison_depth", "description": "Do peer_approaches include specific outcomes, budgets, and timelines — or just vague descriptions? Rate 1-5."},
+    {"id": "takeaway_actionability", "description": "Are takeaways specific enough for an elected official to act on? Do they connect peer approaches to the home city context? Rate 1-5."},
+    {"id": "issue_alignment", "description": "Do comparison issues match real issues from the district_intel? Are they the right things to benchmark? Rate 1-5."}
+  ]
+}

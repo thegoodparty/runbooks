@@ -5,3 +5,8 @@ Quick reference for all available scripts. Keep this updated when adding or remo
 | Script | Description | Used By |
 |--------|-------------|---------|
 | `python/databricks_query.py` | Execute SQL queries against Databricks and return results as a DataFrame | books/query-voter-data.md |
+| `python/briefing_to_pdf.py` | Convert a meeting briefing JSON artifact to PDF via pandoc + xelatex | books/run-meeting-briefing.md |
+| `python/validate_contract.py` | Validate output JSON against a contract schema (type checking, required fields) | books/run-pmf-experiment.md |
+| `python/parse_conversation.py` | Parse Claude Code conversation.jsonl into readable summary (tool calls, costs, errors) | books/run-pmf-experiment.md |
+| `python/cluster_voters.py` | Cluster voters into walkable canvassing areas by geographic proximity (grid-based, lat/lon) | books/run-pmf-experiment.md |
+| `shell/setup-macos.sh` | Install macOS system dependencies (pandoc, texlive, uv) needed to run scripts | README.md |
