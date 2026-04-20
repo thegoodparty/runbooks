@@ -12,12 +12,13 @@ You will execute three phases in sequence:
 1. `/workspace/output/` must contain ONLY `meeting_briefing.json`. Always overwrite the same file, never create a second file like `_final` or `_v2`.
 2. The output JSON MUST match the contract schema exactly.
 3. **Never fabricate data.** If a search returns nothing, record the absence. Partial data is better than invented data.
-4. **All Community Signal scores must be labeled as modeled**, not surveyed. Use phrases like "based on voter modeling" or "modeled from voter attributes."
+4. **All Community Signal scores must be labeled as modeled**, not surveyed. Use phrases like "based on voter modeling" or "modeled from voter data."
+4b. **Proprietary data labeling.** Any data sourced from L2, Haystaq, or Databricks must be referenced in user-facing content as "proprietary GoodParty voter data." Never mention L2, Haystaq, Databricks, or internal table names in the briefing, teaser email, sources list, or any output field visible to users.
 5. `based_on_district_intel_run` must be `"none"` (the string) if no district intel artifact was provided in the parameters.
 6. `agenda_items` must have at least one entry. If no agenda is found, include a single item with `item_number: "N/A"`, `title: "Agenda not yet published"`, `type: "informational"`, `requires_vote: false`. Agenda items must be substantive — items where council takes action, holds a hearing, receives a report, or makes a decision. Do not include meeting logistics (roll call, pledge, invocation, adjournment, approval of minutes).
 7. **CITATIONS ARE REQUIRED** in the briefing content. Every factual claim about fiscal data, council dynamics, or news must reference a source.
-8. **ALWAYS read staff report PDFs.** After pulling the agenda, download and read staff reports for decision items (Step 4b). Staff reports contain fiscal impact, staff recommendations, and conditions that dramatically improve briefing quality. Skip site plans and engineering drawings. **For large PDFs** (over ~1MB), use `pdftotext /workspace/downloads/file.pdf -` to extract text instead of `Read`, which has a size limit.
-9. **Track all sources.** Every data source you access (API endpoint, web page, PDF document) must be recorded in `/workspace/sources.json`. Each entry needs: `id` (unique slug like `linc-property-tax`), `type` (one of: `government_record`, `news`, `staff_report`, `campaign`, `modeled`, `web_search`), `title` (human-readable), `url` (the URL or API endpoint), and `accessed_at` (ISO 8601 timestamp). These sources appear in the final output and are referenced inline in the briefing via `[source-id]` markers.
+8. **ALWAYS read staff report PDFs.** After pulling the agenda, download and read staff reports for decision items (Step 4b). Staff reports contain fiscal impact, staff recommendations, and conditions that dramatically improve briefing quality. Skip site plans and engineering drawings. **Always use `pdftotext /workspace/downloads/file.pdf -` to extract PDF text** — you do not have a PDF reader tool.
+9. **Track all sources.** Every data source you access (API endpoint, web page, PDF document) must be recorded in `/workspace/sources.json`. Each entry needs: `id` (unique slug like `linc-property-tax`), `type` (one of: `government_record`, `news`, `staff_report`, `campaign`, `modeled`, `web_search`), `title` (human-readable), `url` (the URL or API endpoint), and `accessed_at` (ISO 8601 timestamp). These sources appear in the final output and are referenced inline in the briefing via `[source-id]` markers. **Never use `internal://` URLs.** For voter score data from Databricks, use source id `gp-voter-data` with title "GoodParty proprietary voter issue modeling" and url `https://goodparty.org`. For district intel data, use the original source URLs from the district intel artifact's sources array.
 10. **Do NOT remove or omit any fields from the output template.** Every field in the contract schema must appear in the output. If data is unavailable, use sensible defaults: `""` for strings, `0` for numbers, `[]` for arrays. Never use `null`.
 11. **`eo.name`**: If no `officialName` is provided in params, research the governing body and use the name of a real sitting council member or official. Never use generic values like "Council Member" or the body name itself.
 12. **Scoring dimension IDs are fixed.** The `score.dimensions` array MUST contain exactly 12 entries with these exact IDs (in this order): `legislative_record`, `fiscal_depth`, `voter_constituent_intelligence`, `gap_analysis`, `political_intelligence`, `strategic_roadmap`, `procedural_guidance`, `personal_tailoring`, `news_narrative_context`, `state_policy_integration`, `source_transparency`, `accuracy_risk_management`. Do not rename, abbreviate, or reorder them.
@@ -93,10 +94,12 @@ This log is the full audit trail of the run. Keep entries concise but include wh
     {"id": "committees", "step": "7", "name": "Find committee assignments", "status": "pending", "notes": ""},
     {"id": "voting_records", "step": "8", "name": "Explore voting records", "status": "pending", "notes": ""},
     {"id": "news", "step": "9", "name": "Search local news", "status": "pending", "notes": ""},
+    {"id": "voter_scores", "step": "9b", "name": "Query Databricks voter scores", "status": "pending", "notes": ""},
     {"id": "teaser_email", "step": "10", "name": "Generate teaser email", "status": "pending", "notes": ""},
     {"id": "briefing", "step": "11", "name": "Generate briefing content", "status": "pending", "notes": ""},
     {"id": "scoring", "step": "12", "name": "Score the briefing", "status": "pending", "notes": ""},
     {"id": "assemble", "step": "13", "name": "Assemble output", "status": "pending", "notes": ""},
+    {"id": "sanitize", "step": "13b", "name": "Sanitize vendor names from output", "status": "pending", "notes": ""},
     {"id": "verify", "step": "14", "name": "Verify output", "status": "pending", "notes": ""}
   ]
 }
@@ -496,6 +499,177 @@ This data feeds the News/Narrative Context dimension of the score.
 
 ---
 
+## STEP 9b: Query Databricks voter scores for community signals
+
+Connect to Databricks and pull real aggregated Haystaq voter issue scores for the city. These replace LLM-estimated community signal scores with actual modeled voter data.
+
+### 9b-1: Discover available Haystaq columns
+
+```python
+import os, json
+
+params = json.loads(os.environ.get("PARAMS_JSON", "{}"))
+state = params.get("state", "").lower()
+city = params.get("city", "")
+print(f"State: {state}, City: {city}")
+
+from databricks.sql import connect
+
+conn = connect(
+    server_hostname=os.environ["DATABRICKS_SERVER_HOSTNAME"],
+    http_path=os.environ["DATABRICKS_HTTP_PATH"],
+    access_token=os.environ["DATABRICKS_API_KEY"]
+)
+cursor = conn.cursor()
+
+scores_table = f"goodparty_data_catalog.dbt.stg_dbt_source__l2_s3_{state}_haystaq_dna_scores"
+uniform_table = f"goodparty_data_catalog.dbt.stg_dbt_source__l2_s3_{state}_uniform"
+
+cursor.execute(f"DESCRIBE TABLE {scores_table}")
+cols = [row[0] for row in cursor.fetchall()]
+hs_cols = [c for c in cols if c.startswith('hs_')]
+print(f"Total hs_ columns: {len(hs_cols)}")
+
+with open("/tmp/hs_columns.json", "w") as f:
+    json.dump(hs_cols, f)
+
+cursor.execute(f"""
+    SELECT COUNT(*) FROM {uniform_table}
+    WHERE UPPER(Residence_Addresses_City) = UPPER(:city)
+""", {"city": city})
+voter_count = cursor.fetchone()[0]
+print(f"Voters in {city}: {voter_count}")
+
+if voter_count == 0:
+    print("WARNING: No voters found. Community signals will fall back to LLM estimation.")
+
+cursor.close()
+conn.close()
+```
+
+If voter count is 0, skip the rest of Step 9b and note in the checklist. The briefing will fall back to LLM-estimated scores.
+
+### 9b-2: Map agenda items to Haystaq columns
+
+Read the agenda items you collected in Step 4 and the column list from `/tmp/hs_columns.json`. For each substantive agenda item, identify relevant `hs_` columns.
+
+Common mappings (adapt based on actual agenda):
+
+| Agenda topic | Haystaq columns |
+|---|---|
+| Housing / rezoning | `hs_affordable_housing_gov_has_role`, `hs_gentrification_support`, `hs_gentrification_oppose` |
+| Public safety / policing | `hs_police_trust_yes`, `hs_police_trust_no`, `hs_violent_crime_very_worried`, `hs_gun_control_support` |
+| Climate / environment | `hs_climate_change_believer`, `hs_green_new_deal_support`, `hs_pipeline_fracking_oppose` |
+| Taxes / budget / incentives | `hs_tax_cuts_support`, `hs_tax_cuts_oppose`, `hs_econ_anxiety_very_worried` |
+| Infrastructure / transit | `hs_infrastructure_funding_fund_more`, `hs_public_transit_support` |
+| Education | `hs_school_funding_more`, `hs_charter_schools_support`, `hs_school_choice_support` |
+| Healthcare | `hs_medicare_for_all_support`, `hs_medicaid_expansion_support` |
+
+Search `/tmp/hs_columns.json` for additional relevant columns — names follow the pattern `hs_[topic]_[position]`. Include 2-5 columns per agenda item. Save the mapping to `/tmp/agenda_hs_mapping.json`.
+
+### 9b-3: Query aggregated scores
+
+Adapt this script with the columns from your mapping:
+
+```python
+import os, json
+
+params = json.loads(os.environ.get("PARAMS_JSON", "{}"))
+state = params.get("state", "").lower()
+city = params.get("city", "")
+
+from databricks.sql import connect
+
+conn = connect(
+    server_hostname=os.environ["DATABRICKS_SERVER_HOSTNAME"],
+    http_path=os.environ["DATABRICKS_HTTP_PATH"],
+    access_token=os.environ["DATABRICKS_API_KEY"]
+)
+cursor = conn.cursor()
+
+scores_table = f"goodparty_data_catalog.dbt.stg_dbt_source__l2_s3_{state}_haystaq_dna_scores"
+uniform_table = f"goodparty_data_catalog.dbt.stg_dbt_source__l2_s3_{state}_uniform"
+
+mapping = json.load(open("/tmp/agenda_hs_mapping.json"))
+all_hs_cols = sorted(set(col for cols in mapping.values() for col in cols))
+
+avg_exprs = ", ".join(f"AVG(CAST(s.{col} AS DOUBLE)) AS {col}" for col in all_hs_cols)
+
+# Overall city averages
+cursor.execute(f"""
+    SELECT COUNT(*) AS voter_count, {avg_exprs}
+    FROM {uniform_table} u
+    JOIN {scores_table} s ON u.LALVOTERID = s.LALVOTERID
+    WHERE UPPER(u.Residence_Addresses_City) = UPPER(:city)
+""", {"city": city})
+columns = [desc[0] for desc in cursor.description]
+overall = dict(zip(columns, cursor.fetchone()))
+
+# Cross-tab by party
+cursor.execute(f"""
+    SELECT u.Parties_Description AS party, COUNT(*) AS voter_count, {avg_exprs}
+    FROM {uniform_table} u
+    JOIN {scores_table} s ON u.LALVOTERID = s.LALVOTERID
+    WHERE UPPER(u.Residence_Addresses_City) = UPPER(:city)
+    GROUP BY u.Parties_Description ORDER BY COUNT(*) DESC
+""", {"city": city})
+party_cols = [desc[0] for desc in cursor.description]
+party_rows = [dict(zip(party_cols, r)) for r in cursor.fetchall()]
+
+# Cross-tab by age group
+cursor.execute(f"""
+    SELECT
+        CASE WHEN u.Voters_Age < 35 THEN '18-34'
+             WHEN u.Voters_Age < 55 THEN '35-54'
+             ELSE '55+' END AS age_group,
+        COUNT(*) AS voter_count, {avg_exprs}
+    FROM {uniform_table} u
+    JOIN {scores_table} s ON u.LALVOTERID = s.LALVOTERID
+    WHERE UPPER(u.Residence_Addresses_City) = UPPER(:city)
+    GROUP BY age_group ORDER BY age_group
+""", {"city": city})
+age_cols = [desc[0] for desc in cursor.description]
+age_rows = [dict(zip(age_cols, r)) for r in cursor.fetchall()]
+
+results = {
+    "state": state, "city": city,
+    "scores_table": scores_table, "uniform_table": uniform_table,
+    "agenda_hs_mapping": mapping,
+    "overall": {col: round(float(overall[col]), 1) if overall[col] is not None else None for col in all_hs_cols},
+    "overall_voter_count": overall["voter_count"],
+    "by_party": [{"party": r["party"], "voter_count": r["voter_count"],
+                   "scores": {col: round(float(r[col]), 1) if r[col] is not None else None for col in all_hs_cols}}
+                  for r in party_rows],
+    "by_age": [{"age_group": r["age_group"], "voter_count": r["voter_count"],
+                 "scores": {col: round(float(r[col]), 1) if r[col] is not None else None for col in all_hs_cols}}
+                for r in age_rows],
+}
+
+os.makedirs("/workspace/api_responses", exist_ok=True)
+with open("/workspace/api_responses/voter_scores.json", "w") as f:
+    json.dump(results, f, indent=2, default=str)
+print(f"Saved voter scores: {overall['voter_count']} voters, {len(all_hs_cols)} score columns")
+
+cursor.close()
+conn.close()
+```
+
+Append a source entry to `/workspace/sources.json`:
+
+```json
+{
+  "id": "gp-voter-data",
+  "type": "modeled",
+  "title": "GoodParty proprietary voter issue modeling",
+  "url": "https://goodparty.org",
+  "accessed_at": "TIMESTAMP"
+}
+```
+
+Replace `{state}` and `TIMESTAMP` with actual values.
+
+---
+
 ## PHASE 2 CHECKPOINT
 
 **Stop. Re-read Steps 10 and 11 from `/workspace/instruction.md` before proceeding.** Your context is long after all the data collection. Refresh the exact teaser email format, briefing template, banned words list, community signal rules, priority logic, and citation format.
@@ -524,7 +698,7 @@ Your full briefing has the constituency breakdown and prep recommendations for e
 Have a good meeting.
 — GoodParty
 
-*Constituency scores are modeled from voter attributes, not survey results. Reply to this email if something looks wrong.*
+*Constituency scores are modeled from proprietary GoodParty voter data, not survey results. Reply to this email if something looks wrong.*
 ```
 
 ### Rules
@@ -633,15 +807,28 @@ If more than 3 items → "decision needed": keep top 3 by platform relevance, do
 
 ### Community Signal generation
 
-Generate scores on a 0-100 scale. These are **modeled from voter attributes and city demographics, not from actual surveys.**
+Community Signal scores use **real aggregated voter issue scores from Databricks** (Haystaq DNA predictive models applied to L2 voter data). If Step 9b produced `/workspace/api_responses/voter_scores.json`, use those scores. If that file does not exist (no Databricks data for this city), fall back to LLM estimation.
 
-**Rules:**
+**Using Databricks scores (preferred):**
+
+1. Read `/workspace/api_responses/voter_scores.json`
+2. For each agenda item, look up the mapped Haystaq columns from `agenda_hs_mapping`
+3. Use `overall` scores as the headline number (already 0-100 scale)
+4. Use `by_party` and `by_age` breakdowns for demographic cross-tabs
+5. Round to whole numbers for display
+
+Example: If the agenda item is a rezoning and the mapping includes `hs_affordable_housing_gov_has_role` with overall score 42.1, report: "Your district scores 42/100 on government's role in affordable housing [gp-voter-data]." For cross-tabs: "Democratic-registered voters score 76, Republicans 16, unaffiliated 48. Voters 18-34 score 55 while 55+ score 37."
+
+**Fallback (LLM estimation, only when no Databricks data):**
 - Base on issue-area benchmarks from national/state polling, adjusted for local demographics
-- Key adjustment factors: median household income, homeownership rate, median age, racial composition, urban/suburban/rural character
+- Key adjustment factors: median household income, homeownership rate, median age, racial composition
+
+**Rules (both methods):**
 - **Never above 85 or below 15** unless genuinely one-sided
 - Most local governance issues fall in 35-75 range
-- **Always include one demographic cross-tab** (e.g., "58/100 overall, but 34/100 among adjacent homeowners vs. 71/100 among district-wide renters")
-- **Always label as modeled**
+- **Always include one demographic cross-tab** — use real party/age breakdowns from Databricks when available
+- **Always label as modeled** — "modeled from voter data" or "based on voter modeling"
+- When using Databricks data, cite `[gp-voter-data]` inline
 
 **Score ranges:**
 - 80-100: Strong consensus (rare)
@@ -683,7 +870,7 @@ Include ONLY when verifiable from: prior votes, staff recommendations, public st
 ### Disclaimer (required at bottom)
 
 ```
-*Constituency scores are modeled from voter attributes, not survey results. They indicate directional sentiment, not measured preferences. Fiscal data sourced from [specific source]. See something wrong? Reply to this email and we'll fix it within 24 hours.*
+*Constituency scores are modeled from proprietary GoodParty voter data, not survey results. They indicate directional sentiment, not measured preferences. Fiscal data sourced from [specific source]. See something wrong? Reply to this email and we'll fix it within 24 hours.*
 ```
 
 ---
@@ -874,6 +1061,38 @@ The JSON must include these top-level fields:
 - `based_on_district_intel_run` — the run ID or `"none"`
 
 You may include additional fields beyond these (platform details, committee assignments, election data, council dynamics, etc.) — the contract validator allows extra fields.
+
+---
+
+## STEP 13b: Sanitize vendor names from output
+
+Scan the entire output JSON for internal vendor/data source names that must not appear in user-facing content. Replace them with "proprietary GoodParty voter data" or "GoodParty proprietary voter issue modeling."
+
+```bash
+python3 << 'SANITIZE'
+import json
+
+output_path = "/workspace/output/meeting_briefing.json"
+d = json.load(open(output_path))
+text = json.dumps(d)
+
+banned = ["Haystaq", "haystaq", "L2 voter", "l2 voter", "Databricks", "databricks", "internal://"]
+found = [(t, text.count(t)) for t in banned if text.count(t) > 0]
+
+if found:
+    print("Found banned terms — sanitizing:")
+    for term, count in found:
+        print(f"  '{term}' x{count}")
+    for term in banned:
+        text = text.replace(term, "GoodParty proprietary")
+    d = json.loads(text)
+    with open(output_path, "w") as f:
+        json.dump(d, f, indent=2)
+    print("Sanitized and saved.")
+else:
+    print("CLEAN — no banned terms found.")
+SANITIZE
+```
 
 ---
 
