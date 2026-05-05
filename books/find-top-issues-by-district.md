@@ -2,10 +2,10 @@ Find the most distinctive campaign issues in any L2 district by computing lift o
 
 ## Prerequisites
 
-**books/.env variables**: `$AWS_PROFILE` (for the district name lookup against election-api RDS)
 **scripts/.env variables**: `DATABRICKS_API_KEY`, `DATABRICKS_SERVER_HOSTNAME`, `DATABRICKS_HTTP_PATH`
-**Tools**: `uv`, `psql` (or AWS CLI + IAM RDS auth — for the district lookup), Claude Code (for optional Tier 2 thematic clustering)
+**Tools**: `uv`, Claude Code (for optional Tier 2 thematic clustering)
 **Setup**: `cd scripts/python && uv sync`
+**Inputs you provide**: a `(state, district_type, district_name)` triple. The caller is expected to know which district they want — this runbook does not resolve districts.
 
 ## What this does
 
@@ -24,7 +24,25 @@ Three rules to internalize:
 
 1. **Always filter `Voters_Active = 'A'`** — non-active rows are inactive registrations (moved, deceased, removed) and pollute baselines.
 2. **`hs_*` are continuous 0–100 scores**, not flags. Threshold them (default `>= 70`) before averaging into a percentage.
-3. **District name must match exactly** as stored in the L2 column. Resolve it via the election-api DB before running the query (Step 1) — guessing strings or using regex on suffixes drops voters silently.
+3. **District name must match exactly** as stored in the L2 column — capitalization, suffix words, and number formatting all matter. If the script returns zero rows, the value didn't match. See the optional "Don't know the exact L2 string?" tip below.
+
+### Don't know the exact L2 string?
+
+Most callers already have a resolved district. If you don't, list candidates straight from L2 (no VPN, no extra creds — same connection as the rest of this runbook):
+
+```bash
+cd scripts/python
+uv run databricks_query.py "
+SELECT DISTINCT \`City_Ward\` AS district_name
+FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq
+WHERE state_postal_code = 'NC'
+  AND Voters_Active = 'A'
+  AND \`City_Ward\` ILIKE '%FAYETTEVILLE%'
+ORDER BY district_name
+"
+```
+
+Swap `City_Ward` for whichever L2 district column you're targeting and the `ILIKE` pattern for your search hint.
 
 ## Curated issue columns
 
@@ -42,13 +60,7 @@ Excluded: turnout/likelihood scores, candidate-sentiment columns, demographic pr
 
 ## Steps
 
-### Step 1 — Resolve the district name from election-api RDS
-
-Districts in L2 are stored under L2's exact spelling. To pick a real district, query the election-api PostgreSQL DB (Aurora cluster `election-api-db-prod` in AWS account `333022194791`) for a `District` row matching the type and slug or zip you have, then read its `name` column. That value is what you pass as `--district-name`.
-
-(If you already have a confirmed district name from prior work — e.g. a digit like `12` for `US_Congressional_District`, or a town name like `ASHEVILLE` for a city council seat — skip this step.)
-
-### Step 2 — Tier 1: lift aggregation
+### Step 1 — Tier 1: lift aggregation
 
 ```bash
 cd scripts/python
@@ -66,7 +78,7 @@ Args:
 |---|---|---|
 | `--state` | required | Two-letter postal code, e.g. `NC` |
 | `--district-type` | required | L2 column name. Common: `US_Congressional_District`, `State_Senate_District`, `State_House_District`, `City_Council`, `Mayor`, `County` |
-| `--district-name` | required | Exact value as stored in L2 (resolved in Step 1) |
+| `--district-name` | required | Exact value as stored in L2 (provided by caller, or look up via the tip above) |
 | `--top-k` | 15 | How many ranked issues to print |
 | `--threshold` | 70 | Score cutoff for "high-scoring voter" |
 | `--output` | — | Optional path for the long-format CSV (all 106 columns × this district) |
@@ -81,13 +93,13 @@ The script:
 
 Expected runtime: 30–90s for one district.
 
-### Step 3 (optional) — Tier 2: thematic clustering via Claude
+### Step 2 (optional) — Tier 2: thematic clustering via Claude
 
 The deterministic top-15 often contains correlated issues — e.g. `climate_change`, `pipeline_fracking`, and `green_new_deal` all light up together in a progressive district. To collapse correlations and surface five genuinely distinct themes, hand the top-15 (with topic + polarity + label + lift) to a Claude Code subagent with this directive:
 
 > You are given a district's top-15 distinctive issues by lift. Group correlated topics into themes (e.g. climate + EV + fracking → one "environment" theme). Promote the next-best distinct theme from below the top 15 if a slot opens. Return JSON with `district`, one-line `summary`, and `top5_themed` — each entry has `rank`, `theme`, `primary_label`, `primary_lift`, `primary_topic`, `supporting_topics` (merged into this theme), and `rationale`. Also return `merged_topics` and `promoted_from_below_top5`.
 
-Run from the long-format CSV produced in Step 2:
+Run from the long-format CSV produced in Step 1:
 
 ```python
 import csv, json
@@ -139,7 +151,7 @@ After Tier 2 (abbreviated):
 
 | Failure | Fix |
 |---|---|
-| Script exits 2: "No rows returned" | District name doesn't match L2's spelling. Re-run Step 1; check capitalization, leading zeros, and string vs. numeric form of the value. |
+| Script exits 2: "No rows returned" | District name doesn't match L2's spelling. Use the "Don't know the exact L2 string?" tip above to list real values; check capitalization, leading zeros, and string vs. numeric form. |
 | All lifts within ±1 pct pt | District is genuinely centrist relative to the state, OR district sample is small (<2k active voters) and noise dominates signal. Check `district_total` printed in the header. |
 | `Voters_Active` filter drops too much | Confirm with a raw `SELECT COUNT(*)` — for some states <60% of registered voters are `Voters_Active = 'A'`. That's expected; it's still the right filter. |
 | Top results are all the same topic | The dedup by `topic` slug failed because two columns share a topic in `curated_issue_columns.csv`. Audit the CSV — `topic` should be unique per "thing the district cares about", not per column. |
@@ -151,3 +163,4 @@ After Tier 2 (abbreviated):
 - This procedure is a more principled approach than ad-hoc per-suffix issue-score scanning: a curated column universe replaces regex on column names, and lift over state baseline replaces raw averages so that "everyone in the state cares about X" doesn't dominate the output.
 - Reusable across all states and L2 district types — only the curated CSV is shared, the query parameterizes everything else.
 - Tier 1 is fully deterministic and reproducible; Tier 2 is LLM-assisted and should be re-run if the underlying curation changes.
+- **Lift magnitude is itself signal.** A district where every issue's lift sits within ±5pp is genuinely centrist/swing — not broken. Districts with double-digit lifts on multiple themes are politically polarized. Compare the top lifts to gauge how distinctive the district really is.
