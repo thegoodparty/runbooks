@@ -97,18 +97,6 @@ uv run python briefing_to_pdf.py \
 
 ---
 
-## Design decisions
-
-**Agent-driven generation.** The executing agent IS the intelligence — it researches, reasons, and writes. There is no Python script making LLM API calls for generation. `generate_meeting_briefing.py` was an earlier prototype that followed the wrong pattern and has been removed.
-
-**LLM-agnostic instruction file.** `books/meeting-briefing-agent.md` does not reference any specific model or provider. Any agent capable of web search, file read/write, and Bash can execute it.
-
-**Voice and register are prescribed in the instruction.** The generation instruction explicitly requires second-person direct voice, specific talking points naming council members, and per-household budget framing. This is not left to the model's default behavior.
-
-**Constituent data is Haystaq-sourced and labeled as modeled.** The instruction requires all sentiment figures to carry a provenance note. City-wide scope is the default. District-level data is available if the Haystaq query is extended with district filters.
-
-**Naive subagents for testing.** When running experiments, the generation agent should be a fresh subagent with no context from the development session. This tests whether the instruction is self-sufficient — if a naive agent can follow it cold, it is production-ready.
-
 ## Output schema (`briefing.json`)
 
 ```
