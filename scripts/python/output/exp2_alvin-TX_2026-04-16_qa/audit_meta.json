@@ -1,0 +1,11 @@
+{
+  "product_id": "alvin-TX_2026-04-16",
+  "briefing_type": "meeting_briefing",
+  "run_timestamp": "2026-05-10T01:55:46.259269+00:00",
+  "generator": "",
+  "briefing_path": "output/exp2_alvin-TX_2026-04-16_qa/briefing.json",
+  "claims_path": "output/exp2_alvin-TX_2026-04-16_qa/claims.json",
+  "sources_path": "output/exp2_alvin-TX_2026-04-16_qa/sources.json",
+  "qa_bundle_path": "output/exp2_alvin-TX_2026-04-16_qa/qa_bundle.json",
+  "final_status": null
+}

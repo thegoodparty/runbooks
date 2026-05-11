@@ -1,0 +1,215 @@
+{
+  "verified_at": "2026-05-09T00:00:00Z",
+  "source_note": "All 10 source_ids share the URL https://www.alvin.gov and are sections of the April 16, 2026 Alvin City Council agenda packet. One snapshot file (source_snapshots/agenda.txt, 3909 lines) covers all sources. No per-source snapshot files (source_001.txt through source_010.txt) exist; agenda.txt was used for all checks.",
+  "summary": {
+    "total_extracts_checked": 26,
+    "passed": 25,
+    "failed": 1,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "claim_id": "claim_001",
+      "source_id": "source_003",
+      "extract_text": "On March 24, 2026, bids were opened for the Lift Station 33 Rehabilitation and Expansion Project, and Reddico Construction Company, Inc. was the qualified lone bidder.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 795-796."
+    },
+    {
+      "claim_id": "claim_002",
+      "source_id": "source_003",
+      "extract_text": "Contract Amount: $ 2,076,186.50 (Base Bid, Supplementary, and Allowance Items). 5% Contingency: $ 103,809.33 Total Amount: $ 2,179,995.83",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 801-803."
+    },
+    {
+      "claim_id": "claim_002",
+      "source_id": "source_003",
+      "extract_text": "The construction of this project will be funded by the 2020, 2022 and 2023 Water and Sewer Revenue Bonds.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 811-812."
+    },
+    {
+      "claim_id": "claim_003",
+      "source_id": "source_003",
+      "extract_text": "The project is scheduled to start in May 2026 and has a construction time of 365 calendar days.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt line 813."
+    },
+    {
+      "claim_id": "claim_004",
+      "source_id": "source_003",
+      "extract_text": "This project includes the rehabilitation and expansion of lift station 33 (located along Highway 35 across from Kendall Lakes) to a firm pumping capacity of 2.65 MGD.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 804-805."
+    },
+    {
+      "claim_id": "claim_005",
+      "source_id": "source_003",
+      "extract_text": "These improvements were based on recommendations in the 2015 Utility Master Plan by Freese and Nichols, Inc. that was approved by City Council on March 3, 2016; and is also included in the Capital Improvement Plan.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 808-810."
+    },
+    {
+      "claim_id": "claim_006",
+      "source_id": "source_004",
+      "extract_text": "The anticipated city cost for the first year of the grant, for both FLOCK cameras and FLOCK DFR, is approximately $64,000.00. Year two cost would be the same if the grant is renewed. Without the grant, the yearly cost would range between $150,000 — $310,000 based on the DFR program level chosen.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1887-1890. Em dash in source matches em dash in extract."
+    },
+    {
+      "claim_id": "claim_007",
+      "source_id": "source_004",
+      "extract_text": "The grant program is established under TTC chapter 1006, requires a 20% match of funds, and is distributed as a quarterly reimbursement with the agency/city funding the program and MVCPA reimbursing 80% of the cost quarterly.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1872-1874."
+    },
+    {
+      "claim_id": "claim_008",
+      "source_id": "source_004",
+      "extract_text": "With this grant we intend to add eight (8) FLOCK ALPR cameras to our current inventory. These cameras will be deployed in the area of FM 1462 and SH 288, Alvin West in response to the rapid development of the area.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1878-1880."
+    },
+    {
+      "claim_id": "claim_009",
+      "source_id": "source_004",
+      "extract_text": "Due to the distance from Alvin proper - upwards of 15 minutes in most cases - a typical call response to the area will likely consist of two officers being sent so that backup is nearby should it be needed. This will result in two officers not being available to respond to other Alvin calls for service for significant lengths of time, likely multiple times per shift. As current fully staffed shifts only have six officers available when no one is out for the day, such calls would reduce the effective force by at least one third, often more, during each Preservation Creek call for service.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 2013-2020."
+    },
+    {
+      "claim_id": "claim_010",
+      "source_id": "source_004",
+      "extract_text": "Grant Applications from eligible applicants must be completely submitted on-line at https://MVCPA.tamu.edu on or before 5:00 PM, May 8, 2026.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 2155-2156."
+    },
+    {
+      "claim_id": "claim_010",
+      "source_id": "source_004",
+      "extract_text": "A Resolution (Order or Ordinance) by the applicant governing body is required to make application for these funds.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt line 2197."
+    },
+    {
+      "claim_id": "claim_011",
+      "source_id": "source_005",
+      "extract_text": "Sec. 24-49 Parking of Commercial Motor Vehicles Restricted: No person shall stop, stand or park any commercial motor vehicle on any street, alley or other public way of the city during daytime hours except for the express purpose of immediate loading or unloading. Parking between the hours of 10 p.m. and 6 a.m. is prohibited.",
+      "status": "fail",
+      "note": "Colon after 'Restricted' is not present in the source. In agenda.txt (e.g., lines 1678-1682 and 1777-1781), the section heading 'Sec. 24-49 Parking of Commercial Motor Vehicles Restricted' appears on its own line, followed by the body text on the next line with no colon joining them. The extract concatenates the heading and body with an added colon ('Restricted: No person...') that does not appear in the source. All other wording is verbatim."
+    },
+    {
+      "claim_id": "claim_011",
+      "source_id": "source_005",
+      "extract_text": "Any person, firm, entity, or corporation violating any provision of this Ordinance, as it exists or may be amended, shall be deemed guilty of a misdemeanor and, upon conviction, shall be punished in accordance with Section 1-5 (General Penalty; Continuing Violations) of the Code of Ordinances of the City of Alvin, Texas, with a fine not to exceed five hundred dollars ($500.00). Each day a violation continues shall constitute a separate offense.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1698-1702. Source prefixes this with 'Section 4. Penalties.' on the same line 1698; the extract begins at 'Any person...' which is verbatim from that point."
+    },
+    {
+      "claim_id": "claim_012",
+      "source_id": "source_005",
+      "extract_text": "After the council and police department received several complaints about oversize and commercial vehicle parking, Council member DeKeyzer requested a council workshop which was held on Thursday, January 15, 2026.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1576-1578."
+    },
+    {
+      "claim_id": "claim_013",
+      "source_id": "source_006",
+      "extract_text": "The property is identified by the Brazoria County Appraisal District as Property ID No. 711814 and is generally described as A0047 ASA BRIGHAM BLOCK 13 TRACT 7, consisting of approximately 5.2692 acres.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1461-1463."
+    },
+    {
+      "claim_id": "claim_013",
+      "source_id": "source_006",
+      "extract_text": "On or about March 31, 2026, the City received a Petition for Release from the Extraterritorial Jurisdiction (ETJ) of the City of Alvin from Christopher and Catherine Moore, the owners of approximately 5.2692 acres of land located at 14830 Vacek Street, Santa Fe, Texas, in unincorporated Brazoria County. This property is adjacent to the ETJ release petition that was presented to City Council for consideration at the March 19 meeting, which was denied and subsequently released by operation of state law.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1451-1458."
+    },
+    {
+      "claim_id": "claim_014",
+      "source_id": "source_006",
+      "extract_text": "Based on the date the petition was received, the statutory deadline for release, in this case, is May 15, 2026.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1476-1479. A page-break marker ('Page 89 of 176') falls between 'release,' and 'in this case,' in the source but the text is otherwise verbatim."
+    },
+    {
+      "claim_id": "claim_015",
+      "source_id": "source_002",
+      "extract_text": "Council member DeKeyzer moved to approve Ordinance 26-A; releasing approximately 25 acres of land from the Extraterritorial Jurisdiction of the City of Alvin, Texas; providing findings of fact; containing a severability clause; and providing for other matters related thereto. Seconded by Council member Moore; motion failed with all members present voting No.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 418-421."
+    },
+    {
+      "claim_id": "claim_015",
+      "source_id": "source_002",
+      "extract_text": "Council Member Moore clarified for the public that the Council is not necessarily opposed to the release of properties from the ETJ. However, because state law requires Council to take action on such requests while also providing for their automatic release by statute, he indicated that Council will vote against these items to formally document its objection to the process.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 443-448. 'Council Member' appears at end of line 443 and 'Moore clarified...' begins line 444; joined they read exactly as the extract."
+    },
+    {
+      "claim_id": "claim_016",
+      "source_id": "source_007",
+      "extract_text": "For FY25, the City received an unmodified opinion from the auditors – which is the highest form of assurance that our financial statements 'give a true and fair view' of the City's financial position.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1365-1366. Source uses typographic curly quotes around 'give a true and fair view'; extract uses straight quotes. Treated as acceptable encoding normalization."
+    },
+    {
+      "claim_id": "claim_017",
+      "source_id": "source_007",
+      "extract_text": "Pursuant to Section 103.003 of the Texas Local Government Code, the annual financial statements, including the auditor's opinion must be filed with the City Secretary within 180 days after the last day of the fiscal year (September 30, 2025), and were filed in accordance with this requirement and made available on the City's website on March 27, 2026.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 1367-1370."
+    },
+    {
+      "claim_id": "claim_018",
+      "source_id": "source_007",
+      "extract_text": "Stephanie Harris, partner from Crowe LLP will present the report.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt line 1371."
+    },
+    {
+      "claim_id": "claim_019",
+      "source_id": "source_001",
+      "extract_text": "Gabe Adame, Mayor\nMeagan DeKeyzer, Mayor Pro-tem, District E\nAshley Davis, District D\nMartin Vela, District A\nKeko Moore At-Lg P1\nChris Vaughn, District B\nScott Salter, At-Lg P2\nRichard Garivey, District C",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 2-9."
+    },
+    {
+      "claim_id": "claim_020",
+      "source_id": "source_002",
+      "extract_text": "Council member Garivey moved to approve a Chapter 380 Economic Development Agreement providing a business incentive grant in the amount of $61,000.00 to Foul Play Restaurant, located at 1468 Highway 35, Alvin, Texas, for build-out and finishes to the restaurant site, and authorize the Mayor to sign the agreement. Seconded by Council member Moore; motion carried with all members present voting Aye, and Council member Vaughn voting No.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 360-364."
+    },
+    {
+      "claim_id": "claim_021",
+      "source_id": "source_009",
+      "extract_text": "Upon the effective date of this Agreement, CITY shall make one (1) payment of Twelve Thousand Dollars and No Cents ($12,000.00), to ROSHARON VFD on April 20, 2026.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 690-691."
+    },
+    {
+      "claim_id": "claim_022",
+      "source_id": "source_010",
+      "extract_text": "He further outlined key FY 2027 initiatives and projects identified within these plans, including capital improvements for drainage, parks, water, and wastewater systems, as well as ongoing efforts related to transportation, downtown revitalization, and city services. Mr. Roland also highlighted anticipated challenges such as the 100-foot Strip, rising service costs, State Legislature, funding needs, and maintaining competitive employee compensation.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 515-519."
+    },
+    {
+      "claim_id": "claim_022",
+      "source_id": "source_010",
+      "extract_text": "Mr. Roland requested that Council members submit any additional items they would like considered for inclusion in the FY 2027 budget no later than the end of April.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 520-521."
+    },
+    {
+      "claim_id": "claim_023",
+      "source_id": "source_001",
+      "extract_text": "NOTICE is hereby given of a Regular Meeting and Executive Session of the City Council of the City of Alvin, Texas, to be held on Thursday, APRIL 16, 2026, at 7:00 PM in the Council Chambers at: City Hall, 216 W. Sealy, Alvin, Texas.",
+      "status": "pass",
+      "note": "Confirmed at agenda.txt lines 18-20."
+    }
+  ]
+}

@@ -1,0 +1,715 @@
+{
+  "product_id": "alvin-TX_2026-04-16",
+  "briefing_type": "meeting_briefing",
+  "run_timestamp": "2026-05-10T02:20:09.214801+00:00",
+  "final_status": "OK",
+  "block_reason": null,
+  "deterministic_checks": [
+    {
+      "check_id": "identity_fields_present",
+      "status": "pass",
+      "severity": "info",
+      "message": "Meeting title, date, and citySlug present",
+      "route": "pass",
+      "offending": null
+    },
+    {
+      "check_id": "priority_count_nonzero",
+      "status": "pass",
+      "severity": "info",
+      "message": "5 priority issue(s) present",
+      "route": "pass",
+      "offending": null
+    },
+    {
+      "check_id": "high_weight_claims_have_extracts",
+      "status": "pass",
+      "severity": "info",
+      "message": "All high-weight claims have source extracts",
+      "route": "pass",
+      "offending": null
+    },
+    {
+      "check_id": "citation_ids_resolve",
+      "status": "pass",
+      "severity": "info",
+      "message": "All claim citations resolve to known sources",
+      "route": "pass",
+      "offending": null
+    },
+    {
+      "check_id": "snapshot_files_exist",
+      "status": "pass",
+      "severity": "info",
+      "message": "All declared snapshot files exist",
+      "route": "pass",
+      "offending": null
+    },
+    {
+      "check_id": "prohibited_phrases",
+      "status": "pass",
+      "severity": "info",
+      "message": "No prohibited phrases detected",
+      "route": "pass",
+      "offending": null
+    },
+    {
+      "check_id": "constituent_data_labeled",
+      "status": "pass",
+      "severity": "info",
+      "message": "Constituent sentiment sections are labeled",
+      "route": "pass",
+      "offending": null
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "source_001",
+      "type": "government_record",
+      "title": "City of Alvin, Texas — City Council Agenda, April 16, 2026 (176-page packet including staff reports, ordinances, resolutions, and minutes)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_002",
+      "type": "government_record",
+      "title": "City of Alvin March 19, 2026 Regular City Council Meeting Minutes (included in April 16 agenda packet, pp. 8-13)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_003",
+      "type": "staff_report",
+      "title": "Agenda Commentary and LJA Engineering Bid Recommendation Letter — Lift Station 33 Rehabilitation and Expansion Project (Reddico Construction, March 30, 2026)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_004",
+      "type": "staff_report",
+      "title": "Agenda Commentary — Resolution 26-R-20: MVCPA Grant / Drone First Responder Program (APD Cpl. J. Cleere memos dated Feb 26 and Mar 25, 2026; MVCPA FY2027 RFA dated March 16, 2026)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_005",
+      "type": "staff_report",
+      "title": "Agenda Commentary — Ordinance 26-D: Commercial Vehicle and Oversized Vehicle Parking Restrictions (Police Dept, Chief Robert Lee; January 15, 2026 workshop background)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_006",
+      "type": "staff_report",
+      "title": "Agenda Commentary — Ordinance 26-C: ETJ Release, 14830 Vacek Street (5.2692 acres, Christopher and Catherine Moore; petition received March 31, 2026)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_007",
+      "type": "staff_report",
+      "title": "Agenda Commentary — FY2025 Annual Comprehensive Financial Report, Crowe LLP (Finance Director Michael Gibbs; ACFR filed with City Secretary March 27, 2026)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_008",
+      "type": "staff_report",
+      "title": "Agenda Commentary — 2027-2031 Capital Improvement Program (City Engineer Michelle Segovia; presented at March 31, 2026 workshop)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_009",
+      "type": "staff_report",
+      "title": "Agenda Commentary — Interlocal Agreement with Rosharon Volunteer Fire Department for Preservation Creek fire protection services through December 31, 2026",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_010",
+      "type": "government_record",
+      "title": "City of Alvin March 31, 2026 City Council Workshop Minutes — FY27 Budget Planning, Strategic Plans, and Capital Projects overview (City Manager Junru Roland)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim_001",
+      "agenda_item": "5F — Lift Station 33 Rehabilitation and Expansion",
+      "field": "whatIsHappening",
+      "claim_text": "There was only one bidder — Reddico Construction Company, Inc.",
+      "claim_type": "vote_or_decision_fact",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_003"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_003",
+          "text": "On March 24, 2026, bids were opened for the Lift Station 33 Rehabilitation and Expansion Project, and Reddico Construction Company, Inc. was the qualified lone bidder."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The source extract explicitly states that Reddico Construction Company, Inc. was \"the qualified lone bidder,\" which directly confirms the claim that there was only one bidder and that it was Reddico Construction Company, Inc.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_002",
+      "agenda_item": "5F — Lift Station 33 Rehabilitation and Expansion",
+      "field": "budgetImpact",
+      "claim_text": "Total contract amount is $2,179,995.83 (base bid of $2,076,186.50 plus 5% contingency of $103,809.33), funded by 2020, 2022, and 2023 Water and Sewer Revenue Bonds.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_003"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_003",
+          "text": "Contract Amount: $ 2,076,186.50 (Base Bid, Supplementary, and Allowance Items). 5% Contingency: $ 103,809.33 Total Amount: $ 2,179,995.83"
+        },
+        {
+          "source_id": "source_003",
+          "text": "The construction of this project will be funded by the 2020, 2022 and 2023 Water and Sewer Revenue Bonds."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Directionally Consistent",
+        "reasoning": "The financial figures in the claim are precisely accurate: the base bid of $2,076,186.50, 5% contingency of $103,809.33, and total of $2,179,995.83 all match the source exactly. However, the claim describes the base bid as solely \"base bid,\" while the source specifies it includes \"Base Bid, Supplementary, and Allowance Items.\" Additionally, the funding sources (2020, 2022, and 2023 Water and Sewer Revenue Bonds) are not mentioned anywhere in the provided source extract and cannot be verified from it. Because part of the claim is fully accurate and part is unsubstantiated by the extract, the overall classification is Directionally Consistent.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_003",
+      "agenda_item": "5F — Lift Station 33 Rehabilitation and Expansion",
+      "field": "whatIsHappening",
+      "claim_text": "Construction starts May 2026 with a 365-calendar-day construction timeline.",
+      "claim_type": "date_or_deadline",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_003"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_003",
+          "text": "The project is scheduled to start in May 2026 and has a construction time of 365 calendar days."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The source extract explicitly states that the project is scheduled to start in May 2026 and has a construction time of 365 calendar days, which matches the claim precisely.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_004",
+      "agenda_item": "5F — Lift Station 33 Rehabilitation and Expansion",
+      "field": "whatIsHappening",
+      "claim_text": "Lift Station 33 will be expanded to a firm pumping capacity of 2.65 MGD.",
+      "claim_type": "background_context",
+      "claim_weight": "medium",
+      "citation_ids": [
+        "source_003"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_003",
+          "text": "This project includes the rehabilitation and expansion of lift station 33 (located along Highway 35 across from Kendall Lakes) to a firm pumping capacity of 2.65 MGD."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The source extract explicitly states that the project includes the rehabilitation and expansion of Lift Station 33 to a firm pumping capacity of 2.65 MGD, which matches the claim precisely.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_005",
+      "agenda_item": "5F — Lift Station 33 Rehabilitation and Expansion",
+      "field": "background_context",
+      "claim_text": "This project traces to recommendations in the 2015 Utility Master Plan approved by City Council on March 3, 2016.",
+      "claim_type": "vote_or_decision_fact",
+      "claim_weight": "medium",
+      "citation_ids": [
+        "source_003"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_003",
+          "text": "These improvements were based on recommendations in the 2015 Utility Master Plan by Freese and Nichols, Inc. that was approved by City Council on March 3, 2016; and is also included in the Capital Improvement Plan."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The claim matches the source extract precisely. The source states the improvements were based on recommendations in the 2015 Utility Master Plan, approved by City Council on March 3, 2016 — exactly as the claim states. The only omission is the authoring firm (Freese and Nichols, Inc.) and the Capital Improvement Plan reference, but those are additional details not contradicted by the claim.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_006",
+      "agenda_item": "6D — Resolution 26-R-20: MVCPA Grant / Drone First Responder",
+      "field": "budgetImpact",
+      "claim_text": "The city's first-year out-of-pocket cost with the grant is approximately $64,000; without the grant, $150,000-$310,000 per year.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_004"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_004",
+          "text": "The anticipated city cost for the first year of the grant, for both FLOCK cameras and FLOCK DFR, is approximately $64,000.00. Year two cost would be the same if the grant is renewed. Without the grant, the yearly cost would range between $150,000 — $310,000 based on the DFR program level chosen."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The claim precisely matches the source extract. The first-year out-of-pocket cost with the grant is stated as approximately $64,000, and without the grant, the yearly cost is explicitly cited as ranging between $150,000 and $310,000 — both figures align exactly with the source.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_007",
+      "agenda_item": "6D — Resolution 26-R-20: MVCPA Grant / Drone First Responder",
+      "field": "whatIsHappening",
+      "claim_text": "The MVCPA grant requires a 20% city cash match; the state reimburses 80% quarterly.",
+      "claim_type": "background_context",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_004"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_004",
+          "text": "The grant program is established under TTC chapter 1006, requires a 20% match of funds, and is distributed as a quarterly reimbursement with the agency/city funding the program and MVCPA reimbursing 80% of the cost quarterly."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The source extract explicitly states a 20% match of funds requirement, quarterly reimbursement distribution, and MVCPA reimbursing 80% of the cost quarterly — all of which align precisely with the claim.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_008",
+      "agenda_item": "6D — Resolution 26-R-20: MVCPA Grant / Drone First Responder",
+      "field": "whatIsHappening",
+      "claim_text": "Eight FLOCK ALPR cameras will be deployed at FM 1462 and SH 288 in response to rapid development in that area.",
+      "claim_type": "background_context",
+      "claim_weight": "medium",
+      "citation_ids": [
+        "source_004"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_004",
+          "text": "With this grant we intend to add eight (8) FLOCK ALPR cameras to our current inventory. These cameras will be deployed in the area of FM 1462 and SH 288, Alvin West in response to the rapid development of the area."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The claim matches the source extract precisely. The source states that eight (8) FLOCK ALPR cameras will be deployed in the area of FM 1462 and SH 288 in response to the rapid development of the area, which is exactly what the claim states.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_009",
+      "agenda_item": "6D — Resolution 26-R-20: MVCPA Grant / Drone First Responder",
+      "field": "whyItMatters",
+      "claim_text": "Preservation Creek calls are 15+ minutes from Alvin proper, and with six officers per fully-staffed shift, a single call there can consume one-third or more of patrol capacity.",
+      "claim_type": "background_context",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_004"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_004",
+          "text": "Due to the distance from Alvin proper - upwards of 15 minutes in most cases - a typical call response to the area will likely consist of two officers being sent so that backup is nearby should it be needed. This will result in two officers not being available to respond to other Alvin calls for service for significant lengths of time, likely multiple times per shift. As current fully staffed shifts only have six officers available when no one is out for the day, such calls would reduce the effective force by at least one third, often more, during each Preservation Creek call for service."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The claim precisely mirrors the source extract on all key details: (1) Preservation Creek is upwards of 15 minutes from Alvin proper, (2) fully-staffed shifts have six officers, and (3) a single call there would consume at least one-third or more of patrol capacity, as two officers being unavailable out of six equals exactly one-third. The phrasing \"one-third or more\" also directly reflects the source's language of \"at least one third, often more.\"",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_010",
+      "agenda_item": "6D — Resolution 26-R-20: MVCPA Grant / Drone First Responder",
+      "field": "whatIsHappening",
+      "claim_text": "The grant application deadline is May 8, 2026; the council resolution is a prerequisite for submitting.",
+      "claim_type": "date_or_deadline",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_004"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_004",
+          "text": "Grant Applications from eligible applicants must be completely submitted on-line at https://MVCPA.tamu.edu on or before 5:00 PM, May 8, 2026."
+        },
+        {
+          "source_id": "source_004",
+          "text": "A Resolution (Order or Ordinance) by the applicant governing body is required to make application for these funds."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Extrapolating",
+        "reasoning": "The source extract confirms the grant application deadline of May 8, 2026 at 5:00 PM, which matches the first part of the claim. However, the second part — that the council resolution is a prerequisite for submitting — is not mentioned anywhere in the provided source extract. This is a reasonable inference (council resolutions are commonly required for grant applications by government bodies), but it goes beyond what the extract states. Since one part is confirmed and the other is an unstated inference, the overall claim is extrapolating.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_011",
+      "agenda_item": "6C — Ordinance 26-D: Commercial Vehicle Parking",
+      "field": "whatIsHappening",
+      "claim_text": "The ordinance bans commercial motor vehicles from parking on city streets except for immediate loading/unloading, with a full overnight prohibition 10 PM to 6 AM; violations up to $500 per day.",
+      "claim_type": "legal_identifier",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_005"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_005",
+          "text": "Sec. 24-49 Parking of Commercial Motor Vehicles Restricted: No person shall stop, stand or park any commercial motor vehicle on any street, alley or other public way of the city during daytime hours except for the express purpose of immediate loading or unloading. Parking between the hours of 10 p.m. and 6 a.m. is prohibited."
+        },
+        {
+          "source_id": "source_005",
+          "text": "Any person, firm, entity, or corporation violating any provision of this Ordinance, as it exists or may be amended, shall be deemed guilty of a misdemeanor and, upon conviction, shall be punished in accordance with Section 1-5 (General Penalty; Continuing Violations) of the Code of Ordinances of the City of Alvin, Texas, with a fine not to exceed five hundred dollars ($500.00). Each day a violation continues shall constitute a separate offense."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Extrapolating",
+        "reasoning": "The source extract confirms two core elements of the claim: (1) the ban on commercial motor vehicles parking on city streets except for immediate loading/unloading, and (2) the overnight prohibition from 10 PM to 6 AM. However, the $500 per day violation penalty is not mentioned anywhere in the provided source extract. This detail goes beyond what the source substantiates, making the claim an extrapolation — the restriction language is accurate, but the penalty amount cannot be confirmed from this extract.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_012",
+      "agenda_item": "6C — Ordinance 26-D: Commercial Vehicle Parking",
+      "field": "whatIsHappening",
+      "claim_text": "Council member DeKeyzer requested the January 15, 2026 workshop that led to this ordinance, following constituent complaints about oversize and commercial vehicle parking.",
+      "claim_type": "named_person_or_role",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_005"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_005",
+          "text": "After the council and police department received several complaints about oversize and commercial vehicle parking, Council member DeKeyzer requested a council workshop which was held on Thursday, January 15, 2026."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The source extract directly confirms all elements of the claim: Council member DeKeyzer requested the workshop, it was held on January 15, 2026, and it was prompted by complaints about oversize and commercial vehicle parking received by the council and police department. The claim's use of \"constituent complaints\" is a reasonable and accurate characterization of the complaints mentioned in the source.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_013",
+      "agenda_item": "6B — Ordinance 26-C: ETJ Release",
+      "field": "whatIsHappening",
+      "claim_text": "The Moore property (5.2692 acres at 14830 Vacek Street, Property ID No. 711814) is adjacent to the Leigh property ETJ release that was denied at March 19 and released automatically by state law.",
+      "claim_type": "legal_identifier",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_006"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_006",
+          "text": "The property is identified by the Brazoria County Appraisal District as Property ID No. 711814 and is generally described as A0047 ASA BRIGHAM BLOCK 13 TRACT 7, consisting of approximately 5.2692 acres."
+        },
+        {
+          "source_id": "source_006",
+          "text": "On or about March 31, 2026, the City received a Petition for Release from the Extraterritorial Jurisdiction (ETJ) of the City of Alvin from Christopher and Catherine Moore, the owners of approximately 5.2692 acres of land located at 14830 Vacek Street, Santa Fe, Texas, in unincorporated Brazoria County. This property is adjacent to the ETJ release petition that was presented to City Council for consideration at the March 19 meeting, which was denied and subsequently released by operation of state law."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Not in Source — Unresolved",
+        "reasoning": "The source extract confirms the Property ID No. 711814 and the 5.2692-acre size, but says nothing about the street address (14830 Vacek Street), the adjacency to any \"Leigh property,\" any ETJ release denial at a March 19 meeting, or any automatic release by state law. The claim bundles multiple specific legal and procedural facts that are entirely absent from this extract and cannot be verified or contradicted by it.",
+        "is_ok": false
+      },
+      "phase2": null,
+      "final_route": "annotate"
+    },
+    {
+      "claim_id": "claim_014",
+      "agenda_item": "6B — Ordinance 26-C: ETJ Release",
+      "field": "whatDecision",
+      "claim_text": "The statutory deadline for the city to act on this petition is May 15, 2026; after that date it releases automatically by state law.",
+      "claim_type": "date_or_deadline",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_006"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_006",
+          "text": "Based on the date the petition was received, the statutory deadline for release, in this case, is May 15, 2026."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Extrapolating",
+        "reasoning": "The source confirms that the statutory deadline for release is May 15, 2026, which matches the claim's date precisely. However, the claim adds the detail that the petition \"releases automatically by state law\" after that date — this specific mechanism (automatic release by state law) is not stated in the source extract. It is a reasonable legal inference about what a \"statutory deadline for release\" means, but it goes slightly beyond what the source explicitly states.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_015",
+      "agenda_item": "6B — Ordinance 26-C: ETJ Release",
+      "field": "whyItMatters",
+      "claim_text": "At the March 19 meeting, Council voted unanimously against two similar ETJ releases (Ordinances 26-A and 26-B), with Council member Moore stating the no votes were a formal protest of the process, not the individual landowners.",
+      "claim_type": "vote_or_decision_fact",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_002"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_002",
+          "text": "Council member DeKeyzer moved to approve Ordinance 26-A; releasing approximately 25 acres of land from the Extraterritorial Jurisdiction of the City of Alvin, Texas; providing findings of fact; containing a severability clause; and providing for other matters related thereto. Seconded by Council member Moore; motion failed with all members present voting No."
+        },
+        {
+          "source_id": "source_002",
+          "text": "Council Member Moore clarified for the public that the Council is not necessarily opposed to the release of properties from the ETJ. However, because state law requires Council to take action on such requests while also providing for their automatic release by statute, he indicated that Council will vote against these items to formally document its objection to the process."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Extrapolating",
+        "reasoning": "The source extract confirms that Ordinance 26-A was voted on and failed with all members present voting No, which supports the \"unanimous no vote\" portion of the claim. However, the extract does not mention Ordinance 26-B, the March 19 meeting date, or Council member Moore's statement that the no votes were a formal protest of the process rather than against the individual landowners. The core voting outcome is directionally supported, but the additional details — particularly Moore's quoted rationale and the reference to a second ordinance (26-B) — go beyond what is present in the extract, making this an extrapolation rather than a fully accurate or directly verifiable claim.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_016",
+      "agenda_item": "6A — FY2025 ACFR Presentation",
+      "field": "whatIsHappening",
+      "claim_text": "The city received an unmodified audit opinion from Crowe LLP for FY2025 — the highest level of assurance available.",
+      "claim_type": "vote_or_decision_fact",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_007"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_007",
+          "text": "For FY25, the City received an unmodified opinion from the auditors – which is the highest form of assurance that our financial statements 'give a true and fair view' of the City's financial position."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Directionally Consistent",
+        "reasoning": "The source extract confirms that the City received an unmodified opinion for FY25 and that this is the highest form of assurance — consistent with the claim. However, the source does not name the auditor as \"Crowe LLP.\" The naming of the auditor cannot be verified from this extract, making the claim directionally consistent but not fully accurate as written.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_017",
+      "agenda_item": "6A — FY2025 ACFR Presentation",
+      "field": "whatIsHappening",
+      "claim_text": "The ACFR was filed with the City Secretary and posted publicly on March 27, 2026, within the state's 180-day deadline from fiscal year end September 30, 2025.",
+      "claim_type": "date_or_deadline",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_007"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_007",
+          "text": "Pursuant to Section 103.003 of the Texas Local Government Code, the annual financial statements, including the auditor's opinion must be filed with the City Secretary within 180 days after the last day of the fiscal year (September 30, 2025), and were filed in accordance with this requirement and made available on the City's website on March 27, 2026."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The source extract explicitly states that the annual financial statements were filed with the City Secretary within 180 days after the last day of the fiscal year (September 30, 2025) and made available on the City's website on March 27, 2026. The claim matches all key details in the source: the filing date (March 27, 2026), the public posting, the 180-day deadline, and the fiscal year end date (September 30, 2025). The reference to the ACFR is consistent with \"annual financial statements\" in context. All elements align precisely.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_018",
+      "agenda_item": "6A — FY2025 ACFR Presentation",
+      "field": "whoIsPresenting",
+      "claim_text": "Crowe LLP partner Stephanie Harris will present the ACFR; Finance Director Michael Gibbs is the city contact.",
+      "claim_type": "named_person_or_role",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_007"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_007",
+          "text": "Stephanie Harris, partner from Crowe LLP will present the report."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Extrapolating",
+        "reasoning": "The source confirms that Stephanie Harris, a partner from Crowe LLP, will present the report — consistent with the first part of the claim. However, the claim also asserts that Finance Director Michael Gibbs is the city contact, which is not mentioned anywhere in the provided source extract. This second detail goes beyond what the source supports, making the overall claim an extrapolation rather than fully accurate.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_019",
+      "agenda_item": "Background — Council Composition",
+      "field": "whatIsHappening",
+      "claim_text": "Alvin City Council is composed of Mayor Gabe Adame, Mayor Pro-Tem Meagan DeKeyzer (District E), and council members Ashley Davis (District D), Martin Vela (District A), Keko Moore (At-Large P1), Chris Vaughn (District B), Scott Salter (At-Large P2), and Richard Garivey (District C).",
+      "claim_type": "named_person_or_role",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_001"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_001",
+          "text": "Gabe Adame, Mayor\nMeagan DeKeyzer, Mayor Pro-tem, District E\nAshley Davis, District D\nMartin Vela, District A\nKeko Moore At-Lg P1\nChris Vaughn, District B\nScott Salter, At-Lg P2\nRichard Garivey, District C"
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The claim precisely matches the source extract in all respects: Mayor Gabe Adame, Mayor Pro-Tem Meagan DeKeyzer (District E), Ashley Davis (District D), Martin Vela (District A), Keko Moore (At-Large P1), Chris Vaughn (District B), Scott Salter (At-Large P2), and Richard Garivey (District C) are all listed with the correct names, titles, and district designations as they appear in the source.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_020",
+      "agenda_item": "Background — March 19 Vote Record",
+      "field": "talkingPoints",
+      "claim_text": "Chris Vaughn cast the lone No vote on the Foul Play Restaurant $61,000 economic development grant at the March 19, 2026 regular council meeting; all other members voted Aye.",
+      "claim_type": "vote_or_decision_fact",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_002"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_002",
+          "text": "Council member Garivey moved to approve a Chapter 380 Economic Development Agreement providing a business incentive grant in the amount of $61,000.00 to Foul Play Restaurant, located at 1468 Highway 35, Alvin, Texas, for build-out and finishes to the restaurant site, and authorize the Mayor to sign the agreement. Seconded by Council member Moore; motion carried with all members present voting Aye, and Council member Vaughn voting No."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The source extract explicitly states that the motion carried \"with all members present voting Aye, and Council member Vaughn voting No,\" directly confirming that Chris Vaughn cast the sole No vote while all other members voted Aye. The grant amount of $61,000.00 and the recipient (Foul Play Restaurant) also match precisely. The meeting date of March 19, 2026 is not verifiable from the extract alone, but the vote details align exactly with the claim.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_021",
+      "agenda_item": "5E — Rosharon VFD Interlocal Agreement",
+      "field": "budgetImpact",
+      "claim_text": "The Rosharon VFD interlocal agreement for fire protection in the Preservation Creek Development Area costs the city $12,000, paid in a single payment on April 20, 2026, through December 31, 2026.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_009"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_009",
+          "text": "Upon the effective date of this Agreement, CITY shall make one (1) payment of Twelve Thousand Dollars and No Cents ($12,000.00), to ROSHARON VFD on April 20, 2026."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Directionally Consistent",
+        "reasoning": "The source confirms the $12,000 single payment amount and the April 20, 2026 payment date, which matches the claim precisely on those points. However, the source extract does not mention the \"through December 31, 2026\" end date or the \"Preservation Creek Development Area\" designation. The claim adds these details that are not substantiated by the provided extract, making it directionally consistent but not fully verifiable from this source alone.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_022",
+      "agenda_item": "6A — FY2025 ACFR / FY27 Budget Context",
+      "field": "whyItMatters",
+      "claim_text": "City Manager Junru Roland presented FY27 budget challenges at the March 31 workshop including the 100-foot Strip, rising service costs, State Legislature impacts, funding needs, and maintaining competitive employee compensation; Council members were asked to submit budget priorities by end of April.",
+      "claim_type": "background_context",
+      "claim_weight": "medium",
+      "citation_ids": [
+        "source_010"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_010",
+          "text": "He further outlined key FY 2027 initiatives and projects identified within these plans, including capital improvements for drainage, parks, water, and wastewater systems, as well as ongoing efforts related to transportation, downtown revitalization, and city services. Mr. Roland also highlighted anticipated challenges such as the 100-foot Strip, rising service costs, State Legislature, funding needs, and maintaining competitive employee compensation."
+        },
+        {
+          "source_id": "source_010",
+          "text": "Mr. Roland requested that Council members submit any additional items they would like considered for inclusion in the FY 2027 budget no later than the end of April."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Directionally Consistent",
+        "reasoning": "The source extract confirms that Mr. Roland highlighted the anticipated challenges listed in the claim — the 100-foot Strip, rising service costs, State Legislature impacts, funding needs, and maintaining competitive employee compensation — and that this occurred in the context of FY 2027 budget discussion. However, the claim adds two specific details not found in the extract: (1) that the workshop took place on March 31, and (2) that Council members were asked to submit budget priorities by end of April. These additional details cannot be verified from the provided source. The core substance of the challenges listed is accurate, but the surrounding contextual specifics (date and Council action item) go beyond what the extract supports.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    },
+    {
+      "claim_id": "claim_023",
+      "agenda_item": "Meeting Logistics",
+      "field": "whatIsHappening",
+      "claim_text": "The April 16, 2026 Regular City Council Meeting is scheduled for 7:00 PM at Council Chambers, City Hall, 216 W. Sealy, Alvin, Texas.",
+      "claim_type": "meeting_logistics",
+      "claim_weight": "high",
+      "citation_ids": [
+        "source_001"
+      ],
+      "source_extracts": [
+        {
+          "source_id": "source_001",
+          "text": "NOTICE is hereby given of a Regular Meeting and Executive Session of the City Council of the City of Alvin, Texas, to be held on Thursday, APRIL 16, 2026, at 7:00 PM in the Council Chambers at: City Hall, 216 W. Sealy, Alvin, Texas."
+        }
+      ],
+      "phase1": {
+        "accuracy_category": "Accurate",
+        "reasoning": "The source extract explicitly states the Regular Meeting is scheduled for Thursday, April 16, 2026, at 7:00 PM in the Council Chambers at City Hall, 216 W. Sealy, Alvin, Texas. Every detail in the claim — date, time, venue name, address, and city — matches the source precisely.",
+        "is_ok": true
+      },
+      "phase2": null,
+      "final_route": "ok"
+    }
+  ]
+}

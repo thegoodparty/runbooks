@@ -1,0 +1,6 @@
+{
+  "available": false,
+  "reason": "Databricks credentials not available in environment. DATABRICKS_SERVER_HOSTNAME key missing. VPN or credential configuration required to access Haystaq voter data.",
+  "query_attempted": "SELECT hs_topic_label, ROUND(AVG(hs_score) * 100, 1) AS aligned_voter_percentage, COUNT(*) AS voter_count FROM haystaq.voters_active WHERE Residence_Addresses_City = 'Alvin' AND Residence_Addresses_State = 'TX' AND hs_topic_label IN ('infrastructure', 'public safety', 'transportation', 'parks and recreation', 'zoning') GROUP BY hs_topic_label ORDER BY aligned_voter_percentage DESC",
+  "attempted_at": "2026-05-09T00:00:00Z"
+}

@@ -1,0 +1,5 @@
+{
+  "available": false,
+  "error": "Databricks credentials not configured — ModuleNotFoundError: No module named 'pandas'",
+  "attempted_at": "2026-05-10T01:57:59Z"
+}

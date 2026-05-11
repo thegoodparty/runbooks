@@ -1,0 +1,330 @@
+[
+  {
+    "claim_id": "claim_001",
+    "agenda_item": "5F — Lift Station 33 Rehabilitation",
+    "field": "budgetImpact",
+    "claim_text": "The total contract amount is $2,179,995.83, composed of a $2,076,186.50 base bid and a 5% contingency of $103,809.33.",
+    "claim_type": "budget_number",
+    "claim_weight": "high",
+    "citation_ids": ["source_002", "source_003"],
+    "source_extracts": [
+      {
+        "source_id": "source_002",
+        "text": "Contract Amount: $ 2,076,186.50 (Base Bid, Supplementary, and Allowance Items). 5% Contingency: $ 103,809.33. Total Amount: $ 2,179,995.83"
+      },
+      {
+        "source_id": "source_003",
+        "text": "TOTAL BASE BID, SUPPLEMENTARY BID, AND ALLOWANCE ITEMS ITEMS 1 - 42 $2,076,186.50"
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_002",
+    "agenda_item": "5F — Lift Station 33 Rehabilitation",
+    "field": "budgetImpact",
+    "claim_text": "The project is funded by the 2020, 2022, and 2023 Water and Sewer Revenue Bonds.",
+    "claim_type": "background_context",
+    "claim_weight": "high",
+    "citation_ids": ["source_002"],
+    "source_extracts": [
+      {
+        "source_id": "source_002",
+        "text": "The construction of this project will be funded by the 2020, 2022 and 2023 Water and Sewer Revenue Bonds."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_003",
+    "agenda_item": "5F — Lift Station 33 Rehabilitation",
+    "field": "whatIsHappening",
+    "claim_text": "Reddico Construction Company, Inc. was the only bidder; bids were opened March 24, 2026.",
+    "claim_type": "vote_or_decision_fact",
+    "claim_weight": "high",
+    "citation_ids": ["source_002", "source_003"],
+    "source_extracts": [
+      {
+        "source_id": "source_002",
+        "text": "On March 24, 2026, bids were opened for the Lift Station 33 Rehabilitation and Expansion Project, and Reddico Construction Company, Inc. was the qualified lone bidder."
+      },
+      {
+        "source_id": "source_003",
+        "text": "One ( 1 ) contracting firm submitted a bid for the project. No mathematical errors were found."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_004",
+    "agenda_item": "5F — Lift Station 33 Rehabilitation",
+    "field": "whatIsHappening",
+    "claim_text": "The project will expand Lift Station 33 to a firm pumping capacity of 2.65 million gallons per day and is scheduled to start May 2026 with a 365-calendar-day construction window.",
+    "claim_type": "date_or_deadline",
+    "claim_weight": "high",
+    "citation_ids": ["source_002"],
+    "source_extracts": [
+      {
+        "source_id": "source_002",
+        "text": "This project includes the rehabilitation and expansion of lift station 33 (located along Highway 35 across from Kendall Lakes) to a firm pumping capacity of 2.65 MGD."
+      },
+      {
+        "source_id": "source_002",
+        "text": "The project is scheduled to start in May 2026 and has a construction time of 365 calendar days."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_005",
+    "agenda_item": "6D — MVCPA Grant / Drone First Responder",
+    "field": "budgetImpact",
+    "claim_text": "The city's anticipated first-year cost for the grant program (both FLOCK cameras and FLOCK DFR) is approximately $64,000. Without the grant, annual cost would range from $150,000 to $310,000.",
+    "claim_type": "budget_number",
+    "claim_weight": "high",
+    "citation_ids": ["source_004"],
+    "source_extracts": [
+      {
+        "source_id": "source_004",
+        "text": "The anticipated city cost for the first year of the grant, for both FLOCK cameras and FLOCK DFR, is approximately $64,000.00. Year two cost would be the same if the grant is renewed. Without the grant, the yearly cost would range between $150,000 — $310,000 based on the DFR program level chosen."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_006",
+    "agenda_item": "6D — MVCPA Grant / Drone First Responder",
+    "field": "budgetImpact",
+    "claim_text": "The 8 FLOCK ALPR cameras are quoted at $39,200. The full DFR system at 400-foot ceiling is quoted at $275,000 per year.",
+    "claim_type": "budget_number",
+    "claim_weight": "high",
+    "citation_ids": ["source_006", "source_005"],
+    "source_extracts": [
+      {
+        "source_id": "source_006",
+        "text": "8 new Flock LPR cameras which are being requested for the area of FM 1462 at SH 288 at a cost of $39,200.00"
+      },
+      {
+        "source_id": "source_005",
+        "text": "A system with a 200 ft flight ceiling is quoted at $125,000 per year, while one with a 400 ft flight ceiling is quoted at $275,000 per year."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_007",
+    "agenda_item": "6D — MVCPA Grant / Drone First Responder",
+    "field": "whyItMatters",
+    "claim_text": "APD's average response time from dispatch to officer on scene at Walmart theft calls was just under 7 minutes over an 8-month period. The DFR drone can be on scene in 90 seconds.",
+    "claim_type": "background_context",
+    "claim_weight": "medium",
+    "citation_ids": ["source_005"],
+    "source_extracts": [
+      {
+        "source_id": "source_005",
+        "text": "Over 8 months of Alvin Police Department responding to theft calls at Walmart, the average time from dispatch to officer on scene was just under 7 minutes. A drone that responds to the same area from Alvin Police Department when the call is dispatched can be on scene within 90 seconds."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_008",
+    "agenda_item": "6D — MVCPA Grant / Drone First Responder",
+    "field": "whatDecision",
+    "claim_text": "The MVCPA grant application deadline is 5:00 PM, May 8, 2026.",
+    "claim_type": "date_or_deadline",
+    "claim_weight": "high",
+    "citation_ids": ["source_014"],
+    "source_extracts": [
+      {
+        "source_id": "source_014",
+        "text": "Grant Applications from eligible applicants must be completely submitted on-line at https://MVCPA.tamu.edu on or before 5:00 PM, May 8, 2026."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_009",
+    "agenda_item": "6D — MVCPA Grant / Drone First Responder",
+    "field": "whatIsHappening",
+    "claim_text": "The grant program requires a 20% city cash match and reimburses 80% of costs quarterly.",
+    "claim_type": "background_context",
+    "claim_weight": "high",
+    "citation_ids": ["source_004"],
+    "source_extracts": [
+      {
+        "source_id": "source_004",
+        "text": "The grant program is established under TTC chapter 1006, requires a 20% match of funds, and is distributed as a quarterly reimbursement with the agency/city funding the program and MVCPA reimbursing 80% of the cost quarterly."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_010",
+    "agenda_item": "6C — Ordinance 26-D, Commercial Vehicle Parking",
+    "field": "whatIsHappening",
+    "claim_text": "Council Member DeKeyzer requested a council workshop on January 15, 2026, after complaints about oversized and commercial vehicle parking.",
+    "claim_type": "named_person_or_role",
+    "claim_weight": "high",
+    "citation_ids": ["source_007"],
+    "source_extracts": [
+      {
+        "source_id": "source_007",
+        "text": "After the council and police department received several complaints about oversize and commercial vehicle parking, Council member DeKeyzer requested a council workshop which was held on Thursday, January 15, 2026."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_011",
+    "agenda_item": "6C — Ordinance 26-D, Commercial Vehicle Parking",
+    "field": "whatIsHappening",
+    "claim_text": "Violations carry a penalty not to exceed $500, with each day of violation constituting a separate offense.",
+    "claim_type": "legal_identifier",
+    "claim_weight": "high",
+    "citation_ids": ["source_007"],
+    "source_extracts": [
+      {
+        "source_id": "source_007",
+        "text": "providing for a penalty not to exceed five hundred dollars ($500) for violations"
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_012",
+    "agenda_item": "6B — Ordinance 26-C, ETJ Release (Moore)",
+    "field": "whatIsHappening",
+    "claim_text": "The petition covers approximately 5.2692 acres at 14830 Vacek Street, Santa Fe, Texas, owned by Christopher and Catherine Moore, Brazoria County Appraisal District Property ID No. 711814.",
+    "claim_type": "legal_identifier",
+    "claim_weight": "high",
+    "citation_ids": ["source_008"],
+    "source_extracts": [
+      {
+        "source_id": "source_008",
+        "text": "On or about March 31, 2026, the City received a Petition for Release from the Extraterritorial Jurisdiction (ETJ) of the City of Alvin from Christopher and Catherine Moore, the owners of approximately 5.2692 acres of land located at 14830 Vacek Street, Santa Fe, Texas identified by the Brazoria County Appraisal District as Property ID No. 711814."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_013",
+    "agenda_item": "6B — Ordinance 26-C, ETJ Release (Moore)",
+    "field": "whatDecision",
+    "claim_text": "The statutory deadline for the city to act on this ETJ release petition is May 15, 2026.",
+    "claim_type": "date_or_deadline",
+    "claim_weight": "high",
+    "citation_ids": ["source_008"],
+    "source_extracts": [
+      {
+        "source_id": "source_008",
+        "text": "Based on the date the petition was received, the statutory deadline for release, in this case, is May 15, 2026."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_014",
+    "agenda_item": "6B — Ordinance 26-C, ETJ Release (Moore)",
+    "field": "whyItMatters",
+    "claim_text": "At the March 19, 2026 meeting, the council voted unanimously no on Ordinances 26-A and 26-B (ETJ releases for 25 acres and 4 acres, respectively). Council Member Moore stated the votes were to formally document objection to the process, not opposition to the individual owners.",
+    "claim_type": "vote_or_decision_fact",
+    "claim_weight": "high",
+    "citation_ids": ["source_009"],
+    "source_extracts": [
+      {
+        "source_id": "source_009",
+        "text": "Council member DeKeyzer moved to approve Ordinance 26-A; releasing approximately 25 acres of land from the Extraterritorial Jurisdiction of the City of Alvin, Texas; providing findings of fact; containing a severability clause; and providing for other matters related thereto. Seconded by Council member Moore; motion failed with all members present voting No."
+      },
+      {
+        "source_id": "source_009",
+        "text": "Council Member Moore clarified for the public that the Council is not necessarily opposed to the release of properties from the ETJ. However, because state law requires Council to take action on such requests while also providing for their automatic release by statute, he indicated that Council will vote against these items to formally document its objection to the process."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_015",
+    "agenda_item": "6A — ACFR Presentation",
+    "field": "whatIsHappening",
+    "claim_text": "The City of Alvin received an unmodified audit opinion from Crowe LLP for FY2025 (fiscal year ending September 30, 2025). The ACFR was filed with the city secretary on March 27, 2026.",
+    "claim_type": "vote_or_decision_fact",
+    "claim_weight": "high",
+    "citation_ids": ["source_012"],
+    "source_extracts": [
+      {
+        "source_id": "source_012",
+        "text": "For FY25, the City received an unmodified opinion from the auditors – which is the highest form of assurance that our financial statements 'give a true and fair view' of the City's financial position."
+      },
+      {
+        "source_id": "source_012",
+        "text": "the annual financial statements, including the auditor's opinion must be filed with the City Secretary within 180 days after the last day of the fiscal year (September 30, 2025), and were filed in accordance with this requirement and made available on the City's website on March 27, 2026."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_016",
+    "agenda_item": "Council composition",
+    "field": "councilMember",
+    "claim_text": "The Alvin City Council as of April 16, 2026 consists of: Mayor Gabe Adame; Mayor Pro-Tem Meagan DeKeyzer (District E); Ashley Davis (District D); Martin Vela (District A); Keko Moore (At-Large P1); Chris Vaughn (District B); Scott Salter (At-Large P2); Richard Garivey (District C).",
+    "claim_type": "named_person_or_role",
+    "claim_weight": "high",
+    "citation_ids": ["source_001"],
+    "source_extracts": [
+      {
+        "source_id": "source_001",
+        "text": "Gabe Adame, Mayor\nMeagan DeKeyzer, Mayor Pro-tem, District E\nAshley Davis, District D\nMartin Vela, District A\nKeko Moore At-Lg P1\nChris Vaughn, District B\nScott Salter, At-Lg P2\nRichard Garivey, District C"
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_017",
+    "agenda_item": "Meeting logistics",
+    "field": "meeting",
+    "claim_text": "The meeting is a Regular Meeting and Executive Session of the City Council of the City of Alvin, Texas, to be held on Thursday, April 16, 2026, at 7:00 PM in the Council Chambers at City Hall, 216 W. Sealy, Alvin, Texas.",
+    "claim_type": "meeting_logistics",
+    "claim_weight": "high",
+    "citation_ids": ["source_001"],
+    "source_extracts": [
+      {
+        "source_id": "source_001",
+        "text": "NOTICE is hereby given of a Regular Meeting and Executive Session of the City Council of the City of Alvin, Texas, to be held on Thursday, APRIL 16, 2026, at 7:00 PM in the Council Chambers at: City Hall, 216 W. Sealy, Alvin, Texas."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_018",
+    "agenda_item": "5F — Lift Station 33 Rehabilitation",
+    "field": "talkingPoints",
+    "claim_text": "These improvements were based on recommendations in the 2015 Utility Master Plan by Freese and Nichols, Inc., approved by City Council on March 3, 2016, and are also included in the Capital Improvement Plan.",
+    "claim_type": "background_context",
+    "claim_weight": "medium",
+    "citation_ids": ["source_002"],
+    "source_extracts": [
+      {
+        "source_id": "source_002",
+        "text": "These improvements were based on recommendations in the 2015 Utility Master Plan by Freese and Nichols, Inc. that was approved by City Council on March 3, 2016; and is also included in the Capital Improvement Plan."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_019",
+    "agenda_item": "5E — Rosharon VFD Interlocal Agreement",
+    "field": "budgetImpact",
+    "claim_text": "The Interlocal Agreement with Rosharon Volunteer Fire Department for fire protection at Preservation Creek is for an amount not to exceed $12,000, with a one-time payment due April 20, 2026, from account 111-3502-00-3100.",
+    "claim_type": "budget_number",
+    "claim_weight": "high",
+    "citation_ids": ["source_001"],
+    "source_extracts": [
+      {
+        "source_id": "source_001",
+        "text": "Consider an Interlocal Agreement between the City of Alvin and the Rosharon Volunteer Fire Department for fire protection services for the Preservation Creek Subdivision Development Area through December 31, 2026, for an amount not to exceed $12,000.00; and authorize the Mayor to sign the Agreement."
+      },
+      {
+        "source_id": "source_001",
+        "text": "Upon the effective date of this Agreement, CITY shall make one (1) payment of Twelve Thousand Dollars and No Cents ($12,000.00), to ROSHARON VFD on April 20, 2026."
+      }
+    ]
+  },
+  {
+    "claim_id": "claim_020",
+    "agenda_item": "6D — MVCPA Grant / Drone First Responder",
+    "field": "whyItMatters",
+    "claim_text": "Preservation Creek is upwards of 15 minutes from Alvin proper, meaning two-officer responses to calls there will reduce effective patrol by at least one-third per call.",
+    "claim_type": "background_context",
+    "claim_weight": "medium",
+    "citation_ids": ["source_005"],
+    "source_extracts": [
+      {
+        "source_id": "source_005",
+        "text": "Due to the distance from Alvin proper - upwards of 15 minutes in most cases - a typical call response to the area will likely consist of two officers being sent so that backup is nearby should it be needed. This will result in two officers not being available to respond to other Alvin calls for service for significant lengths of time, likely multiple times per shift. As current fully staffed shifts only have six officers available when no one is out for the day, such calls would reduce the effective force by at least one third, often more, during each Preservation Creek call for service."
+      }
+    ]
+  }
+]

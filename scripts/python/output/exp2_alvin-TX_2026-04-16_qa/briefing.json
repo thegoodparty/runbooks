@@ -1,0 +1,297 @@
+{
+  "meeting": {
+    "title": "City of Alvin Regular City Council Meeting",
+    "date": "2026-04-16",
+    "citySlug": "alvin-TX",
+    "body": "City Council",
+    "time": "7:00 PM",
+    "location": "Council Chambers, Alvin City Hall, 216 West Sealy, Alvin, Texas 77511"
+  },
+  "councilMember": {
+    "name": "Chris Vaughn",
+    "district": "District B",
+    "role": "Council Member",
+    "notes": "Vaughn cast the lone dissenting vote against the March 19, 2026 Foul Play Restaurant economic development grant ($61,000), separating himself from the 6-1 majority. He has signaled interest in constituent concerns about commercial development and neighborhood impacts. At the March 19 meeting he requested follow-up on a constituent's emotional support animal issue."
+  },
+  "executiveSummary": {
+    "totalAgendaItems": 15,
+    "priorityItemCount": 5,
+    "note": "Tonight's agenda is substantive. Five items deserve your real attention: a $2.18M infrastructure contract, a police drone/camera grant authorization, a commercial vehicle parking ordinance with neighborhood implications, another ETJ release petition (the third in two months), and the city's annual audit presentation. The consent agenda is clean — standard items. Executive session is personnel only."
+  },
+  "priorityIssues": [
+    {
+      "agendaItemTitle": "Lift Station 33 Rehabilitation and Expansion Project — Award of Bid to Reddico Construction",
+      "itemNumber": "5F",
+      "actionType": "vote",
+      "detail": {
+        "whatIsHappening": "You're voting to award a $2.18M wastewater infrastructure contract to Reddico Construction Company, Inc. of Conroe, TX. There was only one bidder. LJA Engineering reviewed the lone bid and recommends award. Reddico is already under contract for the nearby Lift Station 23 expansion and staff reports no performance issues. The project rehabilitates Lift Station 33 along Highway 35 across from Kendall Lakes, upgrading it to a firm pumping capacity of 2.65 MGD. It starts in May 2026 with a 365-day construction timeline.",
+        "whatDecision": "Vote yes or no to award the contract and authorize the City Manager to sign.",
+        "whyItMatters": "This is the water/sewer backbone for the Highway 35 corridor. As Preservation Creek and other developments come online, capacity at LS 33 becomes a constraint. Approving it now keeps the city ahead of growth rather than reacting to failures. This project traces to a 2015 utility master plan — it's been coming for over a decade.",
+        "budgetImpact": "$2,179,995.83 total (base bid of $2,076,186.50 plus 5% contingency of $103,809.33). Funded by 2020, 2022, and 2023 Water and Sewer Revenue Bonds — not general fund. Spread across ~10,500 households, that is approximately $208/household in previously authorized bond capacity.",
+        "whoIsPresenting": "City Engineer Michelle Segovia"
+      },
+      "talkingPoints": [
+        "The single-bidder situation deserves a brief question on the record: ask staff whether they marketed the bid broadly and whether the 5% contingency is sufficient given the lone-bid dynamic. It is, but getting that confirmed publicly protects you if costs run over.",
+        "Reddico's current performance on Lift Station 23 is the key data point. Staff says no issues — ask for a one-sentence update in the meeting. Council member Salter raised infrastructure quality concerns at the March 31 budget workshop; you can connect to that framing.",
+        "This project is tied directly to your district's future as growth spreads west on Highway 35. Every new connection from Preservation Creek and the Cardon development discussed in the March 19 workshop flows through infrastructure like this. Approving it tonight is a vote for the city's capacity to handle what's already been approved."
+      ],
+      "actionItem": "Confirm Reddico's current LS 23 performance with staff before the vote and ask for a status update on the record — then vote yes.",
+      "sourceCitations": [
+        {
+          "field": "whatIsHappening",
+          "quote": "On March 24, 2026, bids were opened for the Lift Station 33 Rehabilitation and Expansion Project, and Reddico Construction Company, Inc. was the qualified lone bidder. LJA Engineering, the City's consultant that designed the project, reviewed bid that was received and has recommended Reddico Construction Company, Inc. for this project."
+        },
+        {
+          "field": "whatIsHappening",
+          "quote": "This project includes the rehabilitation and expansion of lift station 33 (located along Highway 35 across from Kendall Lakes) to a firm pumping capacity of 2.65 MGD. The project will utilize and rehabilitate the existing wet well, as well as, replace the mechanical equipment, electrical components, and emergency generator."
+        },
+        {
+          "field": "budgetImpact",
+          "quote": "Contract Amount: $ 2,076,186.50 (Base Bid, Supplementary, and Allowance Items). 5% Contingency: $ 103,809.33 Total Amount: $ 2,179,995.83"
+        },
+        {
+          "field": "budgetImpact",
+          "quote": "The construction of this project will be funded by the 2020, 2022 and 2023 Water and Sewer Revenue Bonds."
+        }
+      ],
+      "constituentSentiment": {
+        "available": false,
+        "issue_label": "infrastructure",
+        "aligned_voter_percentage": null,
+        "provenance_note": "Constituent data unavailable — Databricks credentials not configured."
+      }
+    },
+    {
+      "agendaItemTitle": "Resolution 26-R-20 — MVCPA Grant Authorization: Drone First Responder System and 8 FLOCK ALPR Cameras",
+      "itemNumber": "6D",
+      "actionType": "vote",
+      "detail": {
+        "whatIsHappening": "You're voting to authorize APD to apply for a Texas Motor Vehicle Crime Prevention Authority (MVCPA) grant to fund a Drone First Responder (DFR) system from Flock Safety plus eight additional FLOCK automatic license plate reader cameras. The grant requires a 20% city cash match; MVCPA reimburses 80% quarterly. The city's out-of-pocket first-year cost is approximately $64,000 if the grant is awarded, compared to $150,000-$310,000 without the grant. The eight cameras would be deployed in the FM 1462/SH 288 corridor in response to rapid development there. The grant application deadline is May 8, 2026 — this resolution is a prerequisite. You are not approving a specific expenditure tonight; you are authorizing APD to apply.",
+        "whatDecision": "Vote to authorize the grant application and designate Police Chief Robert E. Lee as the authorized official to apply for, accept, reject, alter, or terminate the grant.",
+        "whyItMatters": "Preservation Creek is about to generate significant call volume in an area that is 15 minutes from Alvin proper. Current staffing — six officers per fully-staffed shift — means Preservation Creek calls will routinely pull one-third or more of available patrol capacity. The drone is positioned as a force multiplier specifically for that problem. The ALPR cameras in the FM 1462/SH 288 corridor address the incoming development wave. The technology question (vendor concentration with Flock Safety) is worth noting.",
+        "budgetImpact": "City match if awarded: approximately $64,000 for year one (200 ft ceiling option) up to $275,000 per year (400 ft ceiling option). Without grant: $150,000-$310,000/year. Staff estimates first-year city cost at approximately $64,000 with grant, which is roughly $6/household. The FY27 budget would need to carry this — no current budget appropriation.",
+        "whoIsPresenting": "Police Chief Robert E. Lee"
+      },
+      "talkingPoints": [
+        "The grant application deadline is May 8 — this council approval is the gating item. If you want to ask questions about the full program cost before FY27 budgeting, this is your moment: ask Chief Lee what the FY27 line item would look like at the 200 ft vs. 400 ft option so the Finance Director can plan ahead. The March 31 budget workshop made clear that new spending needs budget alignment.",
+        "Council member Moore has been active on public safety and the development impact in the Preservation Creek area — he would likely support this framing. The DFR rationale in the staff memo is explicit about Preservation Creek as the driver of the need.",
+        "You voted against the Foul Play restaurant grant in March over concerns about geographic distribution of economic development incentives. This vote is different in kind — a state-funded law enforcement grant with a documented public safety rationale — but note that Flock Safety is becoming the city's sole-source vendor for both cameras and drones. Ask whether the contract allows termination without penalty if the grant is not renewed in future years."
+      ],
+      "actionItem": "Ask Chief Lee to confirm the annual renewal cost and the exit terms of the Flock contract before the vote, then support the application authorization.",
+      "sourceCitations": [
+        {
+          "field": "whatIsHappening",
+          "quote": "The anticipated city cost for the first year of the grant, for both FLOCK cameras and FLOCK DFR, is approximately $64,000.00. Year two cost would be the same if the grant is renewed. Without the grant, the yearly cost would range between $150,000 — $310,000 based on the DFR program level chosen."
+        },
+        {
+          "field": "whatIsHappening",
+          "quote": "With this grant we intend to add eight (8) FLOCK ALPR cameras to our current inventory. These cameras will be deployed in the area of FM 1462 and SH 288, Alvin West in response to the rapid development of the area."
+        },
+        {
+          "field": "whyItMatters",
+          "quote": "As to the near future, with the high likelihood that there will be occupied homes in Preservation Creek before the '27 budget year begins, Alvin Police Department will begin responding to a significantly increased number of calls in the Preservation Creek area. Due to the distance from Alvin proper - upwards of 15 minutes in most cases - a typical call response to the area will likely consist of two officers being sent so that backup is nearby should it be needed. This will result in two officers not being available to respond to other Alvin calls for service for significant lengths of time, likely multiple times per shift."
+        },
+        {
+          "field": "whatDecision",
+          "quote": "Section 3. The City Council has considered the matter and deems it in the public interest to authorize this action, and hereby authorizes Robert E. Lee, the Chief of Police for the Alvin Police Department, as the authorized official who is hereby given the authority to apply for, accept, reject, alter, or terminate a grant with the Motor Vehicle Crime Prevention Authority for a Drone First Responder (DFR) system from Flock Safety."
+        }
+      ],
+      "constituentSentiment": {
+        "available": false,
+        "issue_label": "public safety",
+        "aligned_voter_percentage": null,
+        "provenance_note": "Constituent data unavailable — Databricks credentials not configured."
+      }
+    },
+    {
+      "agendaItemTitle": "Ordinance 26-D — Commercial Motor Vehicle and Oversized Vehicle Parking Restrictions",
+      "itemNumber": "6C",
+      "actionType": "vote",
+      "detail": {
+        "whatIsHappening": "You're voting on a new parking ordinance that Mayor Pro-Tem Meagan DeKeyzer drove after constituent complaints about oversized and commercial vehicle parking. The ordinance does two things: (1) restricts vehicles over 25 feet in length to daytime parking only — no overnight parking 10 PM to 6 AM; and (2) bans commercial motor vehicles from parking on city streets at any time except for immediate loading/unloading, with a full overnight prohibition. A construction zone exemption is included. The penalty is up to $500 per violation, per day. The ordinance also fixes a flaw in the old code that inadvertently made lawn trailer trucks illegal to park at any time.",
+        "whatDecision": "Vote to approve Ordinance 26-D as written, amend it, or reject it.",
+        "whyItMatters": "This is a neighborhood quality-of-life issue with a real enforcement question: APD will need to actually ticket violators. Ask Chief Lee whether enforcement is resourced. The ordinance also has an economic impact on small service businesses — lawn companies, delivery drivers, tradespeople — who park near job sites. The daytime exemption helps them. This follows a January 15, 2026 council workshop requested by Council member DeKeyzer.",
+        "budgetImpact": "No direct budget impact cited. Enforcement cost is absorbed by APD. Fine revenue (up to $500/violation/day) would go to general fund but is not projected in the staff report.",
+        "whoIsPresenting": "Police Chief Robert E. Lee"
+      },
+      "talkingPoints": [
+        "The ordinance was driven by Council member DeKeyzer responding to constituent complaints — give her credit for that publicly. Your District B constituents likely share these complaints, given Alvin's growth and increasing commercial traffic. Ask whether specific complaint clusters were in District B.",
+        "The lawn company carveout is intentional and smart — the old ordinance technically banned trucks with trailers from parking at any time. The new language allows daytime parking for vehicles over 25 feet. Flag this improvement explicitly so small business owners in your district know the council was thinking of them.",
+        "The enforcement question is real: a parking ordinance without enforcement is symbolic. Ask Chief Lee whether APD has a plan for proactive enforcement or whether this will be complaint-driven only. Complaint-driven enforcement in residential areas can create neighbor-versus-neighbor friction."
+      ],
+      "actionItem": "Ask Chief Lee before the vote how APD will operationalize enforcement — proactive or complaint-driven — and whether signage will be posted in affected areas.",
+      "sourceCitations": [
+        {
+          "field": "whatIsHappening",
+          "quote": "After the council and police department received several complaints about oversize and commercial vehicle parking, Council member DeKeyzer requested a council workshop which was held on Thursday, January 15, 2026. Currently, Chapter 24 of the City of Alvin Ordinances only prohibits vehicles over 25' in length from parking on a city street. At the workshop, the fact that some tractor trailers did not exceed 25' in length was discussed, as well as the technical issue that, under the current ordinance, it is a violation for the majority of lawn companies who pull a trailer behind a truck to carry their lawn equipment, since that combination often does exceed 25' and makes them, again technically, not allowed to park on any city street."
+        },
+        {
+          "field": "whatIsHappening",
+          "quote": "Sec. 24-49 Parking of Commercial Motor Vehicles Restricted: No person shall stop, stand or park any commercial motor vehicle on any street, alley or other public way of the city during daytime hours except for the express purpose of immediate loading or unloading. Parking between the hours of 10 p.m. and 6 a.m. is prohibited."
+        },
+        {
+          "field": "whatIsHappening",
+          "quote": "Any person, firm, entity, or corporation violating any provision of this Ordinance, as it exists or may be amended, shall be deemed guilty of a misdemeanor and, upon conviction, shall be punished in accordance with Section 1-5 (General Penalty; Continuing Violations) of the Code of Ordinances of the City of Alvin, Texas, with a fine not to exceed five hundred dollars ($500.00). Each day a violation continues shall constitute a separate offense."
+        }
+      ],
+      "constituentSentiment": {
+        "available": false,
+        "issue_label": "transportation",
+        "aligned_voter_percentage": null,
+        "provenance_note": "Constituent data unavailable — Databricks credentials not configured."
+      }
+    },
+    {
+      "agendaItemTitle": "Ordinance 26-C — ETJ Release, 14830 Vacek Street (5.2692 acres, Christopher and Catherine Moore)",
+      "itemNumber": "6B",
+      "actionType": "vote",
+      "detail": {
+        "whatIsHappening": "This is the third ETJ release petition in two months. The owners of 5.2692 acres at 14830 Vacek Street in Santa Fe want out of Alvin's ETJ so they can build a home and get permits through Brazoria County. The March 19 council unanimously voted no on two similar petitions (26-A and 26-B), with Council member Moore explicitly stating the no votes were a protest of the state law process — not opposition to the individual property owners. State law requires the council to act within 45 days of receiving the petition or the property releases automatically. The statutory deadline here is May 15, 2026 — so this council meeting is early, not last-minute.",
+        "whatDecision": "Vote yes (release the ETJ) or vote no (the property releases automatically by May 15, 2026 under state law regardless of the vote).",
+        "whyItMatters": "The ETJ is Alvin's growth buffer. These releases chip away at it one parcel at a time. Moore has made this a pattern he wants documented in the record. The council's unanimous no votes in March were a coordinated signal — to the state legislature, to landowners, and to the public — that the council objects to the mechanism even when it cannot stop individual releases. This property is in the '100-foot strip' area, which is a recurring boundary challenge for the city.",
+        "budgetImpact": "No direct budget impact. Long-term, each ETJ release represents future development the city cannot annex, tax, or regulate.",
+        "whoIsPresenting": "City Manager Junru Roland"
+      },
+      "talkingPoints": [
+        "Council member Moore set the frame in March: 'the Council is not necessarily opposed to the release of properties from the ETJ. However, because state law requires Council to take action on such requests while also providing for their automatic release by statute, he indicated that Council will vote against these items to formally document its objection to the process.' If you plan to join that no-vote coalition again tonight, say so explicitly using this framing.",
+        "This property is adjacent to the parcel from the March 19 meeting (the Leigh property at 15505 Vacek St) that was denied and auto-released. The Moores are likely building a home, not developing commercially — but the council's objection is to the state law mechanism, not the individuals. Make that distinction clearly if you address it publicly.",
+        "The May 15 statutory deadline gives the city 29 days of leverage it isn't actually using. If there are conditions or conversations worth having with this landowner before the deadline, tonight's vote doesn't preclude that — but a yes vote forecloses it."
+      ],
+      "actionItem": "Decide before the meeting whether you're joining Moore's coordinated no-vote coalition or voting yes. Ask Junru Roland if there has been any contact with the Moores about potential ETJ-friendly options before the vote.",
+      "sourceCitations": [
+        {
+          "field": "whatIsHappening",
+          "quote": "On or about March 31, 2026, the City received a Petition for Release from the Extraterritorial Jurisdiction (ETJ) of the City of Alvin from Christopher and Catherine Moore, the owners of approximately 5.2692 acres of land located at 14830 Vacek Street, Santa Fe, Texas, in unincorporated Brazoria County. This property is adjacent to the ETJ release petition that was presented to City Council for consideration at the March 19 meeting, which was denied and subsequently released by operation of state law."
+        },
+        {
+          "field": "whatDecision",
+          "quote": "Under Section 42.105 of the Texas Local Government Code, if a petition satisfies the statutory requirements, the municipality must release the property from its extraterritorial jurisdiction. The governing body must take action on the petition by the later of: the 45th day after the date the municipality receives the petition; or the next meeting of the governing body occurring after the 30th day following receipt of the petition. If the city doesn't release the property within the statutory timeframe, the area is released by operation of state law. Based on the date the petition was received, the statutory deadline for release, in this case, is May 15, 2026."
+        },
+        {
+          "field": "whyItMatters",
+          "quote": "Council Member Moore clarified for the public that the Council is not necessarily opposed to the release of properties from the ETJ. However, because state law requires Council to take action on such requests while also providing for their automatic release by statute, he indicated that Council will vote against these items to formally document its objection to the process."
+        }
+      ],
+      "constituentSentiment": {
+        "available": false,
+        "issue_label": "zoning",
+        "aligned_voter_percentage": null,
+        "provenance_note": "Constituent data unavailable — Databricks credentials not configured."
+      }
+    },
+    {
+      "agendaItemTitle": "FY2025 Annual Comprehensive Financial Report (ACFR) — Presentation by Crowe LLP",
+      "itemNumber": "6A",
+      "actionType": "discussion",
+      "detail": {
+        "whatIsHappening": "Crowe LLP partner Stephanie Harris will present the city's FY2025 ACFR, covering the fiscal year ended September 30, 2025. The city received an unmodified audit opinion — the cleanest possible outcome, meaning auditors found the financial statements give a true and fair view of the city's financial position. The ACFR was filed with the City Secretary on March 27, 2026, meeting the state's 180-day deadline. Hard copies will be distributed at the meeting. Council acknowledges receipt — this is not a vote on budget changes.",
+        "whatDecision": "Move to acknowledge receipt of the FY2025 ACFR. No substantive vote.",
+        "whyItMatters": "The ACFR is your annual window into the city's actual financial health — fund balances, revenues vs. expenditures, debt service obligations, and reserve levels. With FY27 budgeting starting (the March 31 workshop launched that process, with Council member input due by end of April), the ACFR is the financial baseline for everything you'll be asked to approve over the next six months.",
+        "budgetImpact": "No direct expenditure. This is the accounting record of FY25 activity.",
+        "whoIsPresenting": "Stephanie Harris, Partner, Crowe LLP; Finance Director Michael Gibbs"
+      },
+      "talkingPoints": [
+        "The unmodified opinion is good news — say so publicly and thank the Finance Director and Crowe LLP. It matters for bond ratings and investor confidence, which directly affects the city's borrowing cost on future infrastructure bonds.",
+        "Use this presentation to ask Crowe one question on the record: what, if anything, did they note in the management letter (audit communication letter) that council should be aware of? Even a clean opinion often has management observations. City Manager Roland received this letter — ask him to summarize any findings before Crowe concludes.",
+        "The March 31 budget workshop made clear that the FY27 budget will carry significant pressure from the Preservation Creek build-out, the 100-foot strip issue, rising service costs, and state legislative changes. Ask Finance Director Gibbs whether the FY25 fund balance gives the city enough reserve runway to absorb the capital demands coming in FY27-28 without a tax rate increase."
+      ],
+      "actionItem": "Ask Crowe's partner and Finance Director Michael Gibbs whether the audit communication letter contained any management observations, and whether fund balances are sufficient to support FY27 capital demands.",
+      "sourceCitations": [
+        {
+          "field": "whatIsHappening",
+          "quote": "As required by state statute, an independent audit has been completed by the CPA firm of Crowe LLP, for the fiscal year ending September 30, 2025. At the end of an audit, Generally Accepted Auditing Standards mandate that auditors must express an opinion on the financial records. For FY25, the City received an unmodified opinion from the auditors – which is the highest form of assurance that our financial statements 'give a true and fair view' of the City's financial position."
+        },
+        {
+          "field": "whatIsHappening",
+          "quote": "Pursuant to Section 103.003 of the Texas Local Government Code, the annual financial statements, including the auditor's opinion must be filed with the City Secretary within 180 days after the last day of the fiscal year (September 30, 2025), and were filed in accordance with this requirement and made available on the City's website on March 27, 2026."
+        }
+      ],
+      "constituentSentiment": {
+        "available": false,
+        "issue_label": "infrastructure",
+        "aligned_voter_percentage": null,
+        "provenance_note": "Constituent data unavailable — Databricks credentials not configured."
+      }
+    }
+  ],
+  "constituentData": {
+    "available": false,
+    "provenance_note": "Constituent data unavailable — Databricks credentials not configured. Haystaq query attempted but failed due to missing Python dependencies (ModuleNotFoundError: No module named 'pandas').",
+    "voter_count": 0,
+    "top_issues": []
+  },
+  "sources": [
+    {
+      "source_id": "source_001",
+      "type": "government_record",
+      "title": "City of Alvin, Texas — City Council Agenda, April 16, 2026 (176-page packet including staff reports, ordinances, resolutions, and minutes)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_002",
+      "type": "government_record",
+      "title": "City of Alvin March 19, 2026 Regular City Council Meeting Minutes (included in April 16 agenda packet, pp. 8-13)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_003",
+      "type": "staff_report",
+      "title": "Agenda Commentary and LJA Engineering Bid Recommendation Letter — Lift Station 33 Rehabilitation and Expansion Project (Reddico Construction, March 30, 2026)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_004",
+      "type": "staff_report",
+      "title": "Agenda Commentary — Resolution 26-R-20: MVCPA Grant / Drone First Responder Program (APD Cpl. J. Cleere memos dated Feb 26 and Mar 25, 2026; MVCPA FY2027 RFA dated March 16, 2026)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_005",
+      "type": "staff_report",
+      "title": "Agenda Commentary — Ordinance 26-D: Commercial Vehicle and Oversized Vehicle Parking Restrictions (Police Dept, Chief Robert Lee; January 15, 2026 workshop background)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_006",
+      "type": "staff_report",
+      "title": "Agenda Commentary — Ordinance 26-C: ETJ Release, 14830 Vacek Street (5.2692 acres, Christopher and Catherine Moore; petition received March 31, 2026)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_007",
+      "type": "staff_report",
+      "title": "Agenda Commentary — FY2025 Annual Comprehensive Financial Report, Crowe LLP (Finance Director Michael Gibbs; ACFR filed with City Secretary March 27, 2026)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_008",
+      "type": "staff_report",
+      "title": "Agenda Commentary — 2027-2031 Capital Improvement Program (City Engineer Michelle Segovia; presented at March 31, 2026 workshop)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_009",
+      "type": "staff_report",
+      "title": "Agenda Commentary — Interlocal Agreement with Rosharon Volunteer Fire Department for Preservation Creek fire protection services through December 31, 2026",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    },
+    {
+      "source_id": "source_010",
+      "type": "government_record",
+      "title": "City of Alvin March 31, 2026 City Council Workshop Minutes — FY27 Budget Planning, Strategic Plans, and Capital Projects overview (City Manager Junru Roland)",
+      "url": "https://www.alvin.gov",
+      "accessed_at": "2026-05-10T01:57:59Z"
+    }
+  ],
+  "generatedAt": "2026-05-10T01:57:59Z",
+  "generationProvider": "agent"
+}
