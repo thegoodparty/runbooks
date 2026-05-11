@@ -21,7 +21,7 @@ RUNBOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 ## Prerequisites
 
-**scripts/.env variables**: `DATABRICKS_SERVER_HOSTNAME`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_API_KEY`
+**scripts/.env variables**: `DATABRICKS_HOST`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_TOKEN`
 **Tools**: `uv` (Python runtime), WireGuard VPN connected (for Databricks access), `pdftotext` (for staff report extraction)
 **Access**: Internet (for agenda platform discovery, news, and fiscal data)
 
@@ -66,7 +66,7 @@ The `pdf` field is optional. If omitted, the agent discovers the meeting platfor
 
 ### 2. Run the generation agent
 
-Spawn an agent using `books/instructions/meeting_briefing.md` as its instruction. Pass `$RUN_DIR` as the agent's workspace.
+Spawn an agent using `books/meeting-briefing-agent.md` as its instruction. Pass `$RUN_DIR` as the agent's workspace.
 
 The agent will:
 - Discover the council member and meeting platform
@@ -94,3 +94,56 @@ uv run python briefing_to_pdf.py \
 | Haystaq returns no results | VPN not connected or credentials not set | Connect WireGuard; add Databricks vars to `scripts/.env` |
 | `pdftotext` not found | Tool not installed | `brew install poppler` (macOS) |
 | Constituent data omitted | Databricks credentials absent | Expected — briefing generates without constituent sentiment |
+
+---
+
+## Design decisions
+
+**Agent-driven generation.** The executing agent IS the intelligence — it researches, reasons, and writes. There is no Python script making LLM API calls for generation. `generate_meeting_briefing.py` was an earlier prototype that followed the wrong pattern and has been removed.
+
+**LLM-agnostic instruction file.** `books/meeting-briefing-agent.md` does not reference any specific model or provider. Any agent capable of web search, file read/write, and Bash can execute it.
+
+**Voice and register are prescribed in the instruction.** The generation instruction explicitly requires second-person direct voice, specific talking points naming council members, and per-household budget framing. This is not left to the model's default behavior.
+
+**Constituent data is Haystaq-sourced and labeled as modeled.** The instruction requires all sentiment figures to carry a provenance note. City-wide scope is the default. District-level data is available if the Haystaq query is extended with district filters.
+
+**Naive subagents for testing.** When running experiments, the generation agent should be a fresh subagent with no context from the development session. This tests whether the instruction is self-sufficient — if a naive agent can follow it cold, it is production-ready.
+
+## Output schema (`briefing.json`)
+
+```
+meeting.{title, date, citySlug, body, time}
+executiveSummary.{totalAgendaItems, priorityItemCount}
+priorityIssues[].{
+  agendaItemTitle, itemNumber, actionType,
+  detail.{whatIsHappening, whatDecision, whyItMatters, budgetImpact, whoIsPresenting},
+  talkingPoints[],
+  actionItem,
+  sourceCitations[].{field, quote},
+  constituentSentiment.{available, issue_label, aligned_voter_percentage, provenance_note}
+}
+constituentData.{available, provenance_note, voter_count, top_issues[]}
+sources[]
+```
+
+## Known gaps
+
+**Briefing anatomy does not match the reference design.** Specific fixes needed in priority order:
+
+1. `briefing_to_pdf.py` does not render `talkingPoints` or `actionItem` — both fields exist in `briefing.json` but the renderer ignores them. Most important fix.
+2. Section headers — renderer uses `**bold labels**` instead of `### Section Name` headers.
+3. Constituent sentiment — renderer omits the section entirely when unavailable; it should show "No sentiment data yet for [item]."
+4. Constituent quote — not in the schema or instruction at all. Needs a `constituentQuote` field added to both.
+5. Two-section structure — the reference design has a card summary + full briefing deep-dive per item. The renderer produces one merged view.
+
+**TODO: Fix `briefing_to_pdf.py`** — render talking points, action item, section headers, sentiment no-data state
+
+**TODO: Add `constituentQuote`** to schema and instruction
+
+**TODO: Run experiment 3 with live Haystaq data** — Databricks credentials are confirmed working (`DATABRICKS_HOST`, `DATABRICKS_TOKEN` resolved via `find_dotenv()`)
+
+**TODO: District-level Haystaq scope** — add district type and name filters to the Haystaq query in the instruction; city-wide is the current default
+
+**TODO: Legistar API direct integration** — agent currently discovers meeting platform via web search; a direct Legistar client would be more reliable for cities that use it
+
+**TODO: OCR fallback** — `pdftotext` returns empty for scanned PDFs; the instruction should include a fallback path (`pdfplumber` is the working alternative)
