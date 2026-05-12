@@ -122,7 +122,9 @@ Surface budget figures only when they appear in the source documents. Do not est
 
 **Anchoring:** Compare to a prior council decision when possible to ground the figure in something familiar.
 
-All dollar amounts must match the source exactly. Flag any discrepancy between figures appearing in different source documents rather than resolving it silently.
+Dollar amounts and vote counts must be extracted from source exactly -- do not round, paraphrase, or infer. Flag any discrepancy between figures appearing in different source documents rather than resolving it silently.
+
+[TBD: confirm available PDF parsing libraries in the Fargate container and add extraction code snippet here.]
 
 ---
 

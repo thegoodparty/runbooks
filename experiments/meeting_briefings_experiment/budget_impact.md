@@ -20,6 +20,12 @@ Compare to a prior council decision when possible. This grounds the number in so
 Example:
 $11/household over 10 years is half what we spent on the downtown banner program.
 
+## Numeric precision
+
+Dollar amounts and vote counts must be extracted from source exactly -- do not round, paraphrase, or infer. If discrepancies appear between figures in different source documents, flag them rather than resolving silently.
+
+[TBD: confirm available PDF parsing libraries in the Fargate container and add extraction code snippet here.]
+
 ## When no budget data is available
 
 Omit the section. Do not estimate or fabricate figures.
