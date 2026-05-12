@@ -1,12 +1,11 @@
 Rules for finding, evaluating, and presenting recent news for each priority item.
 
 ## What to find
-
-3 recent headlines per priority item from local news sources. Each should be directly relevant to the agenda item -- not tangentially related national coverage.
+Up to 3 recent headlines per priority item from local news sources. Each should be directly relevant to the agenda item in that jurisdiction or in a larger jurisdiction that contains the jurisdiction in question.
 
 ## Freshness
 
-Articles should be from the last 30 days. Older articles may be included only if no recent coverage exists and the article is directly relevant.
+Articles should be from the last 60 days. Older articles may be included only if no recent coverage exists and the article is directly relevant.
 
 ## Source credibility
 
