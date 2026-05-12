@@ -14,14 +14,13 @@ Produce a briefing for the elected official's next city council meeting given yo
 
 **Executive Summary:** "The following items on your agenda require action and/or have a vote:" followed by one line per priority item -- what it requires (vote / no vote) and what's at stake
 
-**Priority items** (3-5, see `agenda_items.md` for selection criteria): For each, include all sections where data is available:
-- Overview
-- Constituent Sentiment -- `constituent_sentiment.md`
-- Constituent Quote -- `constituent_sentiment.md`
-- Recent News -- `recent_news.md`
-- Budget Impact -- `budget_impact.md`
-- Talking Points -- `talking_points.md`
-- Sources -- `Sources.md`
+**Priority items** (3-5, see `agenda_items.md` for selection criteria):
+- Overview *(always)*
+- Constituent Sentiment -- `constituent_sentiment.md` *(conditional: only if a relevant Haystaq score exists)*
+- Recent News -- `recent_news.md` *(conditional: only if recent local coverage exists)*
+- Budget Impact -- `budget_impact.md` *(conditional: only if figures are available)*
+- Talking Points -- `talking_points.md` *(always)*
+- Sources -- `Sources.md` *(always)*
 
 **Non-priority items:** One sentence each. See `agenda_items.md`.
 

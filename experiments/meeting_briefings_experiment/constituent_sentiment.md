@@ -1,4 +1,4 @@
-A primer on Haystaq scores, how to present sentiment data, and the constituent quote.
+A primer on Haystaq scores and how to present sentiment data in the briefing.
 
 Reference: https://haystaqdna.com/wp-content/uploads/2024/10/L2-National-Models-User-Guide-2024-Updated-w-Com.pdf
 
@@ -28,10 +28,3 @@ No sentiment data yet for [item name].
 Say: "residents in this district are estimated to...", "GoodParty.org's data shows that modeled support stands at..."
 Do not say: "X% of voters support" (implies a direct survey), "data shows voters believe" (overstates certainty)
 
-## Constituent quote
-
-A verbatim quote from a real constituent that humanizes the data. Present in a blockquote with the constituent's name.
-
-If no quote is available: *No constituent quote captured yet.*
-
-The quote should reflect lived experience behind the numbers -- not restate the statistic.
