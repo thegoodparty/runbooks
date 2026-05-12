@@ -22,7 +22,7 @@ Do not use phrases such as: "Push for...", "Ensure that...", "Frame your positio
 
 Where a softer directive is contextually appropriate, use: "You may want to consider..." or "It may be worth asking..."
 
-Do not presuppose the EO's position on any issue, their relationships, their read of the room, or their political constraints.
+Do not presuppose the EO's position on any issue, their relationships, their read of the room, or their political constraints. However, you may use the information shared from their campaign website as context.
 
 **Tone:** Neutral and extractive. Use neutral language in all section headers. Do not use headers that imply advocacy or consulting.
 
@@ -33,6 +33,10 @@ Do not import background knowledge, general policy context, or plausible-soundin
 Identity fields -- names, dates, roles, dollar amounts, vote counts, legal citations -- must be copied exactly from source. Do not paraphrase, round, or infer these values.
 
 **Verbosity:** Concise. Priority items get full depth across all sections. Non-priority items get one sentence. Target total read time: ~8 minutes.
+
+**Required disclosure:** Every briefing must include the following disclaimer in the header or footer:
+
+> This briefing was generated with AI assistance and may contain errors. Content labeled "Inferred" represents model-generated interpretation, not verified fact. Constituent sentiment data, where present, reflects modeled estimates. Users should verify critical claims against primary source documents before acting on this briefing.
 
 ---
 
@@ -115,14 +119,10 @@ Surface budget figures only when they appear in the source documents. Do not est
 
 **What to include:**
 - Total cost (one-time and/or recurring)
-- Per-household translation at the local levy level
+- Per-constituent translation at the local levy level
 - Stacked impact when multiple items in the same meeting affect the same taxpayer
 
-**Household-level translation:** Translate dollar figures to a per-household annual impact using the jurisdiction's total household count from Census data.
-
-**Anchoring:** Compare to a prior council decision when possible to ground the figure in something familiar.
-
-Dollar amounts and vote counts must be extracted from source exactly -- do not round, paraphrase, or infer. Flag any discrepancy between figures appearing in different source documents rather than resolving it silently.
+**Numeric precision:** Dollar amounts and vote counts must be extracted from source exactly -- do not round, paraphrase, or infer. Flag any discrepancy between figures appearing in different source documents rather than resolving it silently.
 
 [TBD: confirm available PDF parsing libraries in the Fargate container and add extraction code snippet here.]
 
@@ -132,7 +132,7 @@ Dollar amounts and vote counts must be extracted from source exactly -- do not r
 
 Key observations synthesized from source materials for each priority item.
 
-**Section disclosure:** This section has a different epistemic status than the rest of the briefing. Other sections report; this one synthesizes. The agent has more interpretive latitude here -- the goal is to draw out what is most salient for the official to have in hand when they walk into the room. This is not a summary of the agenda item; the overview does that. The global constraints in the Role and constraints section still apply, including the "Inferred:" convention for anything beyond what source materials explicitly state.
+**Section disclosure:** This section has a different epistemic status than the rest of the briefing. Other sections report; this one synthesizes. The agent has more interpretive latitude here than elsewhere -- the goal is to draw out what is most salient for the official to have in hand when they walk into the room. This is not a summary of the agenda item; the overview does that. The global constraints in the Role and constraints section above still apply, including the "Inferred:" convention for anything beyond what source materials explicitly state.
 
 The following disclaimer must appear at the top of this section in the rendered briefing:
 
@@ -173,13 +173,13 @@ End with a bibliography listing all sources.
 - Campaign website for the elected official
 - Agenda packet for the upcoming meeting
 - Databricks Haystaq L2 scores
-- Local news outlets (see Recent News section for credibility guidance)
+- Local news outlets (see Recent news section above for credibility guidance)
 
 ---
 
 ## Output artifacts
 
-**briefing.json** -- Structured briefing content. One object per priority item containing all populated sections. Non-priority items included as a flat array of one-sentence descriptions.
+**briefing.json** -- Structured briefing content. One object per priority item containing all populated sections (overview, constituent sentiment, recent news, budget impact, key observations). Non-priority items included as a flat array of one-sentence descriptions.
 
 **claims.json** -- A flat list of every factual claim in the briefing. Each entry includes:
 - `claim_text`
