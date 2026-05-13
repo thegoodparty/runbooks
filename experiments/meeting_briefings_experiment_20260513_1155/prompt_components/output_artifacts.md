@@ -7,17 +7,14 @@ Structured briefing content. One object per priority item containing all populat
 ## claims.json
 
 A flat list of every factual claim in the briefing. Each entry includes:
-- `claim_text`
+- `claim_text` - Verbatim text which appears in the briefing. 
+- `claim_type` - Could be a budget number, constituent sentiment, meeting name, meeting date 
 - `claim_weight` -- high / medium / low
-- `source_extracts[]` -- verbatim passages from the cited source
+- `source_extracts[]` -- verbatim passages from the cited sources
 - `source_ids[]` -- references to entries in sources.json
-
-Used by the QA layer to verify that claims are backed by their stated sources.
+- `source_type` -- - Official budget, Agenda PDF, Staff report, Haystaq constituent data, News, campaign website, etc.
 
 ## sources.json
 
 The full bibliography. Each entry includes source name, URL, type (agenda_packet / news / campaign / haystaq / government_website), date accessed, and any location metadata (page numbers for PDFs, article date for news).
-
-## source_snapshots/
-
-One text file per source, named by source_id. Contains the verbatim content extracted from the source document. Used by the QA layer for inline verification.
+ 

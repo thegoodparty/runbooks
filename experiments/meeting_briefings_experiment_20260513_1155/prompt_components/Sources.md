@@ -18,7 +18,7 @@ End with a bibliography listing all sources.
 
 - Local government website for the jurisdiction
 - Campaign website for the elected official
-- Agenda packet for the upcoming meeting
+- Agenda packet and accompanying staff official packets for the upcoming meeting
 - Databricks Haystaq L2 scores
 - Local news outlets (see `recent_news.md` for credibility guidance)
 

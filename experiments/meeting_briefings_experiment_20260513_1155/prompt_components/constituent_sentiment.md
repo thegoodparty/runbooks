@@ -2,7 +2,7 @@ A primer on Haystaq scores and how to present sentiment data in the briefing.
 
 Reference: https://haystaqdna.com/wp-content/uploads/2024/10/L2-National-Models-User-Guide-2024-Updated-w-Com.pdf
 
-Data dictionary: [Databricks link TBD]
+The data dictionary here may have additional information about the score goodparty_data_catalog/sandbox/haystaq_data_dictionary.
 
 ## What Haystaq scores are
 
@@ -21,8 +21,10 @@ Example:
 Northside support for expanding cameras for public safety climbs to 81%.
 
 When no relevant data is available:
-No sentiment data yet for [item name].
+No sentiment data available for [item name]. 
 
+Regardless of whether or not relevant Haystaq data is available, invite the user to consider running a poll to learn more about how their constituents feel about this issue.
+ 
 ## What to say / what not to say
 
 Say: "residents in this district are estimated to...", "GoodParty.org's data shows that modeled support stands at..."

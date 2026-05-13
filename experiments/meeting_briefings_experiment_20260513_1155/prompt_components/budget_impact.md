@@ -8,9 +8,7 @@ Rules for finding and presenting budget impact for each priority item.
 
 ## Numeric precision
 
-Dollar amounts and vote counts must be extracted from source exactly -- do not round, paraphrase, or infer. If discrepancies appear between figures in different source documents, flag them rather than resolving silently.
-
-[TBD: confirm available PDF parsing libraries in the Fargate container and add extraction code snippet here.]
+Dollar amounts and vote counts must be extracted from source exactly -- do not round, paraphrase, or infer. If discrepancies appear between figures in different source documents, flag them rather than resolving silently. Do not report multiple figures in the same sentence, as this can cause ambiguity. 
 
 ## When no budget data is available
 
