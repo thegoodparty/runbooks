@@ -135,9 +135,30 @@ ORDER BY
   column_name;
 ```
 
+### Step 1b — validate column names exist in the voter table
+
+The data dictionary `column_name` field does not always match the actual column name in the voter table. Before running Step 2, confirm each selected column exists:
+
+```sql
+SELECT column_name
+FROM information_schema.columns
+WHERE table_catalog = 'goodparty_data_catalog'
+  AND table_schema = 'dbt'
+  AND table_name = 'int__l2_nationwide_uniform_w_haystaq'
+  AND column_name IN ('{{SCORE_1}}', '{{SCORE_2}}', '{{SCORE_3}}')
+ORDER BY column_name;
+```
+
+If a column is missing, return to Step 1 and select a replacement. Do not query a column that is not in this result — the query will fail silently or error.
+
 ### Step 2 — query jurisdiction values
 
-Replace `{{SCORE_1}}`, `{{SCORE_2}}`, `{{SCORE_3}}` with up to three selected columns, `{{L2_DISTRICT_TYPE}}` with the allowed district column, `{{L2_DISTRICT_NAME}}` with the district value, and `{{CITY}}` with the city name. Validate that `{{L2_DISTRICT_TYPE}}` is a valid column before use.
+Replace `{{SCORE_1}}`, `{{SCORE_2}}`, `{{SCORE_3}}` with validated column names from Step 1b. Replace `{{STATE}}` with the two-letter state abbreviation (e.g. `TX`), `{{CITY}}` with the city name, `` `{{L2_DISTRICT_TYPE}}` `` with the backtick-wrapped district column name, and `{{L2_DISTRICT_NAME}}` with the exact district value. Confirm the district name exists in the canonical election-api District table before using it — a mismatched name matches zero rows and the query silently returns citywide data.
+
+Three rules that apply to every query on this table:
+1. `Voters_Active = 'A'` is a string, not an integer. Always include it to count active voters only.
+2. `hs_*` columns are continuous 0–100 scores regardless of name suffix. Use mean, not count.
+3. The district column name must be wrapped in backticks when used as a filter (e.g. `` `City_Ward` = 'FAYETTEVILLE CITY WARD 2'``).
 
 ```sql
 WITH city_scope AS (
@@ -147,6 +168,8 @@ WITH city_scope AS (
     CAST({{SCORE_3}} AS DOUBLE) AS score_3
   FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq
   WHERE upper(Residence_Addresses_City) = upper('{{CITY}}')
+    AND upper(Residence_Addresses_State) = upper('{{STATE}}')
+    AND Voters_Active = 'A'
 ),
 district_scope AS (
   SELECT 'district' AS geography_scope,
@@ -154,7 +177,8 @@ district_scope AS (
     CAST({{SCORE_2}} AS DOUBLE) AS score_2,
     CAST({{SCORE_3}} AS DOUBLE) AS score_3
   FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq
-  WHERE {{L2_DISTRICT_TYPE}} = '{{L2_DISTRICT_NAME}}'
+  WHERE `{{L2_DISTRICT_TYPE}}` = '{{L2_DISTRICT_NAME}}'
+    AND Voters_Active = 'A'
 )
 SELECT geography_scope,
   ROUND(AVG(score_1), 1) AS avg_score_1,
