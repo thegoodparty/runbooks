@@ -1,4 +1,4 @@
-The meeting briefing produces four output artifacts.
+The meeting briefing produces the following output artifacts.
 
 ## briefing.json
 
@@ -17,4 +17,6 @@ A flat list of every factual claim in the briefing. Each entry includes:
 ## sources.json
 
 The full bibliography. Each entry includes source name, URL, type (agenda_packet / news / campaign / haystaq / government_website), date accessed, and any location metadata (page numbers for PDFs, article date for news).
+ 
+ ## research.json
  

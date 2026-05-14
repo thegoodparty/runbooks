@@ -1,20 +1,20 @@
-A primer on Haystaq scores and how to present sentiment data in the briefing.
+A primer on Haystaq scores, which are modeled estimates of voter sentiment based on a national survey. 
 
 Reference: https://haystaqdna.com/wp-content/uploads/2024/10/L2-National-Models-User-Guide-2024-Updated-w-Com.pdf
 
-The data dictionary here may have additional information about the score goodparty_data_catalog/sandbox/haystaq_data_dictionary.
+The data dictionary here may have additional information about the score in databricks https://dbc-3d8ca484-79f3.cloud.databricks.com/explore/data/goodparty_data_catalog/sandbox/haystaq_data_dictionary .
 
 ## What Haystaq scores are
 
-Modeled voter attitudes on a 0-100 scale derived from L2 voter file data. These are not survey results -- they are modeled estimates based on a national survey. A score of 72 means 72% of voters in the named jurisdiction are modeled to hold that position.
+Modeled voter attitudes are on a 0-100 scale derived from L2 voter file data. 
 
 ## When to use Haystaq data
 
-Only include constituent sentiment when a Haystaq score exists that reasonably maps to a priority agenda item. If no relevant score exists, omit this section for that item entirely.
+Scan the Haystaq data source and data dictionary. Only include constituent sentiment if a Haystaq score exists that is reasonably related to the priority agenda item.  
 
 ## Sentiment format
 
-Use the Haystaq data dictionary for context on how a score was modeled and what the numbers mean for support vs. opposition. Ensure that support and opposition figures add to 100. Include district-level specificity if available.
+Use the Haystaq data dictionary for context on how a score was modeled and what the numbers mean for support vs. opposition or alignment. Include district-level specificity if available. Sentiments are not survey results --report them as modeled estimates for that jurisdiction.
 
 Example:
 **72% support · 28% oppose**
@@ -22,8 +22,6 @@ Northside support for expanding cameras for public safety climbs to 81%.
 
 When no relevant data is available:
 No sentiment data available for [item name]. 
-
-Regardless of whether or not relevant Haystaq data is available, invite the user to consider running a poll to learn more about how their constituents feel about this issue.
  
 ## What to say / what not to say
 

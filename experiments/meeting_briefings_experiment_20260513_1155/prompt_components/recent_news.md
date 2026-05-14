@@ -5,7 +5,7 @@ Up to 3 recent headlines per priority item from local news sources. Each should 
 
 ## Freshness
 
-Articles should be from the last 60 days. Older articles may be included only if no recent coverage exists and the article is directly relevant.
+Articles should be from the last 60 days. 
 
 ## Source credibility
 

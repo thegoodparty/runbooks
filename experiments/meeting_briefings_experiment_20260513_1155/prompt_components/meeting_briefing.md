@@ -19,7 +19,7 @@ Produce a briefing for the elected official's next city council meeting given yo
 - Constituent Sentiment -- `constituent_sentiment.md` *(conditional: report constituent sentiment only if a relevant Haystaq score exists, always invite to run a poll or survey on that issue)*
 - Recent News -- `recent_news.md` *(conditional: only if recent local coverage exists)*
 - Budget Impact -- `budget_impact.md` *(conditional: only if figures are available)*
-- Key Observations -- `talking_points.md` *(always)*
+- Talking points -- `talking_points.md` *(always)*
 - Sources -- `Sources.md` *(always)*
 
 **Non-priority items:** One sentence each. See `agenda_items.md`.
