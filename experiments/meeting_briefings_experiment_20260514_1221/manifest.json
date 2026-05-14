@@ -1,0 +1,612 @@
+{
+  "$schema": "../_schema/manifest.schema.json",
+  "id": "meeting_briefings_experiment_20260514_1221",
+  "version": 2,
+  "model": "sonnet",
+  "max_turns": 100,
+  "timeout_seconds": 3000,
+  "scope": {
+    "allowed_tables": [
+      "goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq",
+      "goodparty_data_catalog.sandbox.haystaq_data_dictionary"
+    ],
+    "max_rows": 1000
+  },
+  "output_constraints": {
+    "featured_items_count": "items[] must contain 1 to 3 entries with tier == 'featured'",
+    "full_treatment_required": "items with tier 'featured' or 'queued' must have research.full_treatment != null",
+    "raw_context_required": "every item must have at least one chunk in research.raw_context",
+    "claim_item_ids_valid": "every claim.item_id must match an id in items[]",
+    "source_ids_valid": "every source_id reference in claims and raw_context must match an id in sources[]",
+    "verbatim_at_fetch_time": "sources[].retrieved_text_or_snapshot must be captured at fetch time, not at artifact assembly"
+  },
+  "input_schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "MeetingBriefingInput",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["state", "city", "officialName", "meetingDate", "agendaPacketUrl"],
+    "properties": {
+      "state": {
+        "type": "string",
+        "pattern": "^[A-Z]{2}$",
+        "description": "2-letter state code (e.g. TX)."
+      },
+      "city": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Full city name (e.g. Alvin)."
+      },
+      "l2DistrictType": {
+        "type": "string",
+        "minLength": 1,
+        "description": "L2 voter file column name for the official's district (e.g. City_Ward). Omit for at-large city-wide officials — Haystaq will use city scope only."
+      },
+      "l2DistrictName": {
+        "type": "string",
+        "minLength": 1,
+        "description": "L2 district value to match (e.g. FAYETTEVILLE CITY WARD 2). Omit for at-large city-wide officials."
+      },
+      "officialName": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Full name of the elected official receiving the briefing."
+      },
+      "meetingDate": {
+        "type": "string",
+        "format": "date",
+        "description": "Date of the council meeting (YYYY-MM-DD)."
+      },
+      "agendaPacketUrl": {
+        "type": "string",
+        "pattern": "^https?://",
+        "description": "Permanent URL to the agenda packet PDF. Used as the stable citation URL — never replaced with a presigned fetch URL."
+      },
+      "campaignUrl": {
+        "type": "string",
+        "pattern": "^https?://",
+        "description": "Optional campaign website URL for the elected official."
+      }
+    }
+  },
+  "output_schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "MeetingBriefingOutput",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "experiment_id",
+      "generated_at",
+      "official_name",
+      "meeting_date",
+      "estimated_read_minutes",
+      "run_metadata",
+      "items",
+      "claims",
+      "sources",
+      "disclosure"
+    ],
+    "properties": {
+      "experiment_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Experiment id, echoed from PARAMS."
+      },
+      "generated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "ISO 8601 UTC timestamp when the briefing was generated."
+      },
+      "official_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Name of the elected official. Copied exactly from PARAMS."
+      },
+      "meeting_date": {
+        "type": "string",
+        "format": "date",
+        "description": "Date of the council meeting (YYYY-MM-DD). Copied exactly from PARAMS."
+      },
+      "estimated_read_minutes": {
+        "type": "integer",
+        "minimum": 1,
+        "description": "Estimated read time in minutes for featured items only."
+      },
+      "run_metadata": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["agenda_packet_url", "source_bundle_retrieved_at"],
+        "properties": {
+          "agenda_packet_url": {
+            "type": "string",
+            "pattern": "^https?://",
+            "description": "Permanent agendaPacketUrl from PARAMS. Never a presigned fetch URL."
+          },
+          "source_bundle_retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the last source was fetched."
+          },
+          "briefing_version": {
+            "type": "string",
+            "description": "Version tag from the instruction header (e.g. v2)."
+          }
+        }
+      },
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "description": "All agenda items in a single array. tier determines display depth and research depth. featured = top 3 shown in UI with full treatment. queued = vote-required but not in top 3; full treatment available in research layer for chatbot. standard = procedural or low-priority; one-sentence summary only.",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "item_number", "title", "tier", "vote_required", "tier_reason", "display", "research"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^item_[0-9]{3}$",
+              "description": "Stable item identifier for cross-referencing from claims and raw_context chunks (e.g. 'item_005')."
+            },
+            "item_number": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Agenda item number as it appears in the packet (e.g. '5F', '6D', '1'). Always a string."
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Agenda item title copied exactly from the packet."
+            },
+            "tier": {
+              "type": "string",
+              "enum": ["featured", "queued", "standard"],
+              "description": "featured: shown in top-3 UI display. queued: full treatment in research layer, not shown in top 3. standard: one-sentence summary only."
+            },
+            "vote_required": {
+              "type": "boolean",
+              "description": "True if this item requires a council vote."
+            },
+            "tier_reason": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "vote_required",
+                  "budget_threshold",
+                  "constituent_alignment",
+                  "public_position_required",
+                  "procedural",
+                  "ceremonial",
+                  "consent_routine"
+                ]
+              },
+              "description": "Reasons driving this item's tier assignment."
+            },
+            "display": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["summary"],
+              "description": "Fields consumed by the UI. Standard items have summary only. Featured and queued items populate all applicable fields.",
+              "properties": {
+                "summary": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "For featured/queued: what is actually at stake (full overview). For standard: one sentence describing the item and what the official should expect."
+                },
+                "constituent_sentiment": {
+                  "type": ["object", "null"],
+                  "additionalProperties": false,
+                  "description": "Featured and queued only. Null if no relevant Haystaq column or haystaq_status != ok.",
+                  "required": ["summary", "detail", "haystaq_column", "support_pct", "oppose_pct", "voter_count", "haystaq_status"],
+                  "properties": {
+                    "summary": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Prose display string using citywide figure. E.g. 'Citywide modeled support on this measure is estimated at 72 on a 0-100 scale.' Not a percentage split."
+                    },
+                    "detail": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "One sentence describing what the score means for this jurisdiction as a modeled estimate. Must disclose it is a modeled estimate, not a direct survey result."
+                    },
+                    "district_note": {
+                      "type": ["string", "null"],
+                      "description": "Null if district and city are closely aligned. Set when district meaningfully departs from city, e.g. 'District-level modeled sentiment on this measure is above the citywide estimate.'"
+                    },
+                    "haystaq_column": {
+                      "type": "string",
+                      "pattern": "^hs_[a-z0-9_]+$"
+                    },
+                    "support_pct": {
+                      "type": ["number", "null"],
+                      "minimum": 0,
+                      "maximum": 100,
+                      "description": "Citywide mean score for the chosen hs_* column (0-100 scale), representing the primary support or main-direction figure per score_high_means."
+                    },
+                    "oppose_pct": {
+                      "type": ["number", "null"],
+                      "minimum": 0,
+                      "maximum": 100,
+                      "description": "Null unless a true complementary hs_* field was also queried. Do not compute as 100 minus support_pct."
+                    },
+                    "voter_count": {
+                      "type": ["integer", "null"],
+                      "minimum": 0,
+                      "description": "Active voters in the citywide scope used as the denominator."
+                    },
+                    "haystaq_status": {
+                      "type": "string",
+                      "enum": ["ok", "city_mismatch", "no_match", "no_column"]
+                    }
+                  }
+                },
+                "recent_news": {
+                  "type": ["array", "null"],
+                  "maxItems": 3,
+                  "description": "Featured and queued only. Up to 3 curated headlines for UI display. Full article text is in research.full_treatment.news_articles.",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["headline", "publication", "article_type", "publication_date", "url"],
+                    "properties": {
+                      "headline": {"type": "string", "minLength": 1},
+                      "publication": {"type": "string", "minLength": 1},
+                      "article_type": {"type": "string", "enum": ["reporting", "opinion", "editorial"]},
+                      "publication_date": {"type": ["string", "null"], "description": "YYYY-MM-DD. Null if exact date could not be confirmed."},
+                      "url": {"type": "string", "pattern": "^https?://"}
+                    }
+                  }
+                },
+                "budget_impact": {
+                  "type": ["object", "null"],
+                  "additionalProperties": false,
+                  "description": "Featured and queued only. Null if no figures available. Do not estimate.",
+                  "required": ["summary", "figures"],
+                  "properties": {
+                    "summary": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "Plain-language cost summary extracted from source."
+                    },
+                    "figures": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["label", "value", "source_id"],
+                        "properties": {
+                          "label": {"type": "string", "minLength": 1},
+                          "value": {"type": "string", "minLength": 1, "description": "Dollar amount copied exactly from source."},
+                          "source_id": {"type": "string", "minLength": 1}
+                        }
+                      }
+                    }
+                  }
+                },
+                "key_observations": {
+                  "type": ["array", "null"],
+                  "minItems": 1,
+                  "maxItems": 5,
+                  "description": "Featured and queued only. Synthesized observations, each one or two sentences.",
+                  "items": {"type": "string", "minLength": 1}
+                },
+                "source_ids": {
+                  "type": ["array", "null"],
+                  "description": "References to top-level sources[] entries for UI inline citation display.",
+                  "items": {"type": "string", "minLength": 1}
+                }
+              }
+            },
+            "research": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["raw_context", "full_treatment"],
+              "description": "Deep content layer for the chatbot and QA. Not stripped by gp-api.",
+              "properties": {
+                "raw_context": {
+                  "type": "array",
+                  "minItems": 1,
+                  "description": "Agenda PDF chunks for this item. Each chunk carries redundant item metadata so it is self-contained when retrieved in isolation by a pre-indexing service.",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["chunk_id", "item_id", "item_title", "tier", "source_id", "text"],
+                    "properties": {
+                      "chunk_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Unique chunk id (e.g. 'item_005_p065')."
+                      },
+                      "item_id": {
+                        "type": "string",
+                        "pattern": "^item_[0-9]{3}$",
+                        "description": "Parent item id — redundant by design for standalone retrieval."
+                      },
+                      "item_title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Parent item title — redundant by design for standalone retrieval."
+                      },
+                      "tier": {
+                        "type": "string",
+                        "enum": ["featured", "queued", "standard"],
+                        "description": "Parent item tier — redundant by design for standalone retrieval."
+                      },
+                      "source_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Reference to sources[] entry for this chunk's source document."
+                      },
+                      "page": {
+                        "type": ["integer", "null"],
+                        "minimum": 1
+                      },
+                      "section_heading": {
+                        "type": ["string", "null"]
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Verbatim extracted text for this chunk."
+                      }
+                    }
+                  }
+                },
+                "full_treatment": {
+                  "type": ["object", "null"],
+                  "additionalProperties": false,
+                  "description": "Present for featured and queued items; null for standard items.",
+                  "required": ["haystaq_detail", "news_articles", "budget_detail"],
+                  "properties": {
+                    "haystaq_detail": {
+                      "type": ["object", "null"],
+                      "additionalProperties": false,
+                      "description": "Null if no relevant Haystaq column found. Present with status field even on city_mismatch.",
+                      "required": ["haystaq_status"],
+                      "properties": {
+                        "haystaq_status": {
+                          "type": "string",
+                          "enum": ["ok", "city_mismatch", "no_match", "no_column"]
+                        },
+                        "haystaq_column": {"type": ["string", "null"]},
+                        "city_mean_score": {
+                          "type": ["number", "null"],
+                          "minimum": 0,
+                          "maximum": 100,
+                          "description": "AVG of chosen hs_* column across all active voters citywide. Primary figure for display.constituent_sentiment."
+                        },
+                        "district_mean_score": {
+                          "type": ["number", "null"],
+                          "minimum": 0,
+                          "maximum": 100,
+                          "description": "AVG of chosen hs_* column across active voters in the official's district. Surfaced in district_note when meaningfully different from city."
+                        },
+                        "city_voter_count": {
+                          "type": ["integer", "null"],
+                          "minimum": 0,
+                          "description": "COUNT of active voters in the citywide scope."
+                        },
+                        "district_voter_count": {
+                          "type": ["integer", "null"],
+                          "minimum": 0,
+                          "description": "COUNT of active voters in the district scope."
+                        },
+                        "complementary_field": {"type": ["string", "null"]},
+                        "query_executed": {
+                          "type": ["string", "null"],
+                          "description": "Sanitized SQL for QA auditability."
+                        }
+                      }
+                    },
+                    "news_articles": {
+                      "type": ["array", "null"],
+                      "description": "Full fetched content for each article. Null if no news found.",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["headline", "publication", "article_type", "url", "body_text"],
+                        "properties": {
+                          "headline": {"type": "string", "minLength": 1},
+                          "publication": {"type": "string", "minLength": 1},
+                          "article_type": {"type": "string", "enum": ["reporting", "opinion", "editorial"]},
+                          "publication_date": {"type": ["string", "null"]},
+                          "url": {"type": "string", "pattern": "^https?://"},
+                          "body_text": {
+                            "type": "string",
+                            "description": "Full article body from pmf_runtime.http.get(). Empty string if paywalled — do not omit."
+                          }
+                        }
+                      }
+                    },
+                    "budget_detail": {
+                      "type": ["object", "null"],
+                      "additionalProperties": false,
+                      "description": "Null if no budget figures found.",
+                      "required": ["figures"],
+                      "properties": {
+                        "figures": {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["label", "value", "verbatim_extract"],
+                            "properties": {
+                              "label": {"type": "string", "minLength": 1},
+                              "value": {"type": "string", "minLength": 1},
+                              "verbatim_extract": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Exact text from the source document containing this figure."
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "claims": {
+        "type": "array",
+        "minItems": 1,
+        "description": "Every factual claim in the briefing. QA uses this to verify support before release. Stripped from the UI display API response.",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "claim_id",
+            "item_id",
+            "section",
+            "claim_text",
+            "claim_type",
+            "claim_weight",
+            "source_extracts",
+            "source_ids",
+            "required_source_type",
+            "route_if_unsupported"
+          ],
+          "properties": {
+            "claim_id": {
+              "type": "string",
+              "pattern": "^claim_[0-9]{3}$"
+            },
+            "item_id": {
+              "type": "string",
+              "pattern": "^item_[0-9]{3}$",
+              "description": "Must match an id in items[]."
+            },
+            "section": {
+              "type": "string",
+              "enum": ["overview", "constituent_sentiment", "recent_news", "budget_impact", "key_observations"]
+            },
+            "claim_text": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Verbatim text as it appears in the briefing."
+            },
+            "claim_type": {
+              "type": "string",
+              "enum": [
+                "budget_number",
+                "vote_count",
+                "legal_citation",
+                "staff_recommendation",
+                "constituent_sentiment",
+                "news_context",
+                "historical_context",
+                "inferred"
+              ]
+            },
+            "claim_weight": {
+              "type": "string",
+              "enum": ["high", "medium", "low"],
+              "description": "Assigned via the claim weight table in instruction.md. Not LLM-inferred."
+            },
+            "source_extracts": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1},
+              "description": "Verbatim passages from sources that support this claim."
+            },
+            "source_ids": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1},
+              "description": "References to id values in sources[]."
+            },
+            "required_source_type": {
+              "type": "string",
+              "enum": ["agenda_packet", "government_website", "news", "haystaq", "none"]
+            },
+            "route_if_unsupported": {
+              "type": "string",
+              "enum": ["block_release", "omit_claim", "flag_as_inferred"]
+            }
+          }
+        }
+      },
+      "sources": {
+        "type": "array",
+        "minItems": 1,
+        "description": "Full bibliography. retrieved_text_or_snapshot must be set at fetch time. Chatbot draws from this field. UI strips retrieved_text_or_snapshot from the display API response.",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "name", "source_type", "retrieved_at", "retrieved_text_or_snapshot"],
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Unique identifier for cross-referencing from claims[] and raw_context chunks."
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Descriptive title of the source document or page."
+            },
+            "url": {
+              "type": ["string", "null"],
+              "pattern": "^https?://",
+              "description": "Permanent stable URL. Null for Haystaq (no public URL) and for agenda packet entries where run_metadata.agenda_packet_url is the canonical reference."
+            },
+            "source_type": {
+              "type": "string",
+              "enum": ["agenda_packet", "news", "government_website", "campaign", "haystaq"]
+            },
+            "retrieved_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "ISO 8601 timestamp set at fetch time, not at assembly."
+            },
+            "retrieved_text_or_snapshot": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Verbatim text captured at retrieval time. QA and chatbot both depend on this field."
+            },
+            "page_number": {
+              "type": ["integer", "null"],
+              "minimum": 1
+            },
+            "section_heading": {
+              "type": ["string", "null"]
+            },
+            "article_date": {
+              "type": ["string", "null"],
+              "format": "date"
+            },
+            "article_type": {
+              "type": ["string", "null"],
+              "enum": ["reporting", "opinion", "editorial", null]
+            },
+            "haystaq_column": {
+              "type": ["string", "null"],
+              "description": "The hs_* column queried. Haystaq sources only."
+            },
+            "score_value": {
+              "type": ["number", "null"],
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Raw mean score from the query. Haystaq sources only."
+            },
+            "district_voters_n": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "description": "Active voter count from the query. Haystaq sources only."
+            }
+          }
+        }
+      },
+      "disclosure": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Required AI-assistance disclaimer. Must match verbatim text in instruction.md."
+      }
+    }
+  }
+}
