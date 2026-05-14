@@ -25,7 +25,7 @@
     "title": "MeetingBriefingInput",
     "type": "object",
     "additionalProperties": false,
-    "required": ["state", "city", "l2DistrictType", "l2DistrictName", "officialName", "meetingDate", "agendaPacketUrl"],
+    "required": ["state", "city", "officialName", "meetingDate", "agendaPacketUrl"],
     "properties": {
       "state": {
         "type": "string",
@@ -40,12 +40,12 @@
       "l2DistrictType": {
         "type": "string",
         "minLength": 1,
-        "description": "L2 voter file column name for district (e.g. City_Ward)."
+        "description": "L2 voter file column name for district (e.g. City_Ward). Optional — omit for at-large city-wide officials."
       },
       "l2DistrictName": {
         "type": "string",
         "minLength": 1,
-        "description": "L2 district value to match (e.g. FAYETTEVILLE CITY WARD 2)."
+        "description": "L2 district value to match (e.g. FAYETTEVILLE CITY WARD 2). Optional — omit for at-large city-wide officials."
       },
       "officialName": {
         "type": "string",

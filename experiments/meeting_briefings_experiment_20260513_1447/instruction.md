@@ -113,8 +113,8 @@ official_name   = params["officialName"]
 meeting_date    = params["meetingDate"]
 state           = params["state"]
 city            = params["city"]
-l2_type         = params["l2DistrictType"]
-l2_name         = params["l2DistrictName"]
+l2_type         = params.get("l2DistrictType")   # optional — None for at-large city-wide officials
+l2_name         = params.get("l2DistrictName")   # optional — None for at-large city-wide officials
 agenda_url      = params["agendaPacketUrl"]   # permanent URL — use this in run_metadata and sources
 campaign_url    = params.get("campaignUrl")   # optional
 print(f"Official: {official_name}, Meeting: {meeting_date}, District: {l2_type}={l2_name}")
@@ -355,20 +355,26 @@ Weak matches (usually reject):
 
 #### 6b — Verify the district returns rows (city casing check)
 
-Before querying the L2 table, verify the district filter returns active voters:
+If `l2_type` and `l2_name` are present, verify the district filter returns active voters. If they are absent (at-large city-wide official), skip the district check and proceed directly to 6c in city-only mode.
 
 ```python
-l2_col = l2_type   # e.g. "City_Ward"
-cur.execute(
-    f'SELECT COUNT(*) FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq WHERE `{l2_col}` = :l2_name AND Voters_Active = \'A\'',
-    {"l2_name": l2_name}
-)
-district_count = cur.fetchone()[0]
-if district_count == 0:
-    # City casing mismatch — broker scope matched but district filter returned nothing
-    haystaq_status = "city_mismatch"
-    # Skip 6c. Set display.constituent_sentiment = null for this item.
+use_district_filter = False   # default: city-only
+
+if l2_type and l2_name:
+    l2_col = l2_type   # e.g. "City_Ward"
+    cur.execute(
+        f'SELECT COUNT(*) FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq WHERE `{l2_col}` = :l2_name AND Voters_Active = \'A\'',
+        {"l2_name": l2_name}
+    )
+    district_count = cur.fetchone()[0]
+    if district_count > 0:
+        use_district_filter = True
+    else:
+        # Column/value mismatch — fall back to city-only rather than skipping sentiment entirely
+        print(f"District filter returned 0 rows for {l2_col}={l2_name}. Falling back to city-only sentiment.")
 ```
+
+If `use_district_filter` remains False (at-large official or failed district check), proceed to 6c in city-only mode: query city scope only and set `district_mean_score = null`, `district_voter_count = null`.
 
 #### 6c — Query city and district values for shortlisted scores
 
@@ -376,58 +382,72 @@ Once the candidate scores are chosen (up to three), query city and district aver
 
 Replace `SCORE_1` / `SCORE_2` / `SCORE_3` with up to three selected Haystaq columns. The broker auto-injects `WHERE Residence_Addresses_State` and `Residence_Addresses_City` — do NOT add them yourself.
 
-IMPORTANT: The district filtering logic below is a draft and must be validated with the data team before operational use. In particular, confirm that `l2DistrictType` is always a valid column in `goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq`, and confirm the correct WHERE behavior for combining district and city scope.
+Branch on `use_district_filter` set in Step 6b:
 
 ```python
 # Whitelist-validate all column names before interpolating
 allowed_cols = {r[0] for r in dd_rows}
-# Replace with actual shortlisted candidate column names (1, 2, or 3):
-candidates = ["hs_candidate_1", "hs_candidate_2", "hs_candidate_3"]
+candidates = ["hs_candidate_1", "hs_candidate_2", "hs_candidate_3"]  # replace with actual shortlisted cols
 for c in candidates:
     assert c in allowed_cols, f"Column {c} not in data dictionary"
 
-l2_col = l2_type
-
-cur.execute(
-    f"""
-    WITH city_scope AS (
-      SELECT
-        'city' AS geography_scope,
-        CAST(`{candidates[0]}` AS DOUBLE) AS score_1,
-        CAST(`{candidates[1]}` AS DOUBLE) AS score_2,
-        CAST(`{candidates[2]}` AS DOUBLE) AS score_3
-      FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq
-      WHERE Voters_Active = 'A'
-    ),
-    district_scope AS (
-      SELECT
-        'district' AS geography_scope,
-        CAST(`{candidates[0]}` AS DOUBLE) AS score_1,
-        CAST(`{candidates[1]}` AS DOUBLE) AS score_2,
-        CAST(`{candidates[2]}` AS DOUBLE) AS score_3
-      FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq
-      WHERE `{l2_col}` = :l2_name
-        AND Voters_Active = 'A'
+if use_district_filter:
+    # City-wide official with a known sub-city district (e.g. ward member)
+    l2_col = l2_type
+    cur.execute(
+        f"""
+        WITH city_scope AS (
+          SELECT 'city' AS geography_scope,
+            CAST(`{candidates[0]}` AS DOUBLE) AS score_1,
+            CAST(`{candidates[1]}` AS DOUBLE) AS score_2,
+            CAST(`{candidates[2]}` AS DOUBLE) AS score_3
+          FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq
+          WHERE Voters_Active = 'A'
+        ),
+        district_scope AS (
+          SELECT 'district' AS geography_scope,
+            CAST(`{candidates[0]}` AS DOUBLE) AS score_1,
+            CAST(`{candidates[1]}` AS DOUBLE) AS score_2,
+            CAST(`{candidates[2]}` AS DOUBLE) AS score_3
+          FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq
+          WHERE `{l2_col}` = :l2_name AND Voters_Active = 'A'
+        )
+        SELECT geography_scope,
+          ROUND(AVG(score_1), 1) AS avg_score_1,
+          ROUND(AVG(score_2), 1) AS avg_score_2,
+          ROUND(AVG(score_3), 1) AS avg_score_3,
+          COUNT(*) AS voter_count
+        FROM (SELECT * FROM city_scope UNION ALL SELECT * FROM district_scope) combined
+        GROUP BY geography_scope
+        ORDER BY CASE geography_scope WHEN 'district' THEN 0 ELSE 1 END
+        """,
+        {"l2_name": l2_name}
     )
-    SELECT
-      geography_scope,
-      ROUND(AVG(score_1), 1) AS avg_score_1,
-      ROUND(AVG(score_2), 1) AS avg_score_2,
-      ROUND(AVG(score_3), 1) AS avg_score_3,
-      COUNT(*) AS voter_count
-    FROM (
-      SELECT * FROM city_scope
-      UNION ALL
-      SELECT * FROM district_scope
-    ) combined
-    GROUP BY geography_scope
-    ORDER BY CASE geography_scope WHEN 'district' THEN 0 ELSE 1 END
-    """,
-    {"l2_name": l2_name}
-)
-rows = cur.fetchall()
-# rows[0] = ('district', avg1, avg2, avg3, n_district)
-# rows[1] = ('city',     avg1, avg2, avg3, n_city)
+    rows = cur.fetchall()
+    # rows[0] = ('district', avg1, avg2, avg3, n_district)
+    # rows[1] = ('city',     avg1, avg2, avg3, n_city)
+    district_mean_score   = rows[0][1] if rows else None
+    district_voter_count  = rows[0][4] if rows else None
+    city_mean_score       = rows[1][1] if len(rows) > 1 else (rows[0][1] if rows else None)
+    city_voter_count      = rows[1][4] if len(rows) > 1 else (rows[0][4] if rows else None)
+else:
+    # At-large official — broker already scopes to city; no additional district filter
+    cur.execute(
+        f"""
+        SELECT
+          ROUND(AVG(CAST(`{candidates[0]}` AS DOUBLE)), 1) AS avg_score_1,
+          ROUND(AVG(CAST(`{candidates[1]}` AS DOUBLE)), 1) AS avg_score_2,
+          ROUND(AVG(CAST(`{candidates[2]}` AS DOUBLE)), 1) AS avg_score_3,
+          COUNT(*) AS voter_count
+        FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq
+        WHERE Voters_Active = 'A'
+        """
+    )
+    row = cur.fetchone()
+    city_mean_score       = row[0] if row else None
+    city_voter_count      = row[3] if row else None
+    district_mean_score   = None   # no district scope for at-large official
+    district_voter_count  = None
 ```
 
 #### Selecting the single score to report
@@ -528,19 +548,26 @@ Flag if coverage is predominantly from one outlet or ideological direction.
 **Discovery and verification:**
 
 ```python
+import re
 from pmf_runtime import http
+
+def strip_html(raw):
+    """Strip HTML tags and collapse whitespace. Always returns plain text."""
+    text = re.sub(r'<[^>]+>', ' ', raw)
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
 
 # Use WebSearch for URL discovery — do not use WebFetch
 # Then verify each article loads and covers the topic:
 r = http.get(article_url)
 if r["status"] == 200 and len(r["body"]) > 500:
-    body_text = r["body"]
-    # Confirm the article body mentions the item topic before citing it
+    body_text = strip_html(r["body"])   # MUST strip HTML — broker rejects raw HTML in body_text
+    # Confirm the stripped text mentions the item topic before citing it
 ```
 
 **Populate both layers:**
 - `display.recent_news` — curated list of up to 3: headline, publication, article_type, publication_date, url
-- `research.full_treatment.news_articles` — full fetch result: same fields plus `body_text` (full article body from `r["body"]`). Set `body_text = ""` if paywalled — do not omit the field.
+- `research.full_treatment.news_articles` — full fetch result: same fields plus `body_text` (plain text — HTML stripped via `strip_html(r["body"])`). Set `body_text = ""` if paywalled — do not omit the field.
 
 Set `retrieved_text_or_snapshot` on the source record at fetch time, not at assembly.
 
@@ -563,7 +590,7 @@ Set `retrieved_text_or_snapshot` on the source record at fetch time, not at asse
 
 Key observations synthesized from source materials.
 
-**Section disclosure:** This section synthesizes. The goal is to surface what is most salient for the official walking into the room. The global constraints still apply.
+**Section disclosure:** This section has a different epistemic status than the rest of the briefing. This one synthesizes. The goal is to draw out what is most salient for the official to have in hand when they walk into the room. This is not a summary of the agenda item; the overview does that. The global constraints in `about_the_agent.md` still apply.
 
 **Format:** Up to five bullet points. Each is one or two sentences.
 
@@ -688,7 +715,7 @@ print("Artifact written.")
     "research": {
         "raw_context": [ { "chunk_id": "item_005_p065", ... } ],
         "full_treatment": {
-            "haystaq_detail": { "haystaq_status": "ok", "mean_score": 39.6, ... },
+            "haystaq_detail": { "haystaq_status": "ok", "city_mean_score": 39.6, "district_mean_score": 41.2, ... },
             "news_articles": [ { "headline": "...", "body_text": "..." } ],
             "budget_detail": { "figures": [ { "label": "Total", "value": "$2,179,995.83", "verbatim_extract": "..." } ] }
         }
