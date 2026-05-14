@@ -16,7 +16,7 @@ Produce a briefing for the elected official's next city council meeting given yo
 
 **Priority items** (see `agenda_items.md` for selection criteria):
 - Overview *(always)*
-- Constituent Sentiment -- `constituent_sentiment.md` *(conditional: report constituent sentiment only if a relevant Haystaq score exists, always invite to run a poll or survey on that issue)*
+- Constituent Sentiment -- `constituent_sentiment.md` *(conditional: if the Haystaq data dictionary yields one or more defensible scores related to the item, query up to three candidate scores and report the single most relevant one conservatively as modeled constituent sentiment; use citywide results by default and note district divergence when meaningful)*
 - Recent News -- `recent_news.md` *(conditional: only if recent local coverage exists)*
 - Budget Impact -- `budget_impact.md` *(conditional: only if figures are available)*
 - Talking points -- `talking_points.md` *(always)*

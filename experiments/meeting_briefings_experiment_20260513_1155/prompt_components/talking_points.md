@@ -9,18 +9,18 @@ Up to five bullet points. Each bullet is one or two sentences.
 ## What makes a useful observation
 
 - Surfaces a tension or gap in the source materials the official may not have noticed
-- Connects constituent sentiment data to a specific aspect of the item
-- Notes where a staff recommendation diverges from constituent data or prior council positions
+- Connects the chosen constituent sentiment measure to a specific aspect of the item
+- Notes where a staff recommendation diverges from modeled constituent sentiment or prior council positions
 - Flags a question the official might want answered before or during the meeting
 
 ## Examples
 
 These illustrate tone and approach. They are not templates.
 
-- "Constituent data indicates strong modeled support for the camera expansion district-wide, with notably higher estimated support in the Northside. The proposed location map may be worth reviewing against this distribution ahead of the vote."
+- "The chosen Haystaq measure suggests stronger modeled support citywide for this policy direction, with higher modeled support in the Northside. The proposed location map may be worth reviewing against that pattern ahead of the vote."
 
 - "The agenda packet describes vendor selection as primarily a staff decision. Inferred: the location placement decision is where the council has the most meaningful input -- the vote effectively ratifies both together."
 
 - "It may be worth asking staff whether camera locations were weighted by service request volume or by other criteria. The agenda packet does not specify the selection methodology."
 
-- "Staff recommend approving the full contract in a single action. The constituent sentiment data reflects support for camera expansion generally and does not speak to the specific locations proposed -- these are distinct questions the vote bundles together."
+- "Staff recommend approving the full contract in a single action. The chosen constituent sentiment measure reflects broader support for this issue area and does not speak to the exact design choices bundled into the vote."
