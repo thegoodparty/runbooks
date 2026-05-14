@@ -1,0 +1,455 @@
+{
+  "run_metadata": {
+    "experiment_id": "meeting_briefings_experiment_alvin_20260416",
+    "briefing_version": "draft",
+    "agenda_packet_url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+    "generated_at": "2026-05-14T00:00:00Z",
+    "source_bundle_retrieved_at": "2026-05-14T00:00:00Z"
+  },
+  "briefing": {
+    "official_name": "Gabe Adame",
+    "meeting_date": "2026-04-16",
+    "estimated_read_time_minutes": 8,
+    "required_disclosure": "This briefing was generated with AI assistance and may contain errors. Inferred or synthesized content represents model-generated interpretation, not verified fact. Constituent sentiment data, where present, reflects modeled estimates for constituents in that jurisdiction.",
+    "agenda": [
+      {"item_number": "1", "title": "Call to Order", "is_priority": false},
+      {"item_number": "2", "title": "Invocation and Pledge of Allegiance", "is_priority": false},
+      {"item_number": "3A", "title": "Badge pinning — Officer Timothy Raney (promotion to Specialist/Corporal)", "is_priority": false},
+      {"item_number": "3B", "title": "Proclamation — Crime Victims' Rights Week (April 19–25, 2026)", "is_priority": false},
+      {"item_number": "3C", "title": "Proclamation — Volunteer Appreciation Month (Gathering Place Interfaith Ministries)", "is_priority": false},
+      {"item_number": "3D", "title": "Proclamation — Telecommunications Week (April 12–18, 2026)", "is_priority": false},
+      {"item_number": "3E", "title": "Public Services Departmental Update", "is_priority": false},
+      {"item_number": "4", "title": "Public Comment", "is_priority": false},
+      {"item_number": "5A", "title": "Approve March 19, 2026 City Council workshop minutes", "is_priority": false},
+      {"item_number": "5B", "title": "Approve March 19, 2026 City Council meeting minutes", "is_priority": false},
+      {"item_number": "5C", "title": "Approve March 31, 2026 City Council workshop minutes", "is_priority": false},
+      {"item_number": "5D", "title": "Acknowledge receipt of 2027–2031 Capital Improvement Program", "is_priority": false},
+      {"item_number": "5E", "title": "ILA with Rosharon VFD — fire protection, Preservation Creek — not to exceed $12,000.00", "is_priority": false},
+      {"item_number": "5F", "title": "Lift Station 33 Rehabilitation and Expansion — bid award to Reddico Construction — not to exceed $2,179,995.83", "is_priority": true},
+      {"item_number": "5G", "title": "Amendment to Crowder Gulf debris removal contract (federal compliance provisions)", "is_priority": false},
+      {"item_number": "5H", "title": "Acceptance of Jerry Persefield resignation from Parks and Recreation Board", "is_priority": false},
+      {"item_number": "6A", "title": "ACFR presentation by Crowe LLP — acknowledge receipt", "is_priority": false},
+      {"item_number": "6B", "title": "Ordinance 26-C — ETJ release, 5.2692 acres at 14830 Vacek Street", "is_priority": false},
+      {"item_number": "6C", "title": "Ordinance 26-D — Commercial and oversized vehicle parking restrictions", "is_priority": true},
+      {"item_number": "6D", "title": "Resolution 26-R-20 — MVCPA grant application: DFR drone system and 8 FLOCK ALPR cameras", "is_priority": true},
+      {"item_number": "6E", "title": "Ordinance 26-E — Park rules amendment (digging and climbing prohibitions)", "is_priority": false},
+      {"item_number": "6F", "title": "Resolution 26-R-21 — Bob S. Owen Pool rules update", "is_priority": false},
+      {"item_number": "6G", "title": "Resolution 26-R-22 — Alvin Recreation Center Pool rules update", "is_priority": false},
+      {"item_number": "6H", "title": "Council member agenda requests", "is_priority": false},
+      {"item_number": "7A", "title": "City Manager items of community interest", "is_priority": false},
+      {"item_number": "8A", "title": "Mayor and council announcements", "is_priority": false},
+      {"item_number": "9A", "title": "Executive Session — Texas Gov't Code §551.074 (personnel)", "is_priority": false},
+      {"item_number": "10", "title": "Reconvene to Open Session", "is_priority": false},
+      {"item_number": "11", "title": "Adjournment", "is_priority": false}
+    ],
+    "executive_summary": "The following items on your agenda require action and/or have a vote:",
+    "action_items": [
+      {
+        "item_number": "5F",
+        "title": "Lift Station 33 Rehabilitation and Expansion — bid award to Reddico Construction Company, Inc.",
+        "requires_vote": true,
+        "note": "On consent agenda. Will pass without discussion unless pulled.",
+        "overview": "Council is being asked to award a construction contract to Reddico Construction Company, Inc. for rehabilitation and expansion of Lift Station 33, located along Highway 35 across from Kendall Lakes. The project expands firm pumping capacity to 2.65 million gallons per day, replaces existing mechanical equipment, electrical components, and the emergency generator, and rehabilitates the existing concrete wet well. If approved, construction starts May 2026 with a 365-calendar-day window. This was a sole-bid situation: Reddico was the only firm to submit when bids opened March 24, 2026. LJA Engineering, the city's design consultant, reviewed the bid, found no mathematical errors, and recommends award. Reddico is the current contractor on the LS 23 Expansion Project and staff reports no performance issues. If deferred, the project timeline shifts and infrastructure capacity in a service area that includes the growing Preservation Creek development remains constrained. The project is funded by 2020, 2022, and 2023 Water and Sewer Revenue Bonds and is included in the Capital Improvement Plan — no new tax authorization is required.",
+        "constituent_sentiment": {
+          "summary": "**Infrastructure spending — modeled lean toward \"enough spent\" (57.5/100)**",
+          "detail": "This score (hs_infrastructure_funding_enough_spent) measures the modeled likelihood that Alvin constituents believe enough is already spent on infrastructure rather than supporting increased funding even with higher taxes; a citywide mean of 57.5 indicates a modest lean toward the \"enough spent\" position among 32,831 registered voters in the Alvin area.",
+          "scope_note": "This is a general infrastructure spending proxy, not a direct measure of the lift station project; the bond funding structure (no new tax authorization) distinguishes this vote from the hypothetical tax-for-infrastructure scenario the survey measures.",
+          "haystaq_column": "hs_infrastructure_funding_enough_spent",
+          "score_value": 57.5,
+          "district_voters_n": 32831
+        },
+        "recent_news": null,
+        "budget_impact": {
+          "summary": "Contract funded entirely by 2020, 2022, and 2023 Water and Sewer Revenue Bonds. No general fund impact.",
+          "figures": [
+            {"label": "Base bid + supplementary + allowance items (Reddico Construction Company, Inc.)", "value": "$2,076,186.50", "source_id": "src-003"},
+            {"label": "Contingency (5%)", "value": "$103,809.33", "source_id": "src-002"},
+            {"label": "Total contract not to exceed", "value": "$2,179,995.83", "source_id": "src-002"}
+          ]
+        },
+        "talking_points": [
+          "This item is on the consent agenda and will pass without separate discussion unless pulled. If you have questions about the sole-bid process — whether outreach was adequate or whether the price came in at market rate — pull it before the vote begins.",
+          "Reddico is the current contractor on the LS 23 Expansion Project and staff reports no performance issues. That is meaningful context for a sole-bid award: the city has direct performance data on this contractor.",
+          "The packet includes $65,000 in allowance items for electrical service, gas service, and SCADA installation. Ask staff what conditions trigger those draws if you want the council's authorization on the record before work begins.",
+          "If cost questions arise in public comment, lead with the funding source: this is bond-funded infrastructure investment with no general fund impact and no new tax obligation."
+        ],
+        "sources": [
+          {"id": "src-001", "label": "City of Alvin City Council Agenda — April 16, 2026", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-002", "label": "Agenda Commentary — Lift Station 33 (pp. 76–77)", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-003", "label": "LJA Engineering Recommendation Letter and Bid Tabulation (pp. 78–85)", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-009", "label": "Haystaq — hs_infrastructure_funding_enough_spent — Alvin TX citywide", "kind": "haystaq", "url": null}
+        ]
+      },
+      {
+        "item_number": "6C",
+        "title": "Ordinance 26-D — Commercial and oversized vehicle parking restrictions",
+        "requires_vote": true,
+        "overview": "Council is being asked to adopt Ordinance 26-D, amending Chapter 24 of the Code of Ordinances. If passed, the ordinance restricts vehicles exceeding 25 feet in length to no parking between 10 p.m. and 6 a.m. (converting an all-hours ban that inadvertently made daytime lawn service vehicles technically in violation into an overnight-only restriction), prohibits commercial motor vehicles from parking on any city street except for immediate loading or unloading during daytime and adds a full overnight prohibition (10 p.m.–6 a.m.), creates a construction zone exemption, and sets a maximum penalty of $500 per violation per day. If it fails or is deferred, the existing ordinance — which technically bars all vehicles over 25 feet at all hours, making it effectively unenforceable against working lawn crews — remains in place and residential complaints about commercial trucks parking overnight continue without a clear legal remedy. The ordinance was co-developed by Council Member DeKeyzer, City Manager Roland, and Police Chief Lee following a council workshop held January 15, 2026 in response to constituent complaints.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": [
+          "The current ordinance has an enforcement gap: it technically prohibits lawn service vehicles from parking on any city street during the workday. This ordinance fixes that by moving the oversized-vehicle restriction to overnight hours only. Confirm for the record that staff and Chief Lee are satisfied the revision is enforceable and does not create new gaps.",
+          "The commercial motor vehicle definition is keyed to Texas Transportation Code §548.001 and §541.201, capturing road tractors, truck tractors, pole trailers, and semitrailers. The packet does not address box trucks and delivery vans. If those have generated complaints, ask Chief Lee before the vote whether the definition scope was intentionally drawn at this boundary.",
+          "This ordinance came from a formal council workshop and was co-developed with the Police Chief and City Manager — that history is useful if questions arise in chambers about the enforcement approach."
+        ],
+        "sources": [
+          {"id": "src-001", "label": "City of Alvin City Council Agenda — April 16, 2026", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-005", "label": "Agenda Commentary — Ordinance 26-D (pp. 125–126)", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-006", "label": "Ordinance 26-D — final text (pp. 127–132)", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"}
+        ]
+      },
+      {
+        "item_number": "6D",
+        "title": "Resolution 26-R-20 — MVCPA grant application: DFR drone system and 8 FLOCK ALPR cameras",
+        "requires_vote": true,
+        "overview": "Council is being asked to authorize the Alvin Police Department to apply for the Texas Motor Vehicle Crime Prevention Authority (MVCPA) Catalytic Converter Theft Prevention Grant for FY2027 (September 1, 2026–August 31, 2027) and to designate Police Chief Robert E. Lee as the authorized official for grant administration. The grant application covers 8 additional FLOCK ALPR cameras for the FM 1462/SH 288 corridor and a Drone First Responder (DFR) system from Flock Safety. The grant reimburses 80% of eligible costs quarterly; the city funds upfront and is reimbursed, with a 20% required cash match. Estimated city cost with the grant is approximately $64,000 for year one, compared to $125,000–$275,000 annually without it depending on the DFR tier selected. Two DFR tiers are available: 200-foot ceiling at $125,000/year and 400-foot ceiling at $275,000/year; the packet does not specify which tier the application will request. The grant application deadline is May 8, 2026. If deferred tonight, the application cannot be submitted in time for the FY27 cycle.",
+        "constituent_sentiment": {
+          "summary": "**Violent crime concern — near-neutral modeled lean (52.3/100)**",
+          "detail": "This score (hs_violent_crime_very_worried) measures the modeled likelihood that Alvin constituents describe themselves as very worried or somewhat worried about violent crime affecting them or their family; a citywide mean of 52.3 indicates no strong lean in either direction among 32,831 registered voters in the Alvin area.",
+          "scope_note": "This is a general crime anxiety proxy, not a direct measure of support for drone or ALPR technology; the near-neutral score means constituent crime concern alone does not provide a strong tailwind or headwind for the grant application.",
+          "haystaq_column": "hs_violent_crime_very_worried",
+          "score_value": 52.3,
+          "district_voters_n": 32831
+        },
+        "recent_news": null,
+        "budget_impact": {
+          "summary": "Reimbursement grant covering 80% of costs; city funds upfront and is reimbursed quarterly. Item not in current budget; FY27 funding subject to appropriation.",
+          "figures": [
+            {"label": "Estimated city cost year 1 (with grant — both DFR and ALPR cameras)", "value": "~$64,000", "source_id": "src-007"},
+            {"label": "8 FLOCK ALPR cameras (without grant)", "value": "$39,200", "source_id": "src-008"},
+            {"label": "DFR system — 200-foot ceiling tier (without grant)", "value": "$125,000/year", "source_id": "src-008"},
+            {"label": "DFR system — 400-foot ceiling tier (without grant)", "value": "$275,000/year", "source_id": "src-007"}
+          ]
+        },
+        "talking_points": [
+          "The resolution authorizes the application but does not specify which DFR tier — 200-foot ceiling at $125,000/year or 400-foot ceiling at $275,000/year — will be applied for. Ask staff which tier the application reflects before the vote so the council's authorization is specific about what the city is pursuing.",
+          "Data governance for ALPR camera data and DFR video is not addressed in the packet. Asking what retention periods and access policies are in place before the grant is awarded gets a policy baseline on record before the program launches.",
+          "This is a one-year reimbursement grant, renewable annually subject to performance and funding availability — no continuation is guaranteed. Ask staff whether a sustainability plan exists if the grant is not renewed in FY28 before authorizing a technology program the department will depend on.",
+          "If cost questions arise, lead with the grant-vs-no-grant comparison: the 80% reimbursement structure means the city receives a program worth $125,000–$314,000/year for approximately $64,000 in year one."
+        ],
+        "sources": [
+          {"id": "src-001", "label": "City of Alvin City Council Agenda — April 16, 2026", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-007", "label": "Agenda Commentary — Resolution 26-R-20 (pp. 135–136)", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-008", "label": "Corporal Cleere — DFR program memo, Feb 26 2026 (pp. 139–142)", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-008b", "label": "Corporal Cleere — MVCPA grant memo, March 25 2026 (p. 143)", "kind": "agenda_packet", "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434"},
+          {"id": "src-010", "label": "Haystaq — hs_violent_crime_very_worried — Alvin TX citywide", "kind": "haystaq", "url": null}
+        ]
+      }
+    ],
+    "non_priority_items": [
+      {"item_number": "1", "title": "Call to Order", "description": "Procedural opening of the meeting."},
+      {"item_number": "2", "title": "Invocation and Pledge of Allegiance", "description": "Ceremonial opening."},
+      {"item_number": "3A", "title": "Badge pinning — Officer Timothy Raney", "description": "Ceremonial recognition of Officer Raney's promotion to the civil service rank of Specialist/Corporal within the Alvin Police Department."},
+      {"item_number": "3B", "title": "Proclamation — Crime Victims' Rights Week", "description": "Ceremonial proclamation designating April 19–25, 2026 as Crime Victims' Rights Week, marking the 45th anniversary of the national observance; no action required."},
+      {"item_number": "3C", "title": "Proclamation — Volunteer Appreciation Month", "description": "Ceremonial recognition of Gathering Place Interfaith Ministries, which provides free dementia caregiver respite services through 83 volunteers at five Alvin-area churches; no action required."},
+      {"item_number": "3D", "title": "Proclamation — Telecommunications Week", "description": "Ceremonial proclamation recognizing Alvin PD public safety telecommunicators for the week of April 12–18, 2026; no action required."},
+      {"item_number": "3E", "title": "Public Services Departmental Update", "description": "Staff presentation on Utilities, Streets, Code Compliance, and Fleet Maintenance — city serves 16+ square miles with an estimated population of 28,633 and 9,626 water/wastewater connections; no action required."},
+      {"item_number": "4", "title": "Public Comment", "description": "Open public comment period; no action."},
+      {"item_number": "5A", "title": "Approve March 19, 2026 workshop minutes", "description": "Routine consent approval of prior meeting minutes."},
+      {"item_number": "5B", "title": "Approve March 19, 2026 meeting minutes", "description": "Routine consent approval of prior meeting minutes."},
+      {"item_number": "5C", "title": "Approve March 31, 2026 workshop minutes", "description": "Routine consent approval of prior meeting minutes."},
+      {"item_number": "5D", "title": "Acknowledge 2027–2031 Capital Improvement Program", "description": "Consent receipt of the CIP document; no budget vote at this meeting."},
+      {"item_number": "5E", "title": "ILA with Rosharon Volunteer Fire Department", "description": "Consent approval of an interlocal agreement for fire protection services in the Preservation Creek Subdivision Development Area (approximately 2,962 acres, east of SH 288, between FM 1462 and County Road 51) through December 31, 2026 for not to exceed $12,000.00, renewable annually; staff recommends approval."},
+      {"item_number": "5G", "title": "Crowder Gulf debris removal contract amendment", "description": "Consent approval of an amendment adding two missing federal provisions — telecom equipment prohibition (2 C.F.R. §200.216) and domestic preference for procurements (2 C.F.R. §200.322) — to preserve FEMA reimbursement eligibility including for Hurricane Beryl; no change to scope or pricing."},
+      {"item_number": "5H", "title": "Acceptance of Jerry Persefield resignation", "description": "Formal consent acceptance of Persefield's April 2, 2026 resignation from the Parks and Recreation Board (term through December 31, 2026); board will have 6 of the required 7–9 members, with a replacement appointment expected at the May 7, 2026 meeting."},
+      {"item_number": "6A", "title": "ACFR presentation — Crowe LLP", "description": "Presentation of the FY2025 Annual Comprehensive Financial Report (audit ending September 30, 2025), which received an unmodified opinion; one material weakness identified in account reconciliation processes; acknowledge receipt only."},
+      {"item_number": "6B", "title": "Ordinance 26-C — ETJ release, 14830 Vacek Street", "description": "Vote to release approximately 5.2692 acres at 14830 Vacek Street, Santa Fe, Texas (owned by Christopher and Catherine Moore) from the city's extraterritorial jurisdiction so the owners may pursue home-building through Brazoria County; statutory deadline to act is May 15, 2026, after which the area is released by operation of state law; staff recommends approval."},
+      {"item_number": "6E", "title": "Ordinance 26-E — Park rules amendment", "description": "Vote to add prohibitions on unauthorized digging, excavation, or soil disturbance and on climbing or sitting on park monuments, railings, fences, and tree sculptures; unanimously recommended by Park Board on March 3, 2026; no budget impact."},
+      {"item_number": "6F", "title": "Resolution 26-R-21 — Bob S. Owen Pool rules", "description": "Vote to update slide rules at Bob S. Owen Pool (919 Bayou Drive) to add health warnings, clarify regulatory status (Texas Department of Insurance: slide is not subject to amusement ride compliance requirements of 28 TAC §5.9004), and align language with Recreation Center pool; unanimously recommended by Park Board on April 7, 2026."},
+      {"item_number": "6G", "title": "Resolution 26-R-22 — Recreation Center Pool rules", "description": "Vote to update rules for the Alvin Recreation Center Pool (3201 Highway 35) in a corresponding update to maintain consistency across city aquatic facilities."},
+      {"item_number": "6H", "title": "Council member agenda requests", "description": "Opportunity for individual council members to request items for the next regularly scheduled meeting; no action expected."},
+      {"item_number": "7A", "title": "City Manager community interest items", "description": "Standing update from City Manager; no action."},
+      {"item_number": "8A", "title": "Mayor and council announcements", "description": "Community interest announcements pursuant to Texas Gov't Code §551.0415; no action or discussion permitted."},
+      {"item_number": "9A", "title": "Executive Session — §551.074 personnel deliberations", "description": "Closed session for personnel deliberations per Texas Government Code §551.074; no public action."},
+      {"item_number": "10", "title": "Reconvene to Open Session", "description": "Procedural."},
+      {"item_number": "11", "title": "Adjournment", "description": "Procedural."}
+    ]
+  },
+  "claims": [
+    {
+      "claim_id": "claim_001",
+      "section": "budget_impact",
+      "item_title": "Lift Station 33 Rehabilitation and Expansion",
+      "claim_text": "The contract not to exceed $2,179,995.83 comprises a base bid, supplementary items, and allowance items totaling $2,076,186.50 plus a 5% contingency of $103,809.33.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": ["Contract Amount: $ 2,076,186.50 (Base Bid, Supplementary, and Allowance Items). 5% Contingency: $ 103,809.33. Total Amount: $ 2,179,995.83"],
+      "source_ids": ["src-002"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_002",
+      "section": "overview",
+      "item_title": "Lift Station 33 Rehabilitation and Expansion",
+      "claim_text": "Reddico Construction Company, Inc. was the sole bidder when bids opened March 24, 2026.",
+      "claim_type": "staff_recommendation",
+      "claim_weight": "high",
+      "source_extracts": ["On March 24, 2026, bids were opened for the Lift Station 33 Rehabilitation and Expansion Project, and Reddico Construction Company, Inc. was the qualified lone bidder."],
+      "source_ids": ["src-002"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_003",
+      "section": "overview",
+      "item_title": "Lift Station 33 Rehabilitation and Expansion",
+      "claim_text": "The project expands the station to a firm pumping capacity of 2.65 MGD, funded by 2020, 2022, and 2023 Water and Sewer Revenue Bonds.",
+      "claim_type": "staff_recommendation",
+      "claim_weight": "medium",
+      "source_extracts": ["This project includes the rehabilitation and expansion of lift station 33 (located along Highway 35 across from Kendall Lakes) to a firm pumping capacity of 2.65 MGD. The construction of this project will be funded by the 2020, 2022 and 2023 Water and Sewer Revenue Bonds."],
+      "source_ids": ["src-002"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_004",
+      "section": "overview",
+      "item_title": "Lift Station 33 Rehabilitation and Expansion",
+      "claim_text": "Construction is scheduled to start in May 2026 and has a construction time of 365 calendar days.",
+      "claim_type": "staff_recommendation",
+      "claim_weight": "medium",
+      "source_extracts": ["The project is scheduled to start in May 2026 and has a construction time of 365 calendar days."],
+      "source_ids": ["src-002"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_005",
+      "section": "constituent_sentiment",
+      "item_title": "Lift Station 33 Rehabilitation and Expansion",
+      "claim_text": "Alvin citywide modeled mean on hs_infrastructure_funding_enough_spent is 57.5/100 (n=32,831 registered voters).",
+      "claim_type": "constituent_sentiment",
+      "claim_weight": "medium",
+      "source_extracts": ["Databricks query: SELECT ROUND(AVG(CAST(hs_infrastructure_funding_enough_spent AS DOUBLE)), 1), COUNT(*) FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq WHERE upper(Residence_Addresses_City) = upper('ALVIN') AND upper(Residence_Addresses_State) = 'TX' AND Voters_Active = 'A' — result: avg=57.5, n=32831"],
+      "source_ids": ["src-009"],
+      "required_source_type": "haystaq",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_006",
+      "section": "overview",
+      "item_title": "Ordinance 26-D — Commercial and oversized vehicle parking restrictions",
+      "claim_text": "The ordinance sets a maximum penalty not to exceed $500 for violations; each day a violation continues constitutes a separate offense.",
+      "claim_type": "legal_citation",
+      "claim_weight": "high",
+      "source_extracts": ["providing for a penalty not to exceed five hundred dollars ($500) for violations", "Each day a violation continues shall constitute a separate offense."],
+      "source_ids": ["src-006"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_007",
+      "section": "overview",
+      "item_title": "Ordinance 26-D — Commercial and oversized vehicle parking restrictions",
+      "claim_text": "The January 15, 2026 council workshop was requested by Council Member DeKeyzer in response to constituent complaints about oversized and commercial vehicle parking.",
+      "claim_type": "historical_context",
+      "claim_weight": "medium",
+      "source_extracts": ["After the council and police department received several complaints about oversize and commercial vehicle parking, Council member DeKeyzer requested a council workshop which was held on Thursday, January 15, 2026."],
+      "source_ids": ["src-005"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_008",
+      "section": "overview",
+      "item_title": "Ordinance 26-D — Commercial and oversized vehicle parking restrictions",
+      "claim_text": "The overnight prohibition for oversized vehicles runs from 10 p.m. to 6 a.m.; commercial motor vehicles may park only for immediate loading or unloading during daytime, with a full overnight ban also from 10 p.m. to 6 a.m.",
+      "claim_type": "legal_citation",
+      "claim_weight": "high",
+      "source_extracts": ["No person shall stop, stand or park any vehicle, trailer or combination thereof which exceeds twenty-five (25) feet in length on any street, alley or other public way of the city between the hours of 10 p.m. and 6 a.m.", "No person shall stop, stand or park any commercial motor vehicle on any street, alley or other public way of the city during daytime hours except for the express purpose of immediate loading or unloading. Parking between the hours of 10 p.m. and 6 a.m. is prohibited"],
+      "source_ids": ["src-006"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_009",
+      "section": "budget_impact",
+      "item_title": "Resolution 26-R-20 — MVCPA grant application",
+      "claim_text": "The anticipated city cost for the first year of the grant, for both FLOCK cameras and FLOCK DFR, is approximately $64,000.00.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": ["The anticipated city cost for the first year of the grant, for both FLOCK cameras and FLOCK DFR, is approximately $64,000.00."],
+      "source_ids": ["src-007"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_010",
+      "section": "budget_impact",
+      "item_title": "Resolution 26-R-20 — MVCPA grant application",
+      "claim_text": "Without the grant, the yearly cost would range between $150,000 and $310,000 based on the DFR program level chosen.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": ["Without the grant, the yearly cost would range between $150,000 — $310,000 based on the DFR program level chosen."],
+      "source_ids": ["src-007"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_011",
+      "section": "budget_impact",
+      "item_title": "Resolution 26-R-20 — MVCPA grant application",
+      "claim_text": "Two DFR tiers are quoted: $125,000/year for a 200-foot ceiling and $275,000/year for a 400-foot ceiling.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": ["A system with a 200 ft flight ceiling is quoted at $125,000 per year, while one with a 400 ft flight ceiling is quoted at $275,000 per year."],
+      "source_ids": ["src-008"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_012",
+      "section": "budget_impact",
+      "item_title": "Resolution 26-R-20 — MVCPA grant application",
+      "claim_text": "The 8 FLOCK ALPR cameras are requested for the area of FM 1462 at SH 288 at a cost of $39,200.00.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": ["8 new Flock LPR cameras which are being requested for the area of FM 1462 at SH 288 at a cost of $39,200.00"],
+      "source_ids": ["src-008b"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_013",
+      "section": "overview",
+      "item_title": "Resolution 26-R-20 — MVCPA grant application",
+      "claim_text": "The MVCPA grant application deadline is May 8, 2026.",
+      "claim_type": "staff_recommendation",
+      "claim_weight": "high",
+      "source_extracts": ["Grant Applications from eligible applicants must be completely submitted on-line at https://MVCPA.tamu.edu on or before 5:00 PM, May 8, 2026."],
+      "source_ids": ["src-007"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_014",
+      "section": "overview",
+      "item_title": "Resolution 26-R-20 — MVCPA grant application",
+      "claim_text": "The grant program requires a 20% cash match and reimburses 80% of costs quarterly.",
+      "claim_type": "staff_recommendation",
+      "claim_weight": "medium",
+      "source_extracts": ["requires a 20% match of funds, and is distributed as a quarterly reimbursement with the agency/city funding the program and MVCPA reimbursing 80% of the cost quarterly"],
+      "source_ids": ["src-007"],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_015",
+      "section": "constituent_sentiment",
+      "item_title": "Resolution 26-R-20 — MVCPA grant application",
+      "claim_text": "Alvin citywide modeled mean on hs_violent_crime_very_worried is 52.3/100 (n=32,831 registered voters).",
+      "claim_type": "constituent_sentiment",
+      "claim_weight": "medium",
+      "source_extracts": ["Databricks query: SELECT ROUND(AVG(CAST(hs_violent_crime_very_worried AS DOUBLE)), 1), COUNT(*) FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq WHERE upper(Residence_Addresses_City) = upper('ALVIN') AND upper(Residence_Addresses_State) = 'TX' AND Voters_Active = 'A' — result: avg=52.3, n=32831"],
+      "source_ids": ["src-010"],
+      "required_source_type": "haystaq",
+      "route_if_unsupported": "block_release"
+    }
+  ],
+  "sources": [
+    {
+      "id": "src-001",
+      "name": "City of Alvin City Council Agenda — April 16, 2026",
+      "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "City of Alvin, Texas. Gabe Adame, Mayor. Meagan DeKeyzer, Mayor Pro-tem, District E. Ashley Davis, District D. Martin Vela, District A. Keko Moore At-Lg P1. Chris Vaughn, District B. Scott Salter, At-Lg P2. Richard Garivey, District C. Alvin City Council Agenda. Thursday, April 16, 2026. 7:00 PM (Council Chambers). Alvin City Hall, 216 West Sealy, Alvin, Texas 77511. [Full agenda items 1–11 including consent agenda items 5A–5H and other business items 6A–6H as extracted from the 198-page agenda packet PDF.]",
+      "page_number": 1,
+      "section_heading": "Alvin City Council Agenda"
+    },
+    {
+      "id": "src-002",
+      "name": "Agenda Commentary — Lift Station 33 Rehabilitation and Expansion (pp. 76–77)",
+      "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "AGENDA COMMENTARY. Meeting Date: 4/16/2026. Department: Engineering. Contact: Michelle Segovia, City Engineer. Agenda Item: Consider an award of bid to Reddico Construction Company, Inc., for the Lift Station 33 Rehabilitation and Expansion Project in an amount not to exceed $2,179,995.83; and authorize the City Manager to sign the contract. Type of Item: Contract/Agreement. Summary: On March 24, 2026, bids were opened for the Lift Station 33 Rehabilitation and Expansion Project, and Reddico Construction Company, Inc. was the qualified lone bidder. LJA Engineering, the City's consultant that designed the project, reviewed bid that was received and has recommended Reddico Construction Company, Inc. for this project. Reddico Construction is the contractor for the LS 23 Expansion Project that is currently under construction and City Staff has had no issues with their performance. Contract Amount: $ 2,076,186.50 (Base Bid, Supplementary, and Allowance Items). 5% Contingency: $ 103,809.33. Total Amount: $ 2,179,995.83. This project includes the rehabilitation and expansion of lift station 33 (located along Highway 35 across from Kendall Lakes) to a firm pumping capacity of 2.65 MGD. The project will utilize and rehabilitate the existing wet well, as well as, replace the mechanical equipment, electrical components, and emergency generator. These improvements were based on recommendations in the 2015 Utility Master Plan by Freese and Nichols, Inc. that was approved by City Council on March 3, 2016; and is also included in the Capital Improvement Plan. The construction of this project will be funded by the 2020, 2022 and 2023 Water and Sewer Revenue Bonds. The project is scheduled to start in May 2026 and has a construction time of 365 calendar days. Staff recommends approval. Funding Account: Bond Funds. Amount: $2,179,995.83.",
+      "page_number": 76,
+      "section_heading": "Agenda Commentary — Lift Station 33"
+    },
+    {
+      "id": "src-003",
+      "name": "LJA Engineering Recommendation Letter and Bid Tabulation (pp. 78–85)",
+      "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "March 30, 2026. Ms. Michelle H. Segovia, PE, CFM. City Engineer. RE: Bid Tabulation and Recommendation of Award for Construction of Lift Station 33 Rehabilitation & Expansion to 2.65 MGD. LJA Project No. E231-0120. Bids for construction of the reference project were received on March 24, 2026, at 2:00 P.M. at City Hall. One (1) contracting firm submitted a bid for the project. No mathematical errors were found. The bidders from low to high and the correct total amounts bid are as follows: Contractor: Reddico Construction Company, Inc., Location: Conroe, TX, Contract Amount: $2,076,186.50. The bidding documents of the bidders were examined and found to be in order. Based on our investigation, we recommend awarding the contract to the low bidder, Reddico Construction Company, Inc. Signed: Michael Helfrich, P.E., Senior Project Engineer. Bid Tabulation Summary: BASE BID ITEMS 1-31: $1,984,636.50. SUPPLEMENTARY BID ITEMS 32-39: $26,550.00. ALLOWANCE ITEMS 40-42: $65,000.00. TOTAL: $2,076,186.50. Calendar Days: 365.",
+      "page_number": 78,
+      "section_heading": "LJA Engineering Recommendation Letter"
+    },
+    {
+      "id": "src-005",
+      "name": "Agenda Commentary — Ordinance 26-D Commercial Vehicle Parking (pp. 125–126)",
+      "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "AGENDA COMMENTARY. Meeting Date: 4/16/2026. Department: Police Department. Contact: Robert Lee, Police Chief. Agenda Item: Consider Ordinance 26-D, amending Chapter 24, 'Traffic and Vehicles' of the Code of Ordinances by amending Article II (Parking) and Article III (Commercial Motor Vehicles) to regulate the parking of certain vehicles, including vehicles exceeding twenty-five (25) feet in length and commercial motor vehicles during certain hours; providing definitions; providing for a penalty not to exceed five hundred dollars ($500) for violations; providing for repealer; providing for severability; providing for publication; and providing for effective date. Summary: After the council and police department received several complaints about oversize and commercial vehicle parking, Council member DeKeyzer requested a council workshop which was held on Thursday, January 15, 2026. Currently, Chapter 24 of the City of Alvin Ordinances only prohibits vehicles over 25' in length from parking on a city street. At the workshop, the fact that some tractor trailers did not exceed 25' in length was discussed, as well as the technical issue that, under the current ordinance, it is a violation for the majority of lawn companies who pull a trailer behind a truck to carry their lawn equipment, since that combination often does exceed 25' and makes them, again technically, not allowed to park on any city street. To correct these uses, Council Member DeKeyzer, City Manager Junru Roland, and Chief Lee came up with the attached changes to Chapter 24 which address these issues. Staff recommends approval of Ordinance 26-D.",
+      "page_number": 125,
+      "section_heading": "Agenda Commentary — Ordinance 26-D"
+    },
+    {
+      "id": "src-006",
+      "name": "Ordinance 26-D — final text (pp. 127–132)",
+      "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "ORDINANCE 26-D. Sec. 24-35. Parking vehicles exceeding twenty-five feet in length. No person shall stop, stand or park any vehicle, trailer or combination thereof which exceeds twenty-five (25) feet in length on any street, alley or other public way of the city between the hours of 10 p.m. and 6 a.m. This offense shall be subject to the penalty provisions set forth in section 1-5 of this Code. Sec. 24-49 Parking of Commercial Motor Vehicles Restricted. No person shall stop, stand or park any commercial motor vehicle on any street, alley or other public way of the city during daytime hours except for the express purpose of immediate loading or unloading. Parking between the hours of 10 p.m. and 6 a.m. is prohibited. Sec. 24-50 Exemptions. Vehicles used during permitted construction, regardless of time of day, are exempt from the requirements of 24-35 and 24-49 while within a construction zone. Section 4. Penalties. Any person, firm, entity, or corporation violating any provision of this Ordinance shall be deemed guilty of a misdemeanor and, upon conviction, shall be punished with a fine not to exceed five hundred dollars ($500.00). Each day a violation continues shall constitute a separate offense. PASSED and APPROVED on the 16th day of April 2026.",
+      "page_number": 127,
+      "section_heading": "Ordinance 26-D"
+    },
+    {
+      "id": "src-007",
+      "name": "Agenda Commentary — Resolution 26-R-20 MVCPA Grant (pp. 135–136)",
+      "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "AGENDA COMMENTARY. Meeting Date: 4/16/2026. Department: Police Department. Contact: Robert Lee, Police Chief. Agenda Item: Consider Resolution 26-R-20, authorizing the Alvin Police Department to make application for the Catalytic Converter Theft Prevention Grant through the Motor Vehicle Crime Prevention Authority, to help defray the cost of a Drone First Responder (DFR) system and eight (8) additional FLOCK ALPR cameras from FLOCK Safety. Summary: The Texas Motor Vehicle Crime Prevention Authority (MVCPA) issues grants annually (September 1st 2026 to August 31st 2027) with the stated purpose being 'to combat motor vehicle theft and/or fraud-related vehicle crime.' These grants are 1-year grants. The grant program is established under TTC chapter 1006, requires a 20% match of funds, and is distributed as a quarterly reimbursement with the agency/city funding the program and MVCPA reimbursing 80% of the cost quarterly. With this grant we intend to add eight (8) FLOCK ALPR cameras to our current inventory. These cameras will be deployed in the area of FM 1462 and SH 288, Alvin West in response to the rapid development of the area. The anticipated city cost for the first year of the grant, for both FLOCK cameras and FLOCK DFR, is approximately $64,000.00. Year two cost would be the same if the grant is renewed. Without the grant, the yearly cost would range between $150,000 — $310,000 based on the DFR program level chosen. With the grant, the cost range would be $32,840 — $64,000 per year. The implementation and/or continuation of the program will be assessed based on the availability of funds for Fiscal Year 2027 and subsequent fiscal years. Staff recommends approval.",
+      "page_number": 135,
+      "section_heading": "Agenda Commentary — Resolution 26-R-20"
+    },
+    {
+      "id": "src-008",
+      "name": "Corporal Cleere — DFR Program Budget Memo, February 26, 2026 (pp. 139–142)",
+      "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "INTEROFFICE MEMORANDUM. TO: Chief Lee. FROM: Corporal J. Cleere. DATE: 02-26-2026. SUBJECT: Drone First Responder program – Budget consideration. Flock has provided two quotes for their Alpha DFR system. A system with a 200 ft flight ceiling is quoted at $125,000 per year, while one with a 400 ft flight ceiling is quoted at $275,000 per year. The added cost is due to additional regulations for waivers from the FAA requiring a radar receiver. Taking all of the above into consideration, I am requesting a budget consideration of $275,000 dollars for FY 2027 for a Flock Alpha DFR system with a 400 ft operational ceiling. [Memo details DFR program rationale including 90-second drone response time vs. ~7-minute officer response, 19% of Chula Vista DFR calls requiring no patrol response, force multiplier benefits for Preservation Creek coverage.]",
+      "page_number": 139,
+      "section_heading": "Corporal Cleere DFR Memo"
+    },
+    {
+      "id": "src-008b",
+      "name": "Corporal Cleere — MVCPA Grant Memo, March 25, 2026 (p. 143)",
+      "url": "https://www.alvin.gov/AgendaCenter/ViewFile/Agenda/_04162026-434",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "INTEROFFICE MEMORANDUM. TO: Chief R. Lee. FROM: Corporal J. Cleere. DATE: 03-25-2026. SUBJECT: MVCPA grant. The Texas Motor Vehicle Crime Prevention Authority (MVCPA) issues grants annually (September 1st 2026 to August 31st 2027). The grant funds would be used to reimburse expenditures for the Flock DFR program (currently quoted at $125,000 annually for a program with a 200 ft ceiling and $275,000 for a program with a 400 ft ceiling) as well as 8 new Flock LPR cameras which are being requested for the area of FM 1462 at SH 288 at a cost of $39,200.00.",
+      "page_number": 143,
+      "section_heading": "Corporal Cleere MVCPA Grant Memo"
+    },
+    {
+      "id": "src-009",
+      "name": "Haystaq — hs_infrastructure_funding_enough_spent — Alvin TX citywide",
+      "url": null,
+      "source_type": "haystaq",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "Query: SELECT ROUND(AVG(CAST(hs_infrastructure_funding_enough_spent AS DOUBLE)), 1) AS avg_score, COUNT(*) AS voter_count FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq WHERE upper(Residence_Addresses_City) = upper('ALVIN') AND upper(Residence_Addresses_State) = 'TX' AND Voters_Active = 'A'. Result: avg_score=57.5, voter_count=32831. Dictionary entry: hs_infrastructure_funding_enough_spent — 'Infrastructure Spending' — source_question: 'Would you support increasing funding for infrastructure projects like bridges and roads even if it meant your taxes would be slightly higher, or do you think that enough money is already spent on infrastructure projects?' — score_high_means: 'higher score = more aligned with dependent variable position' (dependent variable = enough spent position) — model_type: score (0-100) — is_subgroup_only: no.",
+      "haystaq_column": "hs_infrastructure_funding_enough_spent",
+      "score_value": 57.5,
+      "district_voters_n": 32831
+    },
+    {
+      "id": "src-010",
+      "name": "Haystaq — hs_violent_crime_very_worried — Alvin TX citywide",
+      "url": null,
+      "source_type": "haystaq",
+      "retrieved_at": "2026-05-14T00:00:00Z",
+      "retrieved_text_or_snapshot": "Query: SELECT ROUND(AVG(CAST(hs_violent_crime_very_worried AS DOUBLE)), 1) AS avg_score, COUNT(*) AS voter_count FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq WHERE upper(Residence_Addresses_City) = upper('ALVIN') AND upper(Residence_Addresses_State) = 'TX' AND Voters_Active = 'A'. Result: avg_score=52.3, voter_count=32831. Dictionary entry: hs_violent_crime_very_worried — 'Violent Crime Anxiety: Respondents who said very worried, somewhat worried vs. those who said not at all worried, not very worried' — source_question: 'How much do you worry about violent crime affecting you or your family? Are you very worried, somewhat worried, not very worried or not at all worried about violent crime affecting you or your family?' — score_high_means: 'higher score = more aligned with dependent variable position' (dependent variable = very worried / somewhat worried) — model_type: score (0-100) — is_subgroup_only: no.",
+      "haystaq_column": "hs_violent_crime_very_worried",
+      "score_value": 52.3,
+      "district_voters_n": 32831
+    }
+  ]
+}
