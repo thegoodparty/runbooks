@@ -1,17 +1,44 @@
+"""Run a Databricks SQL query and print results as a tab-aligned table.
+
+Env vars (Databricks SDK naming convention):
+  DATABRICKS_HOST       — workspace hostname, e.g. adb-xxxx.azuredatabricks.net
+  DATABRICKS_HTTP_PATH  — warehouse path, e.g. /sql/1.0/warehouses/xxxx
+  DATABRICKS_TOKEN      — personal access token, e.g. dapi_xxxx
+
+Load order (later overrides earlier):
+  1. ~/Research/.env (shared cross-project secrets)
+  2. <repo>/scripts/.env (project-local override)
+"""
+
 import os
 import sys
+from pathlib import Path
+
 import pandas as pd
 from databricks.sql import connect
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+# Load shared first, then project-local override.
+load_dotenv(Path.home() / "Research" / ".env")
+load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=True)
+
+
+def _require(key: str) -> str:
+    value = os.environ.get(key)
+    if not value:
+        raise RuntimeError(
+            f"Missing required environment variable: {key}. "
+            f"Set it in ~/Research/.env or <repo>/scripts/.env "
+            f"(see scripts/.env.example for the expected keys)."
+        )
+    return value
 
 
 def execute_query(query: str) -> pd.DataFrame:
     conn = connect(
-        server_hostname=os.environ['DATABRICKS_SERVER_HOSTNAME'],
-        http_path=os.environ['DATABRICKS_HTTP_PATH'],
-        access_token=os.environ['DATABRICKS_API_KEY'],
+        server_hostname=_require("DATABRICKS_HOST"),
+        http_path=_require("DATABRICKS_HTTP_PATH"),
+        access_token=_require("DATABRICKS_TOKEN"),
     )
     try:
         with conn.cursor() as cursor:
@@ -22,7 +49,7 @@ def execute_query(query: str) -> pd.DataFrame:
         conn.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 2:
         print('Usage: uv run databricks_query.py "SELECT ..."')
         sys.exit(1)

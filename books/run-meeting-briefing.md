@@ -4,22 +4,21 @@ Run a meeting briefing for one elected official's next city council meeting. Pro
 ## Prerequisites
 
 **books/.env variables**: None
-**scripts/.env variables**: `DATABRICKS_SERVER_HOSTNAME`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_API_KEY` (required for Haystaq curated table and data dictionary lookups)
+**Databricks env variables** (required for Haystaq curated table and dictionary lookups): `DATABRICKS_HOST`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_TOKEN`. These match the Databricks SDK naming convention and are loaded by `scripts/python/databricks_query.py` from `~/Research/.env` first, then `scripts/.env` (project-local override).
 **Tools**: Claude Code CLI, `curl`, `pdftotext` (from poppler-utils), `python3`
-**Access**: Internet (for Legistar / PrimeGov / eSCRIBE / CivicPlus / Municode and local news), Databricks (for Haystaq scores)
+**Access**: Internet (for Legistar / PrimeGov / eSCRIBE / CivicPlus / CivicClerk / Municode and local news), Databricks (for Haystaq scores)
 
 ### Pre-run setup check
 
-Before starting the workflow steps, verify the environment is ready:
+Before starting the workflow steps, verify the environment is ready. Trust the script over a grep — run a trivial query and inspect the result:
 
 ```bash
-# Confirm the three Databricks vars are present in scripts/.env
-test -f scripts/.env && grep -q DATABRICKS_SERVER_HOSTNAME scripts/.env && grep -q DATABRICKS_HTTP_PATH scripts/.env && grep -q DATABRICKS_API_KEY scripts/.env \
-  && echo "Databricks env OK" \
-  || echo "Databricks env missing — Haystaq will be unavailable"
+cd scripts/python && uv run python databricks_query.py "SELECT 1 AS ping" 2>&1 | head -5
 ```
 
-If `scripts/.env` is missing or any of the three vars are absent, do not fail the run — proceed without Haystaq. Set `haystaq_status: "no_match"` on every item that would have used it, omit haystaq sources from `sources[]`, and record this in `run_metadata.run_decisions[]` with reason `"databricks_credentials_unavailable"`.
+Success: the script prints a one-row table with `ping = 1`. Continue with the run.
+
+Failure: the script raises `RuntimeError: Missing required environment variable: ...` (or a connection error). Do not fail the run — proceed without Haystaq. Set `haystaq_status: "no_match"` on every item that would have used it, omit haystaq sources from `sources[]`, and record the decision in `run_metadata.run_decisions[]` with reason `"databricks_credentials_unavailable"` (include the exact error message in the reason).
 
 ## Inputs
 
@@ -628,7 +627,8 @@ Most cities publish their meetings through one of a handful of agenda systems. W
 - **Legistar** — `https://webapi.legistar.com/v1/{client}/...`. Events, agenda items (`/events/{eventId}/eventitems`), matter detail (`/matters/{matterId}`), matter attachments (`/matters/{matterId}/attachments`). The richest API; most large cities use it.
 - **PrimeGov** — `https://{client}.primegov.com/Portal/Meeting`. The portal links to compiled meeting PDFs; individual attachments are also accessible.
 - **eSCRIBE** — meetings endpoint serves HTML with item titles, numbers, and attachment links. Parse HTML rather than expecting JSON.
-- **CivicPlus AgendaCenter** — `https://{city}.gov/AgendaCenter`. Per-meeting agenda PDFs; scrape the index page, download, and extract text.
+- **CivicPlus AgendaCenter** — `https://{city}.gov/AgendaCenter`. Per-meeting agenda PDFs; scrape the index page, download, and extract text. Some installations are fronted by Cloudflare and return HTTP 403 to scripted requests — when that happens, check for a CivicClerk mirror first before changing strategy.
+- **CivicClerk** — `https://{client}.api.civicclerk.com/v1/Events`. OData-style filterable JSON feed (e.g. `?$filter=startDateTime ge 2026-05-15&$orderby=startDateTime`). Event detail at `/v1/Events({id})` returns `hasAgenda`, `agendaId`, `agendaFile.fileName`, `publishedFiles[]`. Many small-to-mid TX and FL cities use this — including Alvin TX. Often coexists with a CivicPlus AgendaCenter front-end; the CivicClerk API is the scriptable path.
 - **Municode** — sometimes hosts current ordinance text and code references that the agenda packet cites.
 
 When you do go to a platform, capture the response (`retrieved_at`, `retrieved_text_or_snapshot`) the same way as any other source. Cite it as a distinct entry in `sources[]` with its own `id`.
