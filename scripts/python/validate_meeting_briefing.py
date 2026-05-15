@@ -196,27 +196,35 @@ def check_cross_reference_integrity(artifact: dict, findings: list[Finding]) -> 
 
 
 def check_tier_reason_consistency(artifact: dict, findings: list[Finding]) -> None:
-    """tier_reason claims should be backed by content."""
+    """tier_reason content should be consistent with what's in display.*.
+
+    Reasons are free-form strings (no enum). We use substring patterns so the check
+    works for both the preferred values and any domain-specific reasons the agent
+    coins. Pattern is: if reason text contains '<topic>', the corresponding display
+    field is expected to be non-null.
+    """
     for item in artifact.get("items", []):
         if item.get("tier") not in ("featured", "queued"):
             continue
-        reasons = set(item.get("tier_reason") or [])
+        reasons_text = " ".join(r.lower() for r in (item.get("tier_reason") or []))
         display = item.get("display") or {}
         iid = item.get("id")
 
-        if "budget_threshold" in reasons and not display.get("budget_impact"):
+        if "budget" in reasons_text and not display.get("budget_impact"):
             findings.append(Finding(
-                "tier_reason.budget_threshold_unbacked",
+                "tier_reason.budget_unbacked",
                 "warning",
-                f"Item {iid} has tier_reason 'budget_threshold' but display.budget_impact is null.",
+                f"Item {iid} has a tier_reason mentioning 'budget' but display.budget_impact is null.",
             ))
-        if "constituent_alignment" in reasons and not display.get("constituent_sentiment"):
+        if ("constituent" in reasons_text or "alignment" in reasons_text or "resonance" in reasons_text) \
+                and not display.get("constituent_sentiment"):
             findings.append(Finding(
-                "tier_reason.constituent_alignment_unbacked",
+                "tier_reason.constituent_unbacked",
                 "warning",
-                f"Item {iid} has tier_reason 'constituent_alignment' but display.constituent_sentiment is null.",
+                f"Item {iid} has a tier_reason mentioning constituent alignment/resonance "
+                f"but display.constituent_sentiment is null.",
             ))
-        if "vote_required" in reasons and not item.get("vote_required"):
+        if "vote_required" in reasons_text and not item.get("vote_required"):
             findings.append(Finding(
                 "tier_reason.vote_required_inconsistent",
                 "error",

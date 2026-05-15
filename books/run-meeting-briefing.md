@@ -421,6 +421,12 @@ Binding notes (apply to both queries above):
 
 The curated table writes its own scope — do NOT add state/city WHERE clauses. Broker auto-injection applies only to `int__l2_nationwide_uniform_w_haystaq`, which is touched later in Phase 3.
 
+### Phase 1 gotchas to handle gracefully
+
+- **`private_samuel.district_top_issues_us_all` permission denied.** Not all Databricks principals have SELECT on the curated table (it's in a private schema). Treat `INSUFFICIENT_PERMISSIONS` as a signal to fall back to dictionary-only mode (skip the curated cache entirely; all items resolve through Phase 2 dictionary lookup + Phase 3 batched query). Record a `run_decision` with reason `"curated_table_permission_denied"`.
+- **L2 district value format varies by jurisdiction.** PARAMS may pass `l2DistrictName='25'` but the actual value in L2 for NYC City Council is `'NEW YORK CITY CNCL DIST 25 (EST.)'`. Before running the Phase 3 query, run a one-shot discovery query against `int__l2_nationwide_uniform_w_haystaq` to find the exact value matching the official's district. If no match is found, record `haystaq_status: "city_mismatch"` and skip the district scope (city-only is fine).
+- **Dictionary column names may be abbreviated.** The `haystaq_data_dictionary` sometimes truncates column names (e.g. `hs_infrastruc_fund_more` in the dictionary; `hs_infrastructure_funding_fund_more` in L2). After Phase 2 selection, verify each picked column exists in L2 via `information_schema.columns` before running Phase 3 — if a picked column doesn't exist, look for the unabbreviated form by matching the dictionary's `proper_column_name` to the L2 column list.
+
 ## Phase 2 — In-memory selection per item
 
 For each priority-eligible item, scan the cached results in this order:
@@ -548,6 +554,12 @@ What still applies (no override granted):
 
 This is not a summary of the agenda item; the overview section does that. Each bullet gives the official something to do, ask, say, or frame — not just something to know.
 
+## When there are no talking points
+
+For **featured items**: at least one talking point is required (per `required_data_points` in `output_artifacts.md`). Generate three to five.
+
+For **queued items**: talking points are optional. If the item does not warrant directive guidance (procedural votes, received-and-filed messages, land-use referrals where Krishnan-equivalent has no authority), set `display.talking_points` to **`null`**. Do **not** emit an empty array `[]` — the schema treats that as a violation.
+
 ## Format
 
 Up to five bullet points. Each bullet is one or two sentences. Address the official directly.
@@ -633,7 +645,7 @@ Do not truncate to a single sentence. A QA reader must be able to verify the cla
 
 Most cities publish their meetings through one of a handful of agenda systems. When the briefing setup pre-stages a bundled agenda packet at `/workspace/input/agenda.pdf`, **that file is the primary source — do not re-fetch from the platform.** The platforms below are for the case where the bundled packet references a document not included, or where legislative history for a referenced item is useful context. In that case, go directly to the platform — do not start with a generic web search.
 
-- **Legistar** — `https://webapi.legistar.com/v1/{client}/...`. Events, agenda items (`/events/{eventId}/eventitems`), matter detail (`/matters/{matterId}`), matter attachments (`/matters/{matterId}/attachments`). The richest API; most large cities use it.
+- **Legistar** — `https://webapi.legistar.com/v1/{client}/...`. Events, agenda items (`/events/{eventId}/eventitems`), matter detail (`/matters/{matterId}`), matter attachments (`/matters/{matterId}/attachments`). The richest API; most large cities use it. **Token gating note:** some installations (NYC, observed 2026-05) now return HTTP 403 `"Token is required"` on the public OData API even for anonymous reads. When that happens, fall back to scraping the public portal directly: `https://legistar.{client}.gov/Calendar.aspx` for the calendar, `https://legistar.{client}.gov/MeetingDetail.aspx?ID={event_id}` for per-meeting items, `https://legistar.{client}.gov/LegislationDetail.aspx?ID={matter_id}` for matter detail. The portal serves HTML to anonymous clients without a token.
 - **PrimeGov** — `https://{client}.primegov.com/Portal/Meeting`. The portal links to compiled meeting PDFs; individual attachments are also accessible.
 - **eSCRIBE** — meetings endpoint serves HTML with item titles, numbers, and attachment links. Parse HTML rather than expecting JSON.
 - **CivicPlus AgendaCenter** — `https://{city}.gov/AgendaCenter`. Per-meeting agenda PDFs; scrape the index page, download, and extract text. Some installations are fronted by Cloudflare and return HTTP 403 to scripted requests — when that happens, check for a CivicClerk mirror first before changing strategy.
@@ -1004,7 +1016,7 @@ The coverage contract the briefing operated under — what data points each feat
   },
   {
     "name": "talking_points",
-    "scope": "featured_queued",
+    "scope": "featured",
     "required": true,
     "citation_required": true,
     "allowed_source_types": ["agenda_packet", "news", "government_website", "haystaq"]
