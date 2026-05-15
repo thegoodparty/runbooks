@@ -4,9 +4,43 @@ Run a meeting briefing for one elected official's next city council meeting. Pro
 ## Prerequisites
 
 **books/.env variables**: None
-**scripts/.env variables**: `DATABRICKS_SERVER_HOSTNAME`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_API_KEY` (for Haystaq curated table and data dictionary)
+**scripts/.env variables**: `DATABRICKS_SERVER_HOSTNAME`, `DATABRICKS_HTTP_PATH`, `DATABRICKS_API_KEY` (required for Haystaq curated table and data dictionary lookups)
 **Tools**: Claude Code CLI, `curl`, `pdftotext` (from poppler-utils), `python3`
 **Access**: Internet (for Legistar / PrimeGov / eSCRIBE / CivicPlus / Municode and local news), Databricks (for Haystaq scores)
+
+### Pre-run setup check
+
+Before starting the workflow steps, verify the environment is ready:
+
+```bash
+# Confirm the three Databricks vars are present in scripts/.env
+test -f scripts/.env && grep -q DATABRICKS_SERVER_HOSTNAME scripts/.env && grep -q DATABRICKS_HTTP_PATH scripts/.env && grep -q DATABRICKS_API_KEY scripts/.env \
+  && echo "Databricks env OK" \
+  || echo "Databricks env missing — Haystaq will be unavailable"
+```
+
+If `scripts/.env` is missing or any of the three vars are absent, do not fail the run — proceed without Haystaq. Set `haystaq_status: "no_match"` on every item that would have used it, omit haystaq sources from `sources[]`, and record this in `run_metadata.run_decisions[]` with reason `"databricks_credentials_unavailable"`.
+
+## Inputs
+
+The agent receives one or more of the following as params (via `PARAMS_JSON` env var when running as a PMF experiment, or via the launch prompt when running this runbook locally):
+
+| Param | Required | Description |
+|---|---|---|
+| `officialName` | yes | Full name of the elected official (e.g. `"Shekar Krishnan"`). |
+| `state` | yes | 2-letter state code (e.g. `"NY"`). |
+| `city` | yes | City name as it appears in L2 (title-case, e.g. `"New York"`). |
+| `councilBody` | recommended | The specific body (e.g. `"NYC City Council District 25"`). |
+| `l2DistrictType` | optional | L2 voter file column for the official's district (e.g. `"City_Council_Commissioner_District"`). Omit for at-large officials. |
+| `l2DistrictName` | optional | L2 district value to match (e.g. `"25"`). Required if `l2DistrictType` is set. |
+| `meetingDate` | optional | YYYY-MM-DD. When omitted, the agent discovers the next upcoming meeting on the calendar. |
+| `agendaPacketUrl` | optional | Permanent URL to a published agenda packet. When provided, the agent uses this directly instead of discovering through the agenda platform. |
+| `agendaPdfPath` | optional | Local filesystem path to a user-supplied agenda PDF (e.g. `"/workspace/input/agenda.pdf"` or a path inside the run directory). When provided, the agent uses this file directly — no platform discovery, no download. Takes precedence over `agendaPacketUrl` if both are set. |
+| `campaignUrl` | optional | URL of the official's campaign website, used as contextual background. |
+
+**Agenda input precedence:** `agendaPdfPath` > `agendaPacketUrl` > agent-discovered next meeting on the platform.
+
+When the agent uses a user-supplied agenda (either path or URL), set `briefing_status: "agenda_provided_by_user"` and record the decision in `run_metadata.run_decisions[]`.
 
 ## Quick start
 
@@ -24,13 +58,14 @@ Run a meeting briefing for Shekar Krishnan, NYC City Council District 25
 
 The agent reads this runbook end-to-end, then:
 
-1. Discovers the next meeting and downloads the agenda packet from the jurisdiction's agenda platform (see Agenda platform reference in `Sources.md`).
-2. Chunks the agenda PDF into per-item `raw_context` entries — section-aware primary, page-level fallback (see `agenda_chunking.md`).
-3. Classifies items into `featured` / `queued` / `standard` tiers (see `agenda_items.md`).
-4. Runs the Haystaq query **once upfront** against the curated district top issues table; also caches the data dictionary for fallback. In-memory lookup per item (see `constituent_sentiment.md`).
-5. For each featured/queued item: overview, sentiment, recent news, budget impact, talking points.
-6. Compiles `claims[]` with verbatim source extracts and a complete `sources[]` bibliography (see `Sources.md` and `output_artifacts.md`).
-7. Writes one JSON artifact to `outputs/<run-id>/output/artifact.json`.
+1. Performs the pre-run setup check (Databricks env).
+2. Resolves the agenda source per the input precedence above — user-supplied path, user-supplied URL, or platform discovery.
+3. Chunks the agenda PDF into per-item `raw_context` entries — section-aware primary, page-level fallback (see `agenda_chunking.md`).
+4. Classifies items into `featured` / `queued` / `standard` tiers (see `agenda_items.md`). If no substantive items exist, sets `briefing_status: "awaiting_agenda"` and skips the rest of the pipeline.
+5. Runs the Haystaq query **once upfront** against the curated district top issues table; also caches the data dictionary for fallback. In-memory lookup per item (see `constituent_sentiment.md`).
+6. For each featured/queued item: overview, sentiment, recent news, budget impact, talking points.
+7. Compiles `claims[]` with verbatim source extracts and a complete `sources[]` bibliography (see `Sources.md` and `output_artifacts.md`).
+8. Writes one JSON artifact to `outputs/<run-id>/output/artifact.json` with `briefing_status` reflecting the outcome.
 
 ## Run directory layout
 
@@ -41,11 +76,33 @@ RUN_DIR="outputs/$(date -u +%Y%m%d-%H%M%S)-meeting-briefing-{official-slug}"
 mkdir -p "$RUN_DIR"/{input,output,conversation}
 ```
 
-- `$RUN_DIR/input/` — params.json, the downloaded agenda PDF, any other staged inputs
+- `$RUN_DIR/input/` — params.json, the downloaded (or user-supplied) agenda PDF, any other staged inputs
 - `$RUN_DIR/output/artifact.json` — the final JSON briefing artifact
-- `$RUN_DIR/conversation/log.txt` — turn-by-turn log of each tool call and what it returned
+- `$RUN_DIR/conversation/log.txt` — append-only log of every tool call and what it returned (see below)
 
 The `outputs/` directory is gitignored — local-only, not committed.
+
+## Conversation log discipline
+
+`conversation/log.txt` is the run's full audit trail. Append a line to it **after every tool call** without exception. The log is mandatory, not optional — a thin log undermines QA, debugging, and any post-hoc review.
+
+Format per line:
+
+```
+[ISO 8601 UTC timestamp] TOOL_NAME | one-sentence description of what was attempted
+  RESULT: 1-2 sentence summary of what came back
+```
+
+Example:
+
+```
+[2026-05-15T12:32:59Z] Bash(curl) | fetched Legistar calendar for NYC Council
+  RESULT: Returned 12 upcoming meetings; next Stated Meeting is May 20, 2026 (ID=1403736)
+[2026-05-15T12:33:14Z] Bash(curl) | downloaded May 20 agenda PDF (1.2 KB)
+  RESULT: PDF is a 1-page title page only — no business items published yet
+```
+
+`run_metadata.run_decisions[]` is a separate, curated trail of **judgment calls** (meeting selection, fallback decisions, status transitions). The conversation log captures every tool call; `run_decisions` captures every meaningful choice. Both are required.
 
 <!-- Source: about_the_agent.md -->
 The rules below are non-negotiable constraints, not stylistic suggestions. They apply to all briefing types and all agenda item sections except where variations are explicitly demanded.
@@ -220,6 +277,28 @@ All chunks reference the agenda packet source: `source_id` points to the agenda 
 
 <!-- Source: agenda_items.md -->
 Rules for reading the agenda packet and classifying items into tiers.
+
+## Substantive-items check (run before classification)
+
+Before assigning tiers, scan the agenda packet for **substantive items**. An item is substantive if it has any of:
+
+- A required vote
+- A scheduled public hearing
+- An ordinance or resolution under consideration
+- A budget action (appropriation, contract, grant, bond authorization)
+- A formal action requiring the official to take a public position
+
+If **zero** substantive items exist in the agenda — for example, the agenda PDF is a title page only, the platform's meeting detail shows a "Not available" placeholder, or every listed item is procedural / ceremonial — do not proceed with tier classification or the per-item pipeline. Instead:
+
+1. Set `briefing_status: "awaiting_agenda"` (see `output_artifacts.md`).
+2. Populate `executive_summary` with a brief check-back message, e.g.:
+   *"The agenda for the upcoming [Council Body] meeting on [date] has not been published yet. Check back closer to the meeting date, or upload the agenda PDF directly if you already have it."*
+3. Record the decision in `run_metadata.run_decisions[]` with reason `"agenda_no_substantive_items"`.
+4. Emit an `items[]` array with a single placeholder entry (tier `standard`, title describing the empty-agenda state).
+5. Skip the Haystaq query, news search, budget extraction, and talking points entirely.
+6. Skip to compiling sources (which document the discovery attempt) and writing the artifact.
+
+This is a **qualitative** check based on item content, not a count threshold — agendas vary widely across jurisdictions, so "fewer than N items" does not generalize. The criterion is whether *any* item is substantive in the sense above.
 
 ## Tiers
 
@@ -581,12 +660,13 @@ The meeting briefing pipeline writes a single JSON artifact that serves three co
 
 This is why every item, including procedural and standard items, has at least one `raw_context` chunk. An official may tap a non-priority item just as often as a priority one; without preserved raw context, the chatbot has nothing to work with beyond what was already shown.
 
-**Top-level fields:** `experiment_id`, `briefing_type`, `generated_at`, `official_name`, `meeting_date`, `estimated_read_minutes`, `executive_summary`, `run_metadata`, `items`, `claims`, `sources`, `required_data_points`, `disclosure`.
+**Top-level fields:** `experiment_id`, `briefing_type`, `briefing_status`, `generated_at`, `official_name`, `meeting_date`, `estimated_read_minutes`, `executive_summary`, `run_metadata`, `items`, `claims`, `sources`, `required_data_points`, `disclosure`.
 
 **What each consumer reads:**
 
 | Field | UI | Chatbot | QA |
 |---|---|---|---|
+| `briefing_status` | Yes — determines render path (full briefing, awaiting-agenda placeholder, error) | Reference | Yes — skip claim adjudication when status != `briefing_ready` |
 | `executive_summary` | Yes — top-of-briefing framing | Reference | Reference |
 | `items[].display` | Yes — primary content | Reference | Reference |
 | `items[].research.raw_context` | Stripped by gp-api | Yes — grounded answers to follow-ups | Source verification |
@@ -596,7 +676,22 @@ This is why every item, including procedural and standard items, has at least on
 | `sources[].retrieved_text_or_snapshot` | Stripped by gp-api (too large for display payload) | Yes — verbatim source text for grounded answers | Yes — verify source extracts |
 | `required_data_points` | Stripped by gp-api | No | Yes — coverage contract for verification |
 | `briefing_type` | Reference | Reference | Yes — selects type-specific QA rules |
+| `run_metadata.run_decisions` | Stripped by gp-api | Reference — explains why content is shaped the way it is | Yes — audit trail of agent decisions |
 | `disclosure` | Yes | No | No |
+
+## `briefing_status`
+
+Top-level enum that tells downstream consumers what kind of artifact this is. Set by the agent at the end of the run based on what it actually produced.
+
+| Value | Meaning |
+|---|---|
+| `briefing_ready` | At least one item tiered as `featured` or `queued` with substantive content. The UI renders a normal briefing. |
+| `awaiting_agenda` | The discovered agenda has no substantive items yet (the meeting is too far out, or the jurisdiction has not finalized the agenda). UI renders a "we'll check back" state and may offer a path for the official to upload the agenda PDF directly. |
+| `no_meeting_found` | No upcoming meeting found within the search window for this official. UI surfaces a "no meeting on the calendar" state. |
+| `agenda_provided_by_user` | The agent used a user-supplied agenda (via `agendaPdfPath` or `agendaPacketUrl` input override) rather than discovering one from the platform. Otherwise behaves like `briefing_ready`. |
+| `error` | The run hit a blocker the agent couldn't recover from. `run_metadata.run_decisions[]` carries the diagnostic trail. |
+
+Default expectation: `briefing_ready`. The other values are exit codes for graceful degradation, not failures the run should panic on.
 
 ## `briefing_type`
 
@@ -625,9 +720,25 @@ Captured once at the start of the run.
 {
   "agenda_packet_url": "the permanent agendaPacketUrl value from PARAMS — never the presigned fetch URL",
   "source_bundle_retrieved_at": "ISO 8601 UTC timestamp set when the last source was fetched",
-  "briefing_version": "v2"
+  "briefing_version": "v2",
+  "run_decisions": [
+    {
+      "timestamp": "2026-05-15T04:19:58Z",
+      "decision": "continue_without_haystaq",
+      "reason": "scripts/.env not present in worktree; Databricks credentials missing. Emit haystaq_status='no_match' for affected items per output_artifacts.md null rules."
+    },
+    {
+      "timestamp": "2026-05-15T12:36:09Z",
+      "decision": "use_upcoming_meeting_despite_sparse",
+      "reason": "Next future Stated Meeting on 2026-05-20 has only a 1-page title-page agenda PDF and a 'Not available' placeholder row. Setting briefing_status to awaiting_agenda rather than falling back to a past meeting; production use case is forward-looking."
+    }
+  ]
 }
 ```
+
+**`run_decisions[]` semantics:**
+
+Append an entry every time the agent makes a non-mechanical choice that shapes the resulting artifact — meeting selection, fallback to a different meeting, decision to skip a section, decision to proceed without a required source, decision to set `briefing_status` to anything other than `briefing_ready`. Each entry is `{timestamp, decision, reason}`. Mechanical actions (download a file, parse a PDF, run a query) do not need entries — those live in `conversation/log.txt`. `run_decisions[]` is the curated trail of agent judgment calls that downstream consumers and QA need to understand why the artifact is shaped the way it is.
 
 ## `items`
 
