@@ -369,7 +369,6 @@ Don't promote until you've verified the experiment works end-to-end in dev, incl
 ## See also
 
 - `experiments/_schema/manifest.schema.json` — the meta-schema (source of truth for manifest validation)
-- `experiments/CLAUDE.md` — runbook → experiment lifecycle and naming convention
-- `books/find-district-issue-pulse.md` — example source runbook (paired with `experiments/district_issue_pulse/`)
 - `scripts/python/publish_experiments.py` — the publish CLI
 - `scripts/python/databricks_query.py` — local SQL scratchpad
+- `books/run-meeting-briefing.md` + `books/translate-meeting-briefing-to-experiment.md` + `experiments/meeting_briefing/` — worked example of this conversion procedure end-to-end
