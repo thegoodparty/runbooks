@@ -1,0 +1,27 @@
+[2026-05-15T13:22:27Z] Bash(mkdir) | created run directory outputs/20260515-132227-meeting-briefing-shekar-krishnan-v2 for Shekar Krishnan / NYC Council D25 briefing
+  RESULT: input/output/conversation subdirs created; params.json staged with l2DistrictType=City_Council_Commissioner_District, l2DistrictName=25.
+[2026-05-15T13:22:27Z] Bash(uv run databricks_query.py) | re-probed Databricks for this run with "SELECT 1 AS ping"
+  RESULT: KeyError on DATABRICKS_SERVER_HOSTNAME — env still missing. Follow no-Haystaq fallback: haystaq_status=no_match on items, omit haystaq sources, record databricks_credentials_unavailable run_decision.
+[2026-05-15T13:24:11Z] Bash(uv run databricks_query.py) | re-probed Databricks after user saved fresh credentials
+  RESULT: Databricks now works (SELECT 1 returned 1 after credentials were saved). Haystaq pipeline is in play after all.
+[2026-05-15T13:24:42Z] Bash(curl) | probed Legistar Web API webapi.legistar.com/v1/nyc/events with multiple header combos
+  RESULT: HTTP 403 "Token is required" — NYC Legistar API now requires a token. No LEGISTAR_API_TOKEN in scripts/.env.example. Pivoting to user-facing portal at legistar.council.nyc.gov (HTML scraping) which is anonymous-readable.
+[2026-05-15T13:26:00Z] Bash(curl) | fetched legistar.council.nyc.gov/Calendar.aspx default view (880 KB HTML)
+  RESULT: Parsed 50 meeting rows. Three City Council Stated Meetings visible: 2026-05-14 (yesterday, past), 2026-06-25 (next), 2026-08-13 (next-next). 
+[2026-05-15T13:26:00Z] Bash(curl) | fetched MeetingDetail.aspx for May 14 (Event ID 1415662) and June 25 (Event ID 1398987)
+  RESULT: May 14 has 68 rgRow rows and 72 unique matter IDs (full agenda). June 25 has 1 rgRow row and 0 matter IDs (confirmed light, as user said). Locking in May 14 as the subject meeting.
+[2026-05-15T13:26:00Z] Bash(curl) | downloaded agenda PDF for May 14 from View.ashx?M=A&ID=1415662
+[2026-05-15T13:36:44Z] uv run | extracted 23-page agenda PDF text via pypdf
+  RESULT: 755 lines saved to nyc_council_agenda_2026-05-14.txt. Identified standard procedural items (Roll Call, Invocation, Adoption of Minutes), 8 voted Int items, 7 voted Res items (3 in-house + 4 LU), 6 Mayor/Borough received-and-filed messages, 3 Land Use Call-Ups (M 0066-0068), 11 LU applications (LU 0067-0077), 17 introduced-only Ints, and 12 introduced-only Res items.
+[2026-05-15T13:36:44Z] uv run databricks_query.py | Haystaq Phase 1 — curated district top issues for D25 + NYC
+  RESULT: INSUFFICIENT_PERMISSIONS on goodparty_data_catalog.private_samuel.district_top_issues_us_all. Current Databricks principal lacks SELECT on the curated table. Falling back to dictionary + L2-wide table per runbook Phase 2/3.
+[2026-05-15T13:36:44Z] uv run databricks_query.py | Haystaq Phase 1B — data dictionary
+  RESULT: 399 rows accessible. Scanned for keywords relevant to today's agenda; picked candidate columns with unambiguous score_high_means: hs_infrastructure_funding_fund_more (for Int 0013 — solar crosswalks), hs_affordable_housing_gov_has_role (for Int 0139 — safety-net access proxy), hs_medicaid_expansion_support (for Int 0741 — public mental-health funding proxy).
+[2026-05-15T13:36:44Z] uv run databricks_query.py | Haystaq Phase 3 batched query — city scope (NYC) + district scope (D25 = 'NEW YORK CITY CNCL DIST 25 (EST.)')
+  RESULT: City voter_count=4,806,073 — fund_more=54.6, has_role=67.1, medicaid=64.5. District voter_count=81,836 — fund_more=46.8, has_role=68.5, medicaid=62.0. Note: column names in dictionary are abbreviated; actual L2 table uses unabbreviated names (e.g., hs_infrastructure_funding_fund_more not hs_infrastruc_fund_more). All |district-city| gaps < 10 → district_note=null for every featured item.
+[2026-05-15T13:36:44Z] Bash(curl) | fetched Legistar meeting detail (350 KB HTML) + matter detail for 3 featured items (Int 0013, 0139, 0741)
+  RESULT: Parsed 68 items total. Featured matters status='Enacted (Mayor's Desk for Signature)' (status reflects post-vote state since the meeting was yesterday); briefing is written as if pre-vote.
+[2026-05-15T13:46:17Z] Bash(python3 build_artifact.py) | assembled v2-schema artifact.json from agenda PDF, meeting detail, 3 matter-detail pages, council press release, and Haystaq Phase 3 results
+  RESULT: 81 items (3 featured / 12 queued / 66 standard), 10 claims, 7 sources (1 agenda_packet, 4 government_website, 1 news, 1 haystaq). 174 KB. briefing_status=briefing_ready.
+[2026-05-15T13:56:27Z] Bash(python3 build_artifact.py / extract_briefing.py) | deduped Res 0026 in source artifact, then extracted UI-facing briefing.json + readable briefing.md
+  RESULT: artifact.json now 80 items (no duplicates). briefing.json = 72 KB display payload (no research/full_treatment/claims/raw_context). briefing.md = 45 KB human-readable rendering with featured items expanded, queued listed compactly, standard items collapsed.

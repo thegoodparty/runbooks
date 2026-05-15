@@ -1,0 +1,88 @@
+# Translation report — meeting_briefing experiment
+
+## Per-step source map
+
+| Step in instruction.md | Source in run-meeting-briefing.md | Lift type | Notes |
+|---|---|---|---|
+| Title + intro paragraph | `runbook_header.md` line 1 (one-line summary) + framing about why agenda evidence is combined with Haystaq sentiment and local news | verbatim summary + brief framing sentence | The first sentence is verbatim. The framing sentence is composed because the runbook does not have a single "why combine signals" paragraph; the converter's instruction.md skeleton calls for one. |
+| BEFORE YOU START | `convert-runbook-to-experiment.md` Step 7 skeleton | verbatim from converter | Standard 6-step skeleton; output path updated to `/workspace/output/meeting_briefing.json`. |
+| TODO CHECKLIST | `translate-meeting-briefing-to-experiment.md` § TODO CHECKLIST | verbatim | Lifted as listed in the hints doc. |
+| CRITICAL RULES — Role | `about_the_agent.md` "## Role" | verbatim | Lifted character-for-character. |
+| CRITICAL RULES — Voice and register | `about_the_agent.md` "## Voice and register" | verbatim | Lifted character-for-character. |
+| CRITICAL RULES — Tone | `about_the_agent.md` "## Tone" | verbatim | Lifted character-for-character. |
+| CRITICAL RULES — Section-level posture overrides | `about_the_agent.md` "## Section-level posture overrides" | verbatim | Lifted character-for-character. The trailing sentence "See `talking_points.md` for the canonical pattern" was repointed to "See Step 10" because `talking_points.md` is not a file the agent has — it lives inside this instruction's Step 10. |
+| CRITICAL RULES — Source discipline + Never fabricate | `about_the_agent.md` "## Source discipline" | verbatim | Lifted character-for-character. One pointer-rewrite: "the documented placeholder pattern from `output_artifacts.md`" → "the documented placeholder pattern from this instruction" since the agent has only this instruction. |
+| CRITICAL RULES — Verbosity | `about_the_agent.md` "## Verbosity" | verbatim | Lifted character-for-character. |
+| CRITICAL RULES — Databricks broker rules | `convert-runbook-to-experiment.md` Step 8 "Databricks (`/databricks/query`)" subsection | verbatim from converter | Trimmed only to remove the converter-doc's example identifier (`int__l2_nationwide_uniform_w_haystaq`) when it appeared as flavor in the GROUP BY truncation note; the substance of every rule is preserved. Added one clarifying clause that broker auto-injection applies only to the L2 table (not to the curated table or dictionary), to prevent the agent from misapplying the rule across all three allowed tables. |
+| CRITICAL RULES — Web rules | `convert-runbook-to-experiment.md` Step 8 "Web (URL discovery + retrieval)" subsection | verbatim from converter | Lifted character-for-character including the `pmf_runtime.http.get` response-shape note. |
+| CRITICAL RULES — Output rules | `convert-runbook-to-experiment.md` Step 8 "Output" subsection | verbatim from converter | Output path updated to `/workspace/output/meeting_briefing.json`. |
+| Step 1 — Read params + verify env | `runbook_header.md` "## Inputs" intro + "### Pre-run setup check" | verbatim prose, **adapted SQL** | Prose around success/failure semantics, fallback to "no Haystaq" mode, and the `run_decision` reason `"databricks_credentials_unavailable"` is lifted verbatim. The SELECT 1 ping query was adapted from bare `SELECT 1 AS ping` to `SELECT 1 AS ping FROM goodparty_data_catalog.sandbox.haystaq_data_dictionary LIMIT 1` because the broker rejects bare `SELECT 1` per CRITICAL RULES ("Every query must reference an allowed table"). The "ping" pattern is preserved; only the FROM clause was added. Flagged in "Gaps to flag back upstream". |
+| Step 2 — Resolve agenda source | `runbook_header.md` "Agenda input precedence" + `Sources.md` "## Agenda platform reference" | verbatim | Full platform-reference table including Legistar token-gating note and CivicClerk. The "When the briefing setup pre-stages..." sentence was kept verbatim from Sources.md. |
+| Step 3 — Substantive-items check | `agenda_items.md` "## Substantive-items check (run before classification)" | verbatim | Full section including the placeholder item shape spec. One pointer-rewrite: "Set `briefing_status: "awaiting_agenda"` (see `output_artifacts.md`)" → "Set `briefing_status: "awaiting_agenda"`" since the enum is documented in Step 15 of this same instruction. |
+| Step 4 — Chunk agenda | `agenda_chunking.md` (full file) | verbatim | Full file lifted: Strategy, Read priority, Section headers, Section-aware chunk, Page-fallback chunk, Item attribution, Coverage rule, Source. The opening "See `output_artifacts.md` for the chunk shape" pointer was dropped since the chunk shape is now defined by `manifest.json`'s output_schema (which the agent does not need to re-read inline). |
+| Step 5 — Tier classification | `agenda_items.md` "## Tiers", "## Priority criteria", "## Featured selection", "## Standard items" | verbatim | Pointer "see `constituent_sentiment.md`" → "see Step 6". |
+| Step 6 — Phase 1 cache Haystaq sources | `constituent_sentiment.md` "## Phase 1 — Cache the two sources upfront" | verbatim | Both SQL blocks (ward-bound + at-large) and the binding notes lifted character-for-character. Last sentence ("Broker auto-injection applies only to `int__l2_nationwide_uniform_w_haystaq`...") preserved. |
+| Step 6b — Phase 1 gotchas | `constituent_sentiment.md` "### Phase 1 gotchas to handle gracefully" | verbatim | All three gotchas (permission denied, L2 district value format, abbreviated columns) lifted character-for-character. |
+| Step 7 — In-memory selection | `constituent_sentiment.md` "## Phase 2 — In-memory selection per item" | verbatim | All three lookup branches preserved. |
+| Step 8 — Batched fallback | `constituent_sentiment.md` "## Phase 3 — Batched fallback query (at most once)" | verbatim | Both SQL blocks and the notes lifted character-for-character. |
+| Step 9 — Per-item overview | `agenda_items.md` "## Overview section (for each featured and queued item)" + `meeting_briefing.md` "Briefing structure" overview bullet | mostly verbatim, lightly composed | The Overview section paragraph is verbatim; one trailing sentence was composed to make it explicit that the overview goes into `display.summary` and that for standard items `display.summary` is one sentence. The hints doc instructed "translate to imperative" — but the runbook prose already reads as an instruction step, so per the verbatim-preservation rules ("if a runbook paragraph reads coherently as an instruction step, keep it verbatim"), it was lifted. |
+| Step 10 — Talking points | `talking_points.md` (full file) | verbatim | All sections: Posture override, Scope, When there are no talking points, Format, What a useful talking point does, What to avoid, Examples. The single pointer "see `about_the_agent.md`" → "see the **Section-level posture overrides** rule in CRITICAL RULES above"; pointer "per `required_data_points` in `output_artifacts.md`" → "per `required_data_points`" (now defined inline in Step 15). |
+| Step 11 — Recent news | `recent_news.md` (full file) | verbatim | What to find, Freshness, Source credibility, Format. Single pointer "see `Sources.md`" → "see Step 13". |
+| Step 12 — Budget impact | `budget_impact.md` (full file) | verbatim | What to include, Numeric precision, When no budget data is available. |
+| Step 13 — Compile claims | `Sources.md` "## Per-claim citation requirements" + "## Source routing table" + `output_artifacts.md` `claims` shape | verbatim | Routing table lifted character-for-character. `claim_weight` guidance and "extracts must be extractable" rule lifted from `output_artifacts.md`'s claims section because they govern claim compilation rather than the source-record shape. Brief inline glue ("Claims apply to featured and queued items only" + claim_id format) composed because the hints doc lists claim_id format as a schema concern only and the agent needs to know it during compilation. |
+| Step 14 — Compile sources | `Sources.md` "## Never fabricate", "## Capture rules", "## Sub-documents inside the agenda packet", "## `retrieved_text_or_snapshot` requirements", "## URL rules", "## Allowed sources" | verbatim | Full content lifted in order. The Sources.md header section that pointed to `output_artifacts.md` for the source-record shape was omitted because the source-record shape is now in `manifest.json`'s output_schema rather than a sibling doc. |
+| Step 15 — briefing_status + required_data_points | `agenda_items.md` substantive-items decision summary + `output_artifacts.md` "## `briefing_status`" + "## `required_data_points`" | verbatim | Status table and full required_data_points contract array lifted character-for-character. Scope-value definitions and required-vs-optional explanation preserved. |
+| Step 16 — Sentiment output formatting | `constituent_sentiment.md` "## Output" + "## Footnote" | verbatim | Every field bullet preserved verbatim. The "footnote" paragraph about the dictionary being new and incomplete was kept and folded into the same step so the agent doesn't lose it. |
+| Step 17 — Write artifact | `convert-runbook-to-experiment.md` skeleton + `output_artifacts.md` top-level field descriptions + `meeting_briefing.md` Executive Summary block + `output_artifacts.md` "## `run_metadata`" + `required_disclosure.md` (full file) | mostly verbatim, light composition | The top-level field list is composed (one bullet per output_schema field) because the runbook never enumerates the artifact's top-level fields in one place. Each bullet's *content* is verbatim from the source paragraphs (`executive_summary` length/default form/permitted variations from `output_artifacts.md`; run_metadata example from `output_artifacts.md`). The disclosure text is character-for-character from `required_disclosure.md`. |
+| Step 18 — Validate | `convert-runbook-to-experiment.md` skeleton | verbatim | Standard skeleton command + exit-code summary added from `validate_meeting_briefing.py` docstring. |
+| Spot-check | `runbook_header.md` "## Conversation log discipline" (reframed) + `convert-runbook-to-experiment.md` Step 9 "Spot-check rules" + `translate-meeting-briefing-to-experiment.md` product-specific rules | verbatim where lifted | The conversation-log-discipline reminder was *not* lifted verbatim because the Fargate runner does not maintain `conversation/log.txt` the way the local runbook does — `run_metadata.run_decisions[]` already carries the judgment-call trail per Step 17. Instead, the spot-check leads with the five product-specific rules listed in the hints doc (verbatim) and ends with the three converter-doc spot-check rules adapted for this experiment's column conventions. |
+| Failure modes table | `convert-runbook-to-experiment.md` "## Common failures" + `translate-meeting-briefing-to-experiment.md` meeting-briefing-specific rows | verbatim | Both blocks lifted character-for-character, including the five meeting-briefing-specific rows from the hints doc. Rows that were specific to dispatch infrastructure (Lambda `experiment_type` field, S3 IAM, index.json membership) were dropped because they are not actionable inside an agent run. |
+
+## Choices that required judgment
+
+### 1. Schema-loading strategy in `validate_output.py`
+
+- **Detail:** The hints doc says: *"Update SCHEMA_PATH to load the schema from the manifest at runtime ... OR keep loading from a sibling schema file if validate_output.py is co-located. Prefer the latter — simpler."* But the output contract specifies exactly **three files** (`manifest.json`, `instruction.md`, `validate_output.py`) with no sibling schema file.
+- **Options considered:** (a) Copy `meeting_briefing_output_schema.json` as a fourth file into `experiments/meeting_briefing/` and load it as a sibling. (b) Extract `output_schema` from `manifest.json` at runtime.
+- **Choice and reason:** Option (b). The output contract is "three files," not four. Option (b) requires only a small surgical change to the validator (`SCHEMA_PATH` → `MANIFEST_PATH`, with a helper `load_schema_from_manifest()` that pulls `output_schema` out of the manifest dict). The schema embedded in `manifest.json` is the single source of truth and matches what the runner's post-hoc validator uses, so this is also semantically tidier than maintaining a duplicate sibling file.
+
+### 2. SQL adaptation for the Step 1 ping
+
+- **Detail:** The hints doc instructs to lift the pre-run setup check "verbatim, including the SELECT 1 ping pattern." The runbook's ping is `SELECT 1 AS ping` (no FROM), which works against the local `databricks_query.py` script but is rejected by the broker per CRITICAL RULES ("Every query must reference an allowed table. Bare `SELECT 1` (no FROM) is rejected.").
+- **Options considered:** (a) Lift the bare `SELECT 1` and accept that the very first agent step will trigger a broker rejection on the happy path. (b) Drop the ping entirely and let Phase 1's curated/dictionary queries surface any connectivity issue. (c) Preserve the ping pattern by adding a FROM clause against an allowlisted table.
+- **Choice and reason:** Option (c) — `SELECT 1 AS ping FROM goodparty_data_catalog.sandbox.haystaq_data_dictionary LIMIT 1`. The runbook's intent is "trust the script over a grep — run a trivial query and inspect the result." That intent is preserved with a tiny FROM clause. Option (a) would cost a turn on the happy path. Option (b) is also defensible (and arguably simpler) but deviates further from "verbatim."
+
+## Gaps to flag back upstream
+
+### 1. Hints doc — schema-loading guidance contradicts the three-file output contract
+
+The hints doc recommends loading the schema "from a sibling schema file if `validate_output.py` is co-located" but specifies a three-file output. The two are mutually exclusive: a "sibling schema file" would be a fourth file. Either:
+
+- Update the hints doc to state plainly that the schema is loaded from `manifest.json` (i.e. instruct the subagent to implement option (a) from the hints doc), OR
+- Update the output contract to four files and explicitly require copying `meeting_briefing_output_schema.json` into the experiment dir.
+
+Option 1 is simpler; the manifest is already the authoritative schema location.
+
+### 2. Hints doc — Step 1 ping conflicts with broker scoping rules
+
+The hints doc says: *"Step 1 — Read params + verify env | runbook_header.md pre-run setup check, params handling | Verbatim, including the SELECT 1 ping pattern"*. The runbook's `SELECT 1 AS ping` is bare and the converter's CRITICAL RULES explicitly forbid bare `SELECT 1`. The two rules collide on the literal "verbatim" reading.
+
+Recommended fix: in the hints doc, replace "including the SELECT 1 ping pattern" with: *"adapt the SELECT 1 ping to reference one of the allowed tables (e.g. `SELECT 1 AS ping FROM goodparty_data_catalog.sandbox.haystaq_data_dictionary LIMIT 1`) — the broker rejects bare `SELECT 1`."* This makes the adaptation mechanical, not judgment-driven.
+
+### 3. Hints doc — Step 9 "translate to imperative" conflicts with the verbatim-preservation rules
+
+The hints doc instructs Step 9 to "translate to imperative" the runbook's Overview-section prose. But the verbatim-preservation rules in the same hints doc say: *"If a runbook paragraph reads coherently as an instruction step, keep it verbatim. Do not 'instructionalize' prose that already reads as instructions."* The Overview-section paragraph in `agenda_items.md` already reads as instructions ("Cover what the item actually decides..."). The two instructions contradict.
+
+Recommended fix: drop "translate to imperative" for Step 9. The runbook prose is already imperative. The only thing the agent needs that the runbook doesn't explicitly say is *which artifact field* the overview lands in (`display.summary`) — and that is unambiguously implied by the output_schema. Replace the "translate to imperative" cell with "verbatim; add one explicit pointer to `display.summary` for `featured`/`queued`."
+
+### 4. Runbook — conversation log discipline does not generalize to Fargate
+
+`runbook_header.md` "## Conversation log discipline" prescribes appending to `conversation/log.txt` after every tool call. In the Fargate runtime the agent has no persistent `conversation/` directory and writes only `/workspace/output/meeting_briefing.json`. The `run_metadata.run_decisions[]` array already plays the role of "curated judgment-call trail." The "tool-call log" half of the discipline is irrelevant in the experiment context.
+
+Recommended fix: split `runbook_header.md`'s conversation-log discipline into two pieces — one applicable to local runs (the file-based log), one applicable to both runtimes (run_decisions). Or move the file-based-log half into a runbook-only sidebar so the converter doc doesn't have to discover and skip it.
+
+### 5. Runbook — `briefing_type` enum does not include `city_council_meeting`-adjacent values, but output_schema does
+
+The output_schema enumerates `briefing_type` as `["city_council_meeting", "county_legislature_meeting", "school_board_meeting"]`. The runbook's `meeting_briefing.md` says: *"For city council meeting briefings, this is `\"city_council_meeting\"`. Future values: `\"county_commission_meeting\"`, `\"school_board_meeting\"`, etc."* — note `county_commission_meeting` vs the schema's `county_legislature_meeting`. Not affecting this translation (the agent will only emit `city_council_meeting`), but the two will drift further if either side is edited without the other.
+
+Recommended fix: pick one canonical value for the county-level briefing and reconcile both documents to it.
