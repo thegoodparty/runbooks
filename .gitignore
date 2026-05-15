@@ -1,7 +1,13 @@
 .env
+.DS_Store
 node_modules/
 __pycache__/
 .venv/
+
+# Scratch reference materials for in-progress runbooks (prompt components,
+# example briefings, notes). Compiled outputs land in books/ as tracked files;
+# the scratch dir stays local.
+.reference_docs/
 
 # Local agent run outputs (params, conversation transcripts, downloads, logs).
 # These can contain absolute paths, candidate PII, and full LLM transcripts.
