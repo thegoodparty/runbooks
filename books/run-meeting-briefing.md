@@ -293,7 +293,16 @@ If **zero** substantive items exist in the agenda — for example, the agenda PD
 2. Populate `executive_summary` with a brief check-back message, e.g.:
    *"The agenda for the upcoming [Council Body] meeting on [date] has not been published yet. Check back closer to the meeting date, or upload the agenda PDF directly if you already have it."*
 3. Record the decision in `run_metadata.run_decisions[]` with reason `"agenda_no_substantive_items"`.
-4. Emit an `items[]` array with a single placeholder entry (tier `standard`, title describing the empty-agenda state).
+4. Emit an `items[]` array with **a single placeholder entry** shaped exactly:
+   - `id: "item_001"`
+   - `item_number: null` (no real item number exists)
+   - `title`: brief description of the empty-agenda state (e.g. `"Agenda not yet published"`)
+   - `tier: "standard"`
+   - `vote_required: false`
+   - `tier_reason: ["placeholder"]` (use this exact reason, not a custom invented one)
+   - `display.summary`: same brief description
+   - `research.raw_context`: at least one chunk pointing at whatever discovery artifact was retrieved (calendar HTML, meeting detail page, etc.) — even when the agenda itself is empty, the discovery attempt is evidence
+   - `research.full_treatment: null`
 5. Skip the Haystaq query, news search, budget extraction, and talking points entirely.
 6. Skip to compiling sources (which document the discovery attempt) and writing the artifact.
 
