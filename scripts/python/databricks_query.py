@@ -1,10 +1,20 @@
 import os
 import sys
+from pathlib import Path
 import pandas as pd
 from databricks.sql import connect
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
+# scripts/.env is the in-repo convention (symlinked to ~/Research/.env). Fall back
+# to ~/Research/.env directly when the symlink is missing — git worktree add does
+# not carry untracked symlinks.
+for _env_candidate in (
+    Path(__file__).resolve().parent.parent / ".env",
+    Path.home() / "Research" / ".env",
+):
+    if _env_candidate.exists() or _env_candidate.is_symlink():
+        load_dotenv(_env_candidate)
+        break
 
 
 def execute_query(query: str) -> pd.DataFrame:
