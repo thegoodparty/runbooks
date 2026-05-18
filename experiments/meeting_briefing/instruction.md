@@ -405,7 +405,28 @@ Remaining qualifying items are tiered as `queued`.
 
 Consent agenda items, procedural items (call to order, roll call, approval of minutes, public comment, adjournment, proclamations), standing updates, and uncontroversial board appointments.
 
-For each: one sentence describing what it is and what the official should expect.
+**Enumerate every item on the agenda.** Substantive items get featured or queued treatment (Steps 9–16); the rest get standard treatment per this section. The agenda must be fully represented in `items[]` so the UI can render the full agenda — a user clicking on "Roll Call" should see at least one sentence, not a blank panel.
+
+For each standard item, set `display.summary` to one sentence: what it is, what the official should expect. Set `display.constituent_sentiment`, `display.recent_news`, `display.budget_impact`, `display.talking_points`, and `display.constituent_quote` to `null`. Set `tier_reason` to `["consent_routine"]`. No claims are required for boilerplate-matched items.
+
+##### Procedural boilerplate
+
+For items matching the *intent* described in this table (match conceptually, not by exact title — "Welcome and Call to Order" and "Call to Order and Welcome Remarks" both map to "call the meeting to order"), use the canonical `display.summary` text **verbatim**. Do not paraphrase. The point of the boilerplate is so the agent does not burn turns generating filler for items the user is unlikely to click.
+
+| Intent | `display.summary` (canonical) |
+| --- | --- |
+| Call the meeting to order | The chair calls the meeting to order. No action required. |
+| Roll call or attendance | The clerk takes attendance to establish a quorum. No action required. |
+| Pledge of Allegiance | Standard recitation. No action required. |
+| Opening invocation or prayer | Opening invocation, where scheduled. No action required. |
+| Approve previous meeting minutes | Routine approval of the previous meeting's minutes. Vote in the consent block; pull only if there is a substantive correction. |
+| Open public comment period | Open public comment period. Listen for issues that may need follow-up at a future meeting. |
+| Standing department, committee, or staff report | Standing update from staff. No vote; listen for items that may resurface as future agenda actions. |
+| Proclamation or ceremonial recognition | Ceremonial recognition. No vote; standard to support. |
+| Closed or executive session | Closed session for permitted matters (personnel, litigation, real estate). No public action in session; any votes happen after returning to open session. |
+| Adjournment or motion to adjourn | Motion to adjourn. Standard close. |
+
+For standard items that do **not** match any boilerplate intent (a specific proclamation with a named honoree, a unique presentation, an uncontroversial board appointment), generate a one-sentence `display.summary` that names the distinctive content. Aim for the same shape: "what this is" + "what the official should expect." Two sentences maximum.
 
 ### Step 6 — Pick Haystaq columns from the inline catalog
 
