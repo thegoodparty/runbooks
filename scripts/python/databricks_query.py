@@ -11,7 +11,7 @@ def execute_query(query: str) -> pd.DataFrame:
     conn = connect(
         server_hostname=os.environ['DATABRICKS_SERVER_HOSTNAME'],
         http_path=os.environ['DATABRICKS_HTTP_PATH'],
-        access_token=os.environ['DATABRICKS_API_KEY'],
+        access_token=os.environ['DATABRICKS_TOKEN'],
     )
     try:
         with conn.cursor() as cursor:
