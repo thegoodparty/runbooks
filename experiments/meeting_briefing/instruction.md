@@ -82,7 +82,7 @@ Do not use imperative voice directed at the EO. The briefing does not tell the E
 
 Do not use phrases such as: "Push for...", "Ensure that...", "Frame your position as...", "Make clear that...", "Demand...", "Insist..."
 
-Where a softer directive is contextually appropriate, use: "You may want to consider..." or "It may be worth asking..."
+Where a softer directive is contextually appropriate, use: "You may want to consider..." or "It may be worth asking..." These softeners apply to general briefing prose only; do not use them in sections that have an approved posture override (see **Section-level posture overrides** below), where direct imperative voice is required.
 
 Do not presuppose the EO's position on any issue, their relationships, their read of the room, or their political constraints. However, you may use the information shared from their campaign website as context.
 
@@ -613,6 +613,8 @@ The first section under each priority item. Cover what the item actually decides
 
 Write the overview into `display.summary`. It is what is actually at stake — not just what the item is. What changes if it passes; what happens if it fails or is deferred. The overview is generated for every featured and queued item; for standard items, `display.summary` is one sentence describing what the item is and what the official should expect.
 
+**Keep it tight.** For featured and queued items, target two to four sentences. The overview is the decision and its consequences — not a recap of every body's recommendation, every comparison, or every procedural detail. Recommendation counts, comparisons to other jurisdictions, and procedural mechanics belong in talking points if they're decision-relevant, or in the source extracts otherwise.
+
 ### Step 10 — Talking points (featured items)
 
 Talking points for each priority item — direct advice on how to engage with the item in the room.
@@ -621,7 +623,7 @@ Talking points for each priority item — direct advice on how to engage with th
 
 This section operates as an approved posture override per the **Section-level posture overrides** rule in CRITICAL RULES above. The **Voice and register** and **Tone** rules in that section are suspended for this section only.
 
-What this permits:
+What this section requires:
 
 - Direct address to the official ("you")
 - Imperative and action-oriented voice ("Ask staff...", "Lead with...", "Pull this from consent")
@@ -679,6 +681,8 @@ Rules for finding, evaluating, and presenting recent news for each priority item
 
 News articles are **supplementary context**, not primary source material. Every factual claim in the briefing must trace to the agenda packet or another authoritative document — see Step 13. Use news to surface community discussion and recent coverage that surrounds a decision, not to introduce facts the agenda packet does not establish.
 
+The search itself is **required** for every featured and queued item; only the *output* is optional. Always run the up-to-2 `WebSearch` queries described below. A null `display.recent_news` is permitted only after those queries return no relevant local coverage — not as a turn-saving triage.
+
 #### What to find
 
 Up to 3 recent headlines per priority item from local news sources. Each should be directly relevant to the agenda item in that jurisdiction or in a larger jurisdiction that contains the jurisdiction in question.
@@ -725,11 +729,15 @@ Populate `budget_impact.source_ids` with the ids (from the top-level `sources[]`
 
 Set `budget_impact` to `null`. Do not estimate or fabricate figures.
 
+#### Note on `display.constituent_quote`
+
+The schema reserves `display.constituent_quote` for a future verified-quote pipeline (Circle, public comment, etc.). Until that pipeline exists, **always set `display.constituent_quote` to `null`**. Do not generate, paraphrase, or infer constituent quotes — fabricated quotes violate source discipline.
+
 ### Step 13 — Compile claims with verbatim source extracts
 
 Every factual claim in the briefing must reference at least one source. For each claim:
 
-- `source_extracts[]` — verbatim passages from the source that support the claim. Must be extractable from `retrieved_text_or_snapshot`.
+- `source_extracts[]` — one or more verbatim passages from the source(s) supporting the claim. Together they must give a reader enough context to understand why the claim was made — typically one to three sentences, not the minimum verbatim fragment. Each extract is also surfaced as a click-through citation in the UI, so it must read coherently on its own. Must be extractable verbatim from `retrieved_text_or_snapshot`. Do not invent extracts.
 - `source_ids[]` — references to `id` values in the sources array.
 - `required_source_type` — the minimum acceptable source type for this claim to be released. See routing table below.
 - `route_if_unsupported` — what to do if no source of the required type can be found.
@@ -926,7 +934,15 @@ Assemble the final JSON artifact and write it to `/workspace/output/meeting_brie
 - `location`: the customary location for the meeting (e.g. `"City Hall Council Chambers, 200 Main St"`). Capture from the platform's meeting detail page, the city's published meeting schedule, or the agenda packet header — whichever you consulted in Step 2. If only a building is given without a room, use the building plus street address. **If no source consulted for this run mentions a venue at all** (a realistic case for `agenda_provided_by_user` when the user-supplied PDF has no header), emit an empty string and record the decision in `run_metadata.run_decisions[]`. Do not fabricate a location from general knowledge. For `no_meeting_found` or `error` status, emit an empty string.
 - `meeting_date`: `YYYY-MM-DD`. For `agenda_provided_by_user` or `awaiting_agenda` runs, this is the target meeting date; for `no_meeting_found` it may be an estimated next date.
 - `estimated_read_minutes`: integer; target total read time is ~8 minutes for `briefing_ready` artifacts.
-- `executive_summary`: a single brief framing sentence at the top of the briefing. Generated, not boilerplate — adapt to what was actually found in the agenda. Length 15–25 words. Default form: _"The following items on your agenda require action and/or have a vote."_ Permitted variations for ceremonial-heavy, multi-flagship, or routine-heavy meetings. Stay factual; the voice and tone rules apply (this is **not** an approved posture override).
+- `executive_summary`: a single short framing sentence followed by a bulleted list of the featured items (not all agenda items, not queued items, not standards). The lead sentence is one line stating how many items require action and/or have a vote; the bullets enumerate them, one bullet per featured item naming the item and the decision at stake. Generated, not boilerplate — adapt to what was actually found in the agenda. Example format:
+  ```
+  Three items on this agenda require action and/or have a vote.
+
+  - Public Safety Camera Expansion — Vote on vendor contract and camera locations
+  - FY2027 Property Tax Rate Direction — No vote; sets the table for the May 21 first reading
+  - Ramsey Street Corridor Revitalization — No vote; opportunity to push for a public deliverable commitment
+  ```
+  Stay factual; the voice and tone rules apply (this is **not** an approved posture override). Total length capped at 400 characters (the schema enforces this) — keep bullets tight when there are 4+ featured items.
 - `run_metadata`:
   ```json
   {

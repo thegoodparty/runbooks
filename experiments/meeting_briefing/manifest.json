@@ -458,6 +458,37 @@
                 }
               }
             ]
+          },
+          "constituent_quote": {
+            "description": "Optional verbatim constituent quote. Set to null unless a verified, sourced quote is captured (per tone guidance — do not generate or infer quotes). Field is reserved for a future quote-source pipeline.",
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "text",
+                  "attribution",
+                  "source_id"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "attribution": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source_id": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
           }
         }
       },
