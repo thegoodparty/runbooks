@@ -385,6 +385,92 @@ def check_disclosure_present(artifact: dict, findings: list[Finding]) -> None:
         ))
 
 
+def check_skip_reasons_authorized(artifact: dict, findings: list[Finding]) -> None:
+    """For data points with `skip_reasons_allowed`, verify null values are
+    accompanied by a run_decision citing an allowed reason.
+
+    Closes the "agent invents an unauthorized skip reason" hole. The Toffel run
+    set display.recent_news to null on every item but cited
+    'fallback_under_turn_budget' in run_decisions, which is not in the data
+    point's skip_reasons_allowed=['no_recent_coverage']. That should fail
+    validation.
+
+    Reason matching: run_decision.reason is a string like
+    'reason_key: explanation'. We extract the `reason_key` prefix and compare
+    it set-wise against skip_reasons_allowed.
+    """
+    status = artifact.get("briefing_status")
+    if status in ("awaiting_agenda", "no_meeting_found", "error"):
+        return
+
+    items = artifact.get("items", [])
+    rdps = artifact.get("required_data_points", [])
+    decisions = (artifact.get("run_metadata") or {}).get("run_decisions") or []
+
+    def reason_key(d: dict) -> str:
+        raw = d.get("reason") or ""
+        return raw.split(":", 1)[0].strip()
+
+    decision_reasons = {reason_key(d) for d in decisions if reason_key(d)}
+
+    for rdp in rdps:
+        allowed = rdp.get("skip_reasons_allowed") or []
+        if not allowed:
+            continue
+        name = rdp.get("name")
+        scope = rdp.get("scope")
+
+        def in_scope(item: dict) -> bool:
+            tier = item.get("tier")
+            if scope == "all_items":
+                return True
+            if scope == "featured_queued":
+                return tier in ("featured", "queued")
+            if scope == "featured":
+                return tier == "featured"
+            return False
+
+        null_items: list[str] = []
+        for item in items:
+            if not in_scope(item):
+                continue
+            display = item.get("display") or {}
+            research = item.get("research") or {}
+            if name == "summary":
+                value = display.get("summary")
+            elif name == "talking_points":
+                value = display.get("talking_points")
+            elif name == "raw_context":
+                value = research.get("raw_context")
+            elif name == "constituent_sentiment":
+                value = display.get("constituent_sentiment")
+            elif name == "recent_news":
+                value = display.get("recent_news")
+            elif name == "budget_impact":
+                value = display.get("budget_impact")
+            elif name == "constituent_quote":
+                value = display.get("constituent_quote")
+            else:
+                continue
+            if not value:
+                null_items.append(item.get("id") or "<unknown>")
+
+        if not null_items:
+            continue
+
+        if not (decision_reasons & set(allowed)):
+            sample = null_items[:5]
+            suffix = "..." if len(null_items) > 5 else ""
+            findings.append(Finding(
+                "skip_reason.unauthorized",
+                "error",
+                f"Data point '{name}' is null on {len(null_items)} in-scope item(s) "
+                f"but no run_decision cites an authorized skip reason from "
+                f"{allowed}. Run decision reasons present: "
+                f"{sorted(decision_reasons) or '[]'}. Affected items: {sample}{suffix}",
+            ))
+
+
 def check_run_decisions_meaningful(artifact: dict, findings: list[Finding]) -> None:
     """run_decisions should explain anything unusual — surface specific patterns."""
     status = artifact.get("briefing_status")
@@ -404,6 +490,7 @@ CHECKS = [
     check_tier_reason_consistency,
     check_featured_item_completeness,
     check_required_data_points_coverage,
+    check_skip_reasons_authorized,
     check_source_extracts_in_source,
     check_disclosure_present,
     check_run_decisions_meaningful,
