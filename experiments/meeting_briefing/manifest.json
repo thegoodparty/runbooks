@@ -933,7 +933,7 @@
                       "type": "string",
                       "minLength": 1,
                       "maxLength": 200,
-                      "description": "One-line label naming the section/table/form the extract came from. For tables: caption or column-set label (e.g. 'Financial Status Report — Bank Account Summary as of April 30, 2026'). For prose: section heading (e.g. 'Staff Recommendation'). For form fields: the field's parent section."
+                      "description": "One-line label naming the section, table, or form the extract came from. For tables: the table caption. For prose: the section heading from the document. For form fields: the form's name or parent section. The header is what a reader needs to make sense of the verbatim text standalone."
                     },
                     "extract_type": {
                       "enum": ["prose", "tabular", "form_field", "list", "heading"],
