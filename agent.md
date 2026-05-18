@@ -171,3 +171,96 @@ Tables, code blocks, and structured content for quick lookup.
 ### Writing Style
 - Procedures should be concise and actionable — prefer examples over lengthy explanations
 - References should be scannable — use tables, headers, and code blocks for quick lookup
+
+---
+
+## Active workstream: meeting_briefing experiment + qa-spine
+
+Two related workstreams. **Read this section before working on either.** Last updated 2026-05-18.
+
+### Branch state
+
+| Branch | Worktree | What's there |
+|---|---|---|
+| `briefing-tone-style-content` | main repo at `/Users/melecia/Research/runbooks/` | 3 commits ahead of `origin/develop`. Pushed. Round-4 PM voice/tone prompt edits to `experiments/meeting_briefing/{instruction.md, manifest.json}` (incl. `constituent_quote` schema field). `validate_output.py` now enforces `skip_reasons_allowed`. New `scripts/python/render_briefing.py` (PM-facing markdown renderer). `databricks_query.py` fixed to read `DATABRICKS_TOKEN`. |
+| `qa-spine` | separate worktree at `/Users/melecia/Research/runbooks-qa-spine/` | 1 commit ahead of `origin/qa-spine`. Pushed. Product-agnostic QA pipeline. |
+
+Engineering confirmed (2026-05-18) that develop is the production-bound target; our prompt edits go on top.
+
+### QA pipeline architecture (lives on `qa-spine`)
+
+`scripts/python/qa_validate.py` reads a unified meeting_briefing artifact directly (no four-file adapter). Stages:
+
+1. **Deterministic (12 checks, no LLM)**: artifact present, identity fields, priority count, high-weight claims have extracts, **all claims have provenance** (source_ids + source_extracts), citation IDs resolve, source snapshots present, prohibited phrases, **extracts appear in cited source** (bounded substring + rapidfuzz fallback within same cited source — never wanders), **summary-source coherence** (ROUGE-L; default threshold 0.33), **completeness floor**, **polish_grammar** (doubled words, common typos, double spaces).
+2. **Phase 1 LLM** (Anthropic by default): per-claim triage into 8 accuracy categories.
+3. **Phase 2 LLM** (Gemini by default, adversarial system prompt): escalation for high-weight Phase-1-not-OK only.
+4. Writes `qa_bundle.json` with `release_verdict` ∈ {ok, warn, block}. Default exit 0 (non-blocking trial mode); `--enforce-verdict` opts into exit-1/2.
+
+**All product-specific values live in `scripts/python/meeting_briefing_product_spec.json`.** Different product → write a new spec, zero Python changes. Spec controls: identity fields, priority filter, prohibited phrases + paths, claim types + blockable routing, accuracy categories, completeness thresholds, polish patterns, judge names → providers/models.
+
+**Pluggable LLM judges via `QA_JUDGES` env var** (set in `~/Research/.env`):
+```
+QA_JUDGES=claude:anthropic:claude-sonnet-4-6,gemini:google:gemini-2.5-flash
+```
+Format `name:provider:model,...`. Spec's `judges.phase1` and `judges.phase2` reference the names. Adding OpenAI / Bedrock / etc. is a small Judge subclass + `PROVIDER_REGISTRY` entry.
+
+### Test run conventions
+
+**LOCAL (preferred for prompt iteration):**
+
+`isolation: worktree` does NOT fork from the local branch HEAD — observed behavior is that it forks from `origin/HEAD` (the remote's default branch, which is `origin/develop` for this repo). So a worktree spawned from `briefing-tone-style-content` will check out at `origin/develop`'s HEAD, missing any local commits ahead of that point. Verify with `git -C .claude/worktrees/agent-<id> rev-parse HEAD` before relying on the run.
+
+Two recipes:
+
+(A) **Quick test against upstream develop state** — use `Agent` with `isolation: worktree`, `subagent_type: general-purpose`, `model: opus`. The temp worktree lands at `.claude/worktrees/agent-<id>/` checked out at `origin/HEAD`. Outputs in its `output/`. Subagent is a fresh Claude SDK instance with no parent context.
+
+(B) **Test against a specific local commit (e.g., your branch HEAD with unmerged work)** — manually create a worktree at the commit you want:
+
+```bash
+git worktree add -b <test-branch-name> /Users/melecia/Research/runbooks-<scenario> <commit-sha>
+```
+
+Then spawn `Agent` WITHOUT `isolation`, instructing the subagent to operate via absolute paths under that worktree path. The subagent's CWD may reset between Bash calls, so always use absolute paths. Confirm with `do NOT read from /Users/melecia/Research/runbooks/` in the prompt to keep it scoped.
+
+For both recipes:
+- `.reference_docs/` is untracked, never appears in worktrees — safe to keep prior outputs there
+- After completion: copy `output/*` into `.reference_docs/meeting_briefings_experiment_<YYYYMMDD>_<scenario>/` along with a `prompt_snapshot/` of the instruction.md + manifest.json that were active
+- Run QA against the preserved artifact from the `runbooks-qa-spine` worktree
+
+**FARGATE (full production runtime):**
+
+Documented in `books/convert-runbook-to-experiment.md` Section 3. Summary:
+
+1. `AWS_PROFILE=<profile> uv run python scripts/python/publish_experiments.py --env=dev` — uploads `experiments/<id>/` to `s3://agent-experiment-metadata-dev/`. Publishes the FULL set; branch is the curation surface.
+2. `aws sqs send-message` to `agent-dispatch-dev.fifo` with `experiment_type=meeting_briefing` + PARAMS. **Note: use `experiment_type` not `experiment_id` — the dispatch Lambda rejects the latter.**
+3. Output at `s3://gp-agent-artifacts-dev/meeting_briefing/<RUN_ID>/artifact.json`.
+4. Log groups: `/aws/lambda/pmf-engine-dispatch-dev` (dispatch), `/ecs/pmf-engine-dev` (runner), `/ecs/broker-dev` (broker — scope rule violations, connectivity).
+5. **The `work` AWS profile is not configured in agent envs** — only the user has AWS access. If using Fargate, the user runs publish + dispatch + fetch; the agent runs QA against the fetched artifact.
+
+### Preserved test artifacts
+
+Look in `.reference_docs/` for prior run outputs:
+
+- `meeting_briefings_experiment_20260515_1831_toffel/` — original Toffel run (sparse extracts, no news, no sentiment, no `meeting_name`/`location`)
+- `meeting_briefings_experiment_20260518_toffel_regen/` — fresh Toffel run after Round 4 prompt edits + dev sync (richer extracts at ~96 chars avg, news executed, sentiment populated, all new top-level fields populated)
+
+Each folder has `artifact.json`, `rendered.md`, and `prompt_snapshot/` capturing the instruction + manifest at run time.
+
+### Surprises worth knowing (don't relearn)
+
+- The `gemini-qa-agent` env var name is **lowercase-hyphenated literal**, not `GEMINI_API_KEY`. `qa_validate.py`'s `_resolve_api_key('google')` handles this.
+- `scripts/.env` is a **symlink** to `~/Research/.env` (not a copy). Don't replace with a literal file or you'll lose updates. If the symlink is missing or broken, recreate with `ln -sf "$HOME/Research/.env" scripts/.env`.
+- `databricks_query.py` reads `DATABRICKS_TOKEN`, NOT `DATABRICKS_API_KEY`. A subagent worktree off an older commit may still have the bug.
+- `briefing_type` enum (`city_council_meeting` | `county_legislature_meeting` | `school_board_meeting`) does NOT include `town_meeting`. Brookline Town Meeting maps to `city_council_meeting` as closest fit with `briefing_type_closest_fit` run_decision.
+- The "qa-spine" pre-existed our work as a POC by the user (a research data scientist pushing prod QA across the team). We turned it product-agnostic and added 5 new deterministic checks.
+- **Fargate runtime is single-agent.** Phase 2 same-family adversarial (different Anthropic model + adversarial Phase 2 system prompt) is the in-Fargate production path. Cross-family Phase 2 deferred until/if multi-provider Fargate exists.
+- The `wrong` profile name for AWS in this environment is `work`. The user's working profile name appears to be `goodparty`. Confirm with the user before dispatching.
+
+### What's deferred
+
+See `.reference_docs/qa_todo.md` for the live list with status. Headline items as of 2026-05-18:
+
+- Phase 1 + Phase 2 LLM stages wired but **never run with real API tokens** (~$0.10–0.50 per run estimated)
+- Haystaq sentiment presentation format (raw 0-100 vs tiered vs support/oppose pair)
+- Constituent quote source pipeline (schema slot exists; data source doesn't)
+- Kemah/Thorne test run (abandoned mid-Fargate-dispatch 2026-05-18; can resume locally — agent was already finding substantive items including a US DOT SS4A grant resolution)
