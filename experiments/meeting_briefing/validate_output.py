@@ -324,11 +324,21 @@ def check_required_data_points_coverage(artifact: dict, findings: list[Finding])
                 ))
 
 
+def _extract_text(extract) -> str:
+    """source_extracts items are either strings (legacy) or objects with a `text` field (preferred)."""
+    if isinstance(extract, str):
+        return extract
+    if isinstance(extract, dict):
+        return extract.get("text") or ""
+    return ""
+
+
 def check_source_extracts_in_source(artifact: dict, findings: list[Finding]) -> None:
     """Each claim.source_extracts entry should appear in at least one cited source's retrieved_text_or_snapshot.
 
     Substring match with whitespace normalization. Not a verbatim guarantee — designed to catch fabricated
     extracts and gross mis-citations, not subtle paraphrase issues (that's the LLM-adjudicated layer's job).
+    Accepts both legacy string form and structured {text, section_header, extract_type} form.
     """
     sources_by_id = {src.get("id"): src for src in artifact.get("sources", []) if src.get("id")}
 
@@ -341,9 +351,10 @@ def check_source_extracts_in_source(artifact: dict, findings: list[Finding]) -> 
         cited_texts = [normalize(sources_by_id.get(sid, {}).get("retrieved_text_or_snapshot", ""))
                        for sid in cited_ids if sid in sources_by_id]
         for extract in claim.get("source_extracts") or []:
-            if not extract:
+            text = _extract_text(extract)
+            if not text:
                 continue
-            needle = normalize(extract)
+            needle = normalize(text)
             if not needle:
                 continue
             # Try full match first.
@@ -356,14 +367,14 @@ def check_source_extracts_in_source(artifact: dict, findings: list[Finding]) -> 
                     "source_extract.partial_match_only",
                     "warning",
                     f"Claim {cid}: extract matched on first 60 chars but not in full. "
-                    f"Possible verbatim drift. Extract starts: {extract[:80]!r}",
+                    f"Possible verbatim drift. Extract starts: {text[:80]!r}",
                 ))
                 continue
             findings.append(Finding(
                 "source_extract.not_found_in_source",
                 "error",
                 f"Claim {cid}: source_extract not found in any cited source's retrieved_text_or_snapshot. "
-                f"Extract starts: {extract[:80]!r}. Cited source_ids: {cited_ids}",
+                f"Extract starts: {text[:80]!r}. Cited source_ids: {cited_ids}",
             ))
 
 

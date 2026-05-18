@@ -910,10 +910,38 @@
             "type": "array",
             "minItems": 1,
             "maxItems": 10,
+            "description": "Each extract is either (legacy) a verbatim string from a cited source, or (preferred) an object {text, section_header, extract_type}. The object form lets QA judges and the UI citation layer locate where the extract belongs in the source document.",
             "items": {
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 2000
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["text", "section_header", "extract_type"],
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000,
+                      "description": "The verbatim passage from the source. Must be extractable from the cited source's retrieved_text_or_snapshot."
+                    },
+                    "section_header": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200,
+                      "description": "One-line label naming the section/table/form the extract came from. For tables: caption or column-set label (e.g. 'Financial Status Report — Bank Account Summary as of April 30, 2026'). For prose: section heading (e.g. 'Staff Recommendation'). For form fields: the field's parent section."
+                    },
+                    "extract_type": {
+                      "enum": ["prose", "tabular", "form_field", "list", "heading"],
+                      "description": "prose: sentence-form text. tabular: a row, cell, or aggregate from a table. form_field: a labeled key:value pair. list: a bullet/numbered list item. heading: a section title used as evidence."
+                    }
+                  }
+                }
+              ]
             }
           },
           "source_ids": {

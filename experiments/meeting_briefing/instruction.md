@@ -758,10 +758,20 @@ The schema reserves `display.constituent_quote` for a future verified-quote pipe
 
 Every factual claim in the briefing must reference at least one source. For each claim:
 
-- `source_extracts[]` — one or more verbatim passages from the source(s) supporting the claim. Together they must give a reader enough context to understand why the claim was made — typically one to three sentences, not the minimum verbatim fragment. Each extract is also surfaced as a click-through citation in the UI, so it must read coherently on its own. Must be extractable verbatim from `retrieved_text_or_snapshot`. Do not invent extracts.
+- `source_extracts[]` — one or more **structured extracts** from the source(s) supporting the claim. Each extract is an object with three fields:
+  - `text` — the verbatim passage from the source. Must be extractable verbatim from the cited source's `retrieved_text_or_snapshot`. Do not invent extracts. For prose, this should be one to three sentences that read coherently. For non-prose (tables, forms, lists), this is the verbatim row, key:value pair, or list item.
+  - `section_header` — a one-line label naming the section, table, or form the extract came from. The header is what a reader needs to make sense of the extract standalone. Examples by source shape:
+    - Table row: capture the table caption + the column-set being summarized (e.g., `"Financial Status Report — Bank Account Summary as of April 30, 2026"`).
+    - Form field: capture the form's name or parent section (e.g., `"Resolution 2026-23 — Budget Impact"`).
+    - List item: capture the list's header (e.g., `"Project Planning Area — Corridors and Side Streets"`).
+    - Prose paragraph: capture the section heading from the document (e.g., `"Staff Recommendation"` or `"Background"`).
+    - If there is no obvious section header in the source, write a short label that conveys what the content represents in context, prefixed with `"[derived] "`.
+  - `extract_type` — one of: `prose`, `tabular`, `form_field`, `list`, `heading`. Pick the one that best describes the kind of content. When in doubt, use `prose`.
 - `source_ids[]` — references to `id` values in the sources array.
 - `required_source_type` — the minimum acceptable source type for this claim to be released. See routing table below.
 - `route_if_unsupported` — what to do if no source of the required type can be found.
+
+The structured extract format matters because the QA pipeline and the UI citation layer both rely on the `section_header` to locate where the extract belongs in the source document. A bare row like `"TOTALS TEXAS FIRST BANK 901,826.03"` is unverifiable without knowing what table it came from. With `section_header: "Financial Status Report — Bank Account Summary as of April 30, 2026"`, both the QA judge and the human reader can find their bearings.
 
 #### Source routing table
 
