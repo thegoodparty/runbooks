@@ -5,16 +5,12 @@ import pandas as pd
 from databricks.sql import connect
 from dotenv import load_dotenv
 
-# scripts/.env is the in-repo convention (symlinked to ~/Research/.env). Fall back
-# to ~/Research/.env directly when the symlink is missing — git worktree add does
-# not carry untracked symlinks.
-for _env_candidate in (
-    Path(__file__).resolve().parent.parent / ".env",
-    Path.home() / "Research" / ".env",
-):
-    if _env_candidate.exists() or _env_candidate.is_symlink():
-        load_dotenv(_env_candidate)
-        break
+# scripts/.env is the in-repo convention. In Fargate the task definition populates
+# os.environ at task launch and no .env file is needed; load_dotenv is a no-op when
+# the file is missing. Locally, contributors keep credentials in scripts/.env (real
+# file or symlink — python-dotenv handles both, including broken symlinks, without
+# crashing).
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 
 def execute_query(query: str) -> pd.DataFrame:

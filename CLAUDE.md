@@ -182,8 +182,8 @@ Two related workstreams. **Read this section before working on either.** Last up
 
 | Branch | Worktree | What's there |
 |---|---|---|
-| `briefing-tone-style-content` | main repo at `/Users/melecia/Research/runbooks/` | 3 commits ahead of `origin/develop`. Pushed. Round-4 PM voice/tone prompt edits to `experiments/meeting_briefing/{instruction.md, manifest.json}` (incl. `constituent_quote` schema field). `validate_output.py` now enforces `skip_reasons_allowed`. New `scripts/python/render_briefing.py` (PM-facing markdown renderer). `databricks_query.py` fixed to read `DATABRICKS_TOKEN`. |
-| `qa-spine` | separate worktree at `/Users/melecia/Research/runbooks-qa-spine/` | 1 commit ahead of `origin/qa-spine`. Pushed. Product-agnostic QA pipeline. |
+| `briefing-tone-style-content` | main repo at `$HOME/Research/runbooks/` | 3 commits ahead of `origin/develop`. Pushed. Round-4 PM voice/tone prompt edits to `experiments/meeting_briefing/{instruction.md, manifest.json}` (incl. `constituent_quote` schema field). `validate_output.py` now enforces `skip_reasons_allowed`. New `scripts/python/render_briefing.py` (PM-facing markdown renderer). `databricks_query.py` fixed to read `DATABRICKS_TOKEN`. |
+| `qa-spine` | separate worktree at `$HOME/Research/runbooks-qa-spine/` | 1 commit ahead of `origin/qa-spine`. Pushed. Product-agnostic QA pipeline. |
 
 Engineering confirmed (2026-05-18) that develop is the production-bound target; our prompt edits go on top.
 
@@ -198,7 +198,7 @@ Engineering confirmed (2026-05-18) that develop is the production-bound target; 
 
 **All product-specific values live in `scripts/python/meeting_briefing_product_spec.json`.** Different product → write a new spec, zero Python changes. Spec controls: identity fields, priority filter, prohibited phrases + paths, claim types + blockable routing, accuracy categories, completeness thresholds, polish patterns, judge names → providers/models.
 
-**Pluggable LLM judges via `QA_JUDGES` env var** (set in `~/Research/.env`):
+**Pluggable LLM judges via `QA_JUDGES` env var** (set in `scripts/.env`):
 ```
 QA_JUDGES=claude:anthropic:claude-sonnet-4-6,gemini:google:gemini-2.5-flash
 ```
@@ -217,10 +217,10 @@ Two recipes:
 (B) **Test against a specific local commit (e.g., your branch HEAD with unmerged work)** — manually create a worktree at the commit you want:
 
 ```bash
-git worktree add -b <test-branch-name> /Users/melecia/Research/runbooks-<scenario> <commit-sha>
+git worktree add -b <test-branch-name> $HOME/Research/runbooks-<scenario> <commit-sha>
 ```
 
-Then spawn `Agent` WITHOUT `isolation`, instructing the subagent to operate via absolute paths under that worktree path. The subagent's CWD may reset between Bash calls, so always use absolute paths. Confirm with `do NOT read from /Users/melecia/Research/runbooks/` in the prompt to keep it scoped.
+Then spawn `Agent` WITHOUT `isolation`, instructing the subagent to operate via absolute paths under that worktree path. The subagent's CWD may reset between Bash calls, so always use absolute paths. Confirm with `do NOT read from $HOME/Research/runbooks/` in the prompt to keep it scoped.
 
 For both recipes:
 - `.reference_docs/` is untracked, never appears in worktrees — safe to keep prior outputs there

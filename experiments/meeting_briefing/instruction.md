@@ -1001,7 +1001,7 @@ Assemble the final JSON artifact and write it to `/workspace/output/meeting_brie
 
   - Public Safety Camera Expansion — Vote on vendor contract and camera locations
   - FY2027 Property Tax Rate Direction — No vote; sets the table for the May 21 first reading
-  - Ramsey Street Corridor Revitalization — No vote; opportunity to push for a public deliverable commitment
+  - Ramsey Street Corridor Revitalization — No vote; staff presentation outlining next-phase scope and timeline
   ```
   Stay factual; the voice and tone rules apply (this is **not** an approved posture override). Total length capped at 400 characters (the schema enforces this) — keep bullets tight when there are 4+ featured items.
 - `run_metadata`:
