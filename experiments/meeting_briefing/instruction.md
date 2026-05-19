@@ -8,7 +8,7 @@ Run a meeting briefing for one elected official's next city council meeting. Pro
 2. Maintain a TodoWrite list mirroring the TODO CHECKLIST below.
 3. Your params are in the `PARAMS_JSON` env var. Read them once at the top.
 4. Write the final artifact to `/workspace/output/meeting_briefing.json` and nowhere else.
-5. Run `python3 /workspace/qa_checks.py` (Step 18) and then `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json` (Step 19) before declaring success. `qa_checks.py` is the deterministic schema + cross-reference validator; `qa_validate.py` is the deep QA spine (deterministic + Phase 1/2 LLM audit) that produces `qa_bundle.json` alongside the artifact.
+5. Run `python3 /workspace/qa_checks.py` (Step 18) and then `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json --bundle-out /workspace/qa_bundle.json` (Step 19) before declaring success. `qa_checks.py` is the deterministic schema + cross-reference validator; `qa_validate.py` is the deep QA spine (deterministic + Phase 1/2 LLM audit) that writes `/workspace/qa_bundle.json` (note: workspace root, NOT `/workspace/output/`, to avoid the runner's per-artifact validator).
 6. Perform the spot-check at the bottom — validator-passing data can still be garbage.
 
 ## EARLY EXIT CONDITIONS (gate the run before any heavy work)
@@ -66,7 +66,7 @@ The packet is **not** the published agenda summary page. The summary lists item 
 16. Format the constituent sentiment output per item using Step 8 results.
 17. Write artifact to `/workspace/output/meeting_briefing.json`.
 18. Run `python3 /workspace/qa_checks.py` (deterministic QA — schema + cross-references + discovery-channel depth + source-extract presence).
-19. Run `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json` (deep QA spine — claim-level deterministic + LLM Phase 1/2; writes `qa_bundle.json` next to the artifact).
+19. Run `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json --bundle-out /workspace/qa_bundle.json` (deep QA spine — claim-level deterministic + LLM Phase 1/2; writes `qa_bundle.json` to the workspace root, not `/workspace/output/`).
 20. Spot-check.
 
 ## CRITICAL RULES
@@ -154,7 +154,7 @@ Concise. Priority items get full depth across all sections. Non-priority items g
 ### Output rules
 
 - Write **only** to `/workspace/output/meeting_briefing.json`. The runner publishes nothing else.
-- Run `python3 /workspace/qa_checks.py` and then `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json` before declaring success. `qa_checks.py` is deterministic schema + cross-reference validation; `qa_validate.py` is the deep QA spine (deterministic + Phase 1/2 LLM audit) that writes `qa_bundle.json` alongside the artifact. The runner-level validator will reject the artifact post-hoc if you skip the deterministic check; in-loop validation lets you fix violations cheaply.
+- Run `python3 /workspace/qa_checks.py` and then `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json --bundle-out /workspace/qa_bundle.json` before declaring success. `qa_checks.py` is deterministic schema + cross-reference validation; `qa_validate.py` is the deep QA spine (deterministic + Phase 1/2 LLM audit) that writes `qa_bundle.json` to the workspace root. The runner-level validator will reject the artifact post-hoc if you skip the deterministic check; in-loop validation lets you fix violations cheaply.
 
 ## Steps
 
@@ -1043,10 +1043,13 @@ Note: `/workspace/validate_output.py` (the runner's generic shim) only does JSON
 
 ```bash
 python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json \
-  --product-spec /workspace/meeting_briefing_product_spec.json
+  --product-spec /workspace/meeting_briefing_product_spec.json \
+  --bundle-out /workspace/qa_bundle.json
 ```
 
-`qa_validate.py` is shipped as a manifest attachment alongside its product spec. It is the product-agnostic QA spine: 12 deterministic claim-level checks → Phase 1 LLM triage (Anthropic Sonnet by default) on every claim → Phase 2 LLM escalation (Gemini Flash by default, adversarial system prompt) on high-weight Phase-1-not-OK claims → writes `/workspace/output/qa_bundle.json` with `release_verdict` ∈ `{ok, warn, block}` plus per-claim `accuracy_category`, `reasoning`, and `proposed_correction` text on blocked claims.
+**Bundle path matters**: write to `/workspace/qa_bundle.json` (the workspace root), NOT `/workspace/output/qa_bundle.json`. The runner's `validate_output.py` shim runs after the agent and schema-validates every JSON in `/workspace/output/` against the meeting_briefing contract; qa_bundle has its own shape and would fail that validator. Writing to `/workspace/` puts the bundle in the runner's log-upload path (it lands at `s3://gp-agent-artifacts-dev/meeting_briefing/<RUN_ID>/logs/workspace/qa_bundle.json`) without conflicting with the artifact validator.
+
+`qa_validate.py` is shipped as a manifest attachment alongside its product spec. It is the product-agnostic QA spine: 12 deterministic claim-level checks → Phase 1 LLM triage (Anthropic Sonnet by default) on every claim → Phase 2 LLM escalation (Gemini Flash by default, adversarial system prompt) on high-weight Phase-1-not-OK claims → writes a JSON bundle with `release_verdict` ∈ `{ok, warn, block}` plus per-claim `accuracy_category`, `reasoning`, and `proposed_correction` text on blocked claims.
 
 Required env vars (provided by the Fargate task definition via Secrets Manager): `ANTHROPIC_API_KEY`, `gemini-qa-agent`, and `QA_JUDGES` (in the format `name:provider:model,...`, e.g. `claude:anthropic:claude-sonnet-4-6,gemini:google:gemini-2.5-flash`). If the LLM provider keys are missing, the LLM phases skip with a warning and only the deterministic verdict ships in the bundle.
 
