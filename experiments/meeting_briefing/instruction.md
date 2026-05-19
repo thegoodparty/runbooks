@@ -8,7 +8,7 @@ Run a meeting briefing for one elected official's next city council meeting. Pro
 2. Maintain a TodoWrite list mirroring the TODO CHECKLIST below.
 3. Your params are in the `PARAMS_JSON` env var. Read them once at the top.
 4. Write the final artifact to `/workspace/output/meeting_briefing.json` and nowhere else.
-5. Run `python3 /workspace/qa_checks.py` before declaring success. (The runner-written `/workspace/validate_output.py` is a generic schema-only fast check; `qa_checks.py` is the full deterministic QA — schema + cross-references + required data points + discovery-channel depth.)
+5. Run `python3 /workspace/qa_checks.py` (Step 18) and then `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json` (Step 19) before declaring success. `qa_checks.py` is the deterministic schema + cross-reference validator; `qa_validate.py` is the deep QA spine (deterministic + Phase 1/2 LLM audit) that produces `qa_bundle.json` alongside the artifact.
 6. Perform the spot-check at the bottom — validator-passing data can still be garbage.
 
 ## EARLY EXIT CONDITIONS (gate the run before any heavy work)
@@ -65,8 +65,9 @@ The packet is **not** the published agenda summary page. The summary lists item 
 15. Set `briefing_status` and emit `required_data_points`.
 16. Format the constituent sentiment output per item using Step 8 results.
 17. Write artifact to `/workspace/output/meeting_briefing.json`.
-18. Run `python3 /workspace/qa_checks.py` (full deterministic QA — schema + cross-references + discovery-channel depth + source-extract presence).
-19. Spot-check.
+18. Run `python3 /workspace/qa_checks.py` (deterministic QA — schema + cross-references + discovery-channel depth + source-extract presence).
+19. Run `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json` (deep QA spine — claim-level deterministic + LLM Phase 1/2; writes `qa_bundle.json` next to the artifact).
+20. Spot-check.
 
 ## CRITICAL RULES
 
@@ -153,7 +154,7 @@ Concise. Priority items get full depth across all sections. Non-priority items g
 ### Output rules
 
 - Write **only** to `/workspace/output/meeting_briefing.json`. The runner publishes nothing else.
-- Run `python3 /workspace/qa_checks.py` before declaring success. (Generic `/workspace/validate_output.py` does schema-only; `qa_checks.py` does schema + deterministic QA.) The runner-level validator will reject the artifact post-hoc if you skip this; in-loop validation lets you fix violations cheaply.
+- Run `python3 /workspace/qa_checks.py` and then `python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json --product-spec /workspace/meeting_briefing_product_spec.json` before declaring success. `qa_checks.py` is deterministic schema + cross-reference validation; `qa_validate.py` is the deep QA spine (deterministic + Phase 1/2 LLM audit) that writes `qa_bundle.json` alongside the artifact. The runner-level validator will reject the artifact post-hoc if you skip the deterministic check; in-loop validation lets you fix violations cheaply.
 
 ## Steps
 
@@ -1028,7 +1029,7 @@ Every briefing must include the following disclaimer at the `disclosure` field:
 
 > This briefing was generated with AI assistance and may contain errors. Inferred or synthesized content represents model-generated interpretation, not verified fact. Constituent sentiment data, where present, reflects modeled estimates for constituents in that jurisdiction.
 
-### Step 18 — Validate
+### Step 18 — Validate (deterministic)
 
 ```bash
 python3 /workspace/qa_checks.py
@@ -1037,6 +1038,21 @@ python3 /workspace/qa_checks.py
 If validation fails, fix the artifact in-loop and re-run before declaring success. Exit codes: `0` = schema-valid + QA passed; `1` = schema invalid; `2` = schema valid but deterministic QA failed.
 
 Note: `/workspace/validate_output.py` (the runner's generic shim) only does JSON-schema validation. `qa_checks.py` (shipped as a manifest attachment) is the full deterministic validator — schema + cross-references + required_data_points coverage + discovery-channel depth + source-extract presence. Always use `qa_checks.py` here; `validate_output.py` is OK as a fast fail-fast schema-only check earlier in the loop, but it does not gate `awaiting_agenda` discovery depth.
+
+### Step 19 — Run the deep QA spine (claim-level audit)
+
+```bash
+python3 /workspace/qa_validate.py /workspace/output/meeting_briefing.json \
+  --product-spec /workspace/meeting_briefing_product_spec.json
+```
+
+`qa_validate.py` is shipped as a manifest attachment alongside its product spec. It is the product-agnostic QA spine: 12 deterministic claim-level checks → Phase 1 LLM triage (Anthropic Sonnet by default) on every claim → Phase 2 LLM escalation (Gemini Flash by default, adversarial system prompt) on high-weight Phase-1-not-OK claims → writes `/workspace/output/qa_bundle.json` with `release_verdict` ∈ `{ok, warn, block}` plus per-claim `accuracy_category`, `reasoning`, and `proposed_correction` text on blocked claims.
+
+Required env vars (provided by the Fargate task definition via Secrets Manager): `ANTHROPIC_API_KEY`, `gemini-qa-agent`, and `QA_JUDGES` (in the format `name:provider:model,...`, e.g. `claude:anthropic:claude-sonnet-4-6,gemini:google:gemini-2.5-flash`). If the LLM provider keys are missing, the LLM phases skip with a warning and only the deterministic verdict ships in the bundle.
+
+The script exits 0 by default (non-blocking trial mode); `--enforce-verdict` opts into exit 1 (warn) / exit 2 (block) routing. Do NOT pass `--enforce-verdict` here — the runner expects exit 0 from the validator step.
+
+If `release_verdict` is `block`, the bundle's per-claim `proposed_correction` field gives a concrete rewrite. The agent may consume those corrections in a future revision pass; for now, the bundle ships alongside the artifact in S3 for PM review.
 
 ## Spot-check
 
