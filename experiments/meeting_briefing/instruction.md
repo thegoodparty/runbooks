@@ -305,11 +305,10 @@ If **zero** substantive items exist — for example, the agenda packet is a titl
 **On failure of either gate** — do not proceed with tier classification or the per-item pipeline. Instead:
 
 1. Set `briefing_status: "awaiting_agenda"`.
-2. Populate `executive_summary` with the brief check-back message in `lead_in` and an empty `items: []` array:
+2. Populate `executive_summary` with the brief check-back message in `lead_in`:
    ```json
    {
-     "lead_in": "The agenda for the upcoming [Council Body] meeting on [date] has not been published yet. Check back closer to the meeting date, or upload the agenda PDF directly if you already have it.",
-     "items": []
+     "lead_in": "The agenda for the upcoming [Council Body] meeting on [date] has not been published yet. Check back closer to the meeting date, or upload the agenda PDF directly if you already have it."
    }
    ```
 3. Record the decision in `run_metadata.run_decisions[]`. Use reason `"packet_not_published"` for Gate A failures and `"agenda_no_substantive_items"` for Gate B failures.
@@ -650,6 +649,8 @@ The first section under each priority item. Cover what the item actually decides
 
 Write the overview into `display.summary`. It is what is actually at stake — not just what the item is. What changes if it passes; what happens if it fails or is deferred. The overview is generated for every featured and queued item; for standard items, `display.summary` is one sentence describing what the item is and what the official should expect.
 
+**For featured items only**, also write a one-sentence distillation into `display.executive_summary_overview` — the same facts as `display.summary` but tighter framing (≤300 chars). The renderer composes the top-of-briefing executive summary by walking `items[]` in agenda order, filtering to `tier: "featured"`, and reading each item's `executive_summary_overview`. Stay factual; the voice and tone rules apply. Set this field to `null` on queued, standard, and placeholder items.
+
 ### Step 10 — Talking points (featured items)
 
 Talking points for each priority item — direct advice on how to engage with the item in the room.
@@ -965,27 +966,10 @@ Assemble the final JSON artifact and write it to `/workspace/output/meeting_brie
 - `meeting_time`: start time of the meeting in 24-hour `HH:MM` format, in the local timezone given by `meeting_timezone` (e.g. `"19:00"`). Capture from the same source you used for `meeting_date` (streaming platform meeting detail, city meeting schedule, or agenda packet header). Briefings own this independently of `meeting_schedule` so the row is self-sufficient. For `no_meeting_found` or `error` status, emit an empty string.
 - `meeting_timezone`: IANA timezone name for `meeting_time` (e.g. `"America/Chicago"`). Use the timezone the governing body publishes the meeting in, not UTC. If only an abbreviation like `"CST"` or `"Eastern Time"` is visible on the source, resolve to the matching IANA zone for the city's location. For `no_meeting_found` or `error` status, emit an empty string.
 - `estimated_read_minutes`: integer; target total read time is ~8 minutes for `briefing_ready` artifacts.
-- `executive_summary`: written **after** the per-featured-item deep-dive content has been authored (Steps 9–16) so each entry reflects what the deep dive actually says. A structured object with `lead_in` (a single framing sentence) and `items` (an array, one entry per **featured** item — not queued, not standard, in the same order they appear in top-level `items[]`). Each `executive_summary.items[]` entry carries: `item_id` (must match an entry in top-level `items[]` with `tier: "featured"` — the UI uses this to link the entry to its deep-dive panel), `title` (must **verbatim equal** `items[item_id].title`; do not paraphrase or shorten), and `overview` (a one-sentence distillation of `items[item_id].display.summary` — same facts, tighter framing, so the lead-of-briefing matches the deep dive). Default `lead_in` when items follow: _"The following items on your agenda require action and/or have a vote:"_ (with trailing colon). Permitted variations for ceremonial-heavy, multi-flagship, or routine-heavy meetings. When zero items qualify as featured, set `items: []` and use a standalone `lead_in` covering the case (e.g. _"This is a ceremonial agenda with no items requiring action or a vote."_). Generated, not boilerplate — adapt to what was actually found in the agenda. Per-field caps enforced by the schema: `lead_in` 300 chars, `title` 100 chars (must match `items[].title`), `overview` 300 chars; max 5 entries. Stay factual; the voice and tone rules apply (this is **not** an approved posture override). Example:
+- `executive_summary`: a single object with one field, `lead_in` — the framing sentence shown above the per-item summaries at the top of the briefing. The per-featured-item bullets that appear under the lead-in are **not stored here**: they live on each featured item as `display.executive_summary_overview` (see Step 9) and are composed at render time by walking `items[]` in agenda order, filtering to `tier: "featured"`, and reading each item's overview. This means ordering, item linkage, and title consistency are guaranteed by the data structure — you do not author them as a separate array. Default `lead_in` when at least one featured item exists: _"The following items on your agenda require action and/or have a vote:"_ (with trailing colon). Permitted variations for ceremonial-heavy, multi-flagship, or routine-heavy meetings. When zero items qualify as featured, use a standalone `lead_in` covering the case (e.g. _"This is a ceremonial agenda with no items requiring action or a vote."_) without trailing colon. Generated, not boilerplate — adapt to what was actually found in the agenda. Per-field cap enforced by the schema: `lead_in` 300 chars. Stay factual; the voice and tone rules apply (this is **not** an approved posture override). Example:
   ```json
   {
-    "lead_in": "The following items on your agenda require action and/or have a vote:",
-    "items": [
-      {
-        "item_id": "item_007",
-        "title": "Short-term rental ordinance",
-        "overview": "First full vote on a citywide ordinance requiring short-term rental operators to register, carry liability insurance, and cap whole-home rentals at 90 nights per year."
-      },
-      {
-        "item_id": "item_012",
-        "title": "Lincoln Park renovation bond",
-        "overview": "Authorization vote on a $6.8M general obligation bond to fund the Lincoln Park renovation: new playground, accessible paths, restrooms, and stormwater retention."
-      },
-      {
-        "item_id": "item_015",
-        "title": "Senior transit subsidy pilot",
-        "overview": "Vote to authorize a 12-month pilot program subsidizing on-demand transit rides for residents 65+ within city limits."
-      }
-    ]
+    "lead_in": "The following items on your agenda require action and/or have a vote:"
   }
   ```
 - `run_metadata`:
