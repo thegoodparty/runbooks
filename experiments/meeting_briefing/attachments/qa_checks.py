@@ -310,6 +310,15 @@ def check_featured_item_completeness(artifact: dict, findings: list[Finding]) ->
                 "error",
                 f"Featured item {iid} has no talking_points; the spec requires them on every featured item.",
             ))
+        eso = display.get("executive_summary_overview")
+        if not eso or not str(eso).strip():
+            findings.append(Finding(
+                "featured_item.missing_executive_summary_overview",
+                "error",
+                f"Featured item {iid} has empty display.executive_summary_overview; "
+                f"the renderer composes the top-of-briefing executive summary by reading this field "
+                f"per featured item, and a missing value silently drops the item from the rendered summary.",
+            ))
 
 
 def check_required_data_points_coverage(artifact: dict, findings: list[Finding]) -> None:

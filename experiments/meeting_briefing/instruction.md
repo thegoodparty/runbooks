@@ -1012,6 +1012,7 @@ Validator-passing JSON can still be garbage. Before declaring success, walk this
 
 - **`briefing_status` consistency:** `briefing_ready` requires ≥1 featured OR queued item (Step 5 may produce zero featured items if no item qualifies). `awaiting_agenda` AND `no_meeting_found` require `claims[]` empty.
 - **Every featured item must have at least one talking point.** Empty array is a schema violation; set `display.talking_points` to a non-empty list or `null`.
+- **Every featured item must have a non-null `display.executive_summary_overview`.** The renderer composes the top-of-briefing executive summary by reading this field per featured item — a null or empty value silently drops the item from the rendered summary.
 - **Every Haystaq score reported in `display.constituent_sentiment`** must trace to a column in the Step 6 inline catalog and a row in the Step 8 batched L2 query.
 - **`district_note` is always `null`** — deprecated since city scope was removed.
 - **When `l2DistrictType` is set, `voter_count` should reflect the district, not the whole state** → if it looks state-sized, the L2 district WHERE clause matched zero rows and you silently fell back to state scope. Fix: re-confirm `l2DistrictType` and `l2DistrictName` came verbatim from PARAMS_JSON and were discovered via the L2 value-format check; set `haystaq_status: "no_match"` if the value genuinely doesn't resolve.
