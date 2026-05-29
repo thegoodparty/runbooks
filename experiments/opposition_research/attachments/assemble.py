@@ -39,6 +39,20 @@ def _load_fragments(scratch_dir):
     return fragments
 
 
+def _load_race(scratch_dir):
+    # Derived race fields written by the agent in Step 0 (candidate_name,
+    # office_name, state, partisanType) — these used to come from PARAMS, but
+    # the input contract now nests the race under campaign_strategy_context, so
+    # the agent derives + writes them here for the assembler.
+    path = os.path.join(scratch_dir, "_race.json")
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (ValueError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def _load_closing_note(scratch_dir):
     path = os.path.join(scratch_dir, "_closing_note.txt")
     if not os.path.exists(path):
@@ -111,7 +125,7 @@ def _spot_checks(artifact, params):
             f"opponent_count {count} does not match opponents length {n_opp}"
         )
 
-    if params.get("partisanType") == "nonpartisan":
+    if str(params.get("partisanType") or "").strip().lower() == "nonpartisan":
         allowed = "Party affiliation: Nonpartisan (race is nonpartisan)"
         for line in markdown.splitlines():
             content = line.strip().lstrip("-").strip()
@@ -160,17 +174,19 @@ def main():
     output_dir = os.path.join(workspace, "output")
     os.makedirs(output_dir, exist_ok=True)
 
-    params = _load_params()
+    # Prefer the agent's derived race fields (_race.json); fall back to PARAMS
+    # for older callers / tests that pass the race fields top-level.
+    race = _load_race(scratch_dir) or _load_params()
     fragments = _load_fragments(scratch_dir)
     closing_note = _load_closing_note(scratch_dir)
 
-    artifact = _build_artifact(params, fragments, closing_note)
+    artifact = _build_artifact(race, fragments, closing_note)
 
     output_path = os.path.join(output_dir, "opposition_research.json")
     with open(output_path, "w", encoding="utf-8") as fh:
         json.dump(artifact, fh, indent=2, ensure_ascii=False)
 
-    reasons = _spot_checks(artifact, params)
+    reasons = _spot_checks(artifact, race)
     reasons += _validate_shape(workspace, artifact)
 
     if reasons:
