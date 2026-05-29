@@ -15,109 +15,85 @@
     "type": "object",
     "additionalProperties": false,
     "required": [
-      "candidate_name",
-      "office_name",
-      "state",
-      "opponents"
+      "race_id",
+      "user_email",
+      "user_full_name",
+      "campaign_strategy_context"
     ],
     "properties": {
-      "candidate_name": {
+      "race_id": {
         "type": "string",
         "minLength": 1,
-        "description": "The person we write FOR. Referred to as 'you' in output, never by name."
+        "description": "BallotReady brHashId. Trace / idempotency identifier only — the agent does NOT reason over it or look anything up with it."
       },
-      "office_name": {
+      "user_email": {
+        "type": "string",
+        "description": "The candidate's email. Used to mark is_user against the roster (exact match, case-insensitive + trimmed)."
+      },
+      "user_first_name": { "type": ["string", "null"] },
+      "user_last_name": { "type": ["string", "null"] },
+      "user_full_name": {
         "type": "string",
         "minLength": 1,
-        "description": "Human-readable office name for web search, e.g. 'Hazleton City Government Study Commission'. Use this, not BallotReady normalizations."
+        "description": "The candidate we write FOR. Referred to as 'you' in output, never by name. Fallback for is_user when the email doesn't match a roster row."
       },
-      "state": {
-        "type": "string",
-        "pattern": "^[A-Z]{2}$",
-        "description": "2-letter state code (e.g. PA)."
+      "user_party_affiliation": {
+        "type": ["string", "null"],
+        "description": "Party label, or null. 'Other' means the real value is in other_party."
       },
-      "electionDate": {
-        "type": [
-          "string",
-          "null"
-        ],
-        "description": "Election date (YYYY-MM-DD) or null if unknown."
+      "other_party": {
+        "type": ["string", "null"],
+        "description": "The candidate's party when user_party_affiliation == 'Other'."
       },
-      "partisanType": {
-        "type": [
-          "string",
-          "null"
-        ],
-        "enum": [
-          "partisan",
-          "nonpartisan",
-          null
-        ],
-        "description": "Race partisan type. nonpartisan means every opponent contests on the same ballot; drop party labels."
+      "campaign_strategy_context_status": {
+        "type": ["string", "null"],
+        "description": "gp-api's fetch status for the context (e.g. 'ok'). Informational; the agent ignores it."
       },
-      "isPrimary": {
-        "type": [
-          "boolean",
-          "null"
-        ],
-        "description": "Whether this is a primary contest. null if unknown."
-      },
-      "opponents": {
-        "type": "array",
-        "description": "Seed roster of opponents, hydrated by gp-api before dispatch. The agent does NOT call election-api.",
-        "items": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "firstName",
-            "lastName",
-            "source"
-          ],
-          "properties": {
-            "firstName": {
-              "type": "string",
-              "minLength": 1
-            },
-            "lastName": {
-              "type": "string",
-              "minLength": 1
-            },
-            "party": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "isIncumbent": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            },
-            "websiteUrl": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "urls": {
-              "type": "array",
-              "items": {
-                "type": "string"
+      "campaign_strategy_context": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "The election-api campaign-strategy-context result, hydrated by gp-api before dispatch. The agent does NOT call election-api; this is its only roster source besides web search.",
+        "required": ["candidate_count", "candidate_office", "candidates"],
+        "properties": {
+          "candidate_count": { "type": "integer" },
+          "candidate_office": { "type": ["string", "null"] },
+          "candidates": {
+            "type": "array",
+            "description": "Full seed roster (NOT pre-filtered). The agent marks the candidate via is_user and excludes them; it does not receive a pre-trimmed opponent list.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["first_name", "last_name", "full_name"],
+              "properties": {
+                "gp_candidate_id": { "type": ["string", "null"] },
+                "first_name": { "type": "string" },
+                "last_name": { "type": "string" },
+                "full_name": { "type": "string" },
+                "email": { "type": ["string", "null"] },
+                "website_url": { "type": ["string", "null"] },
+                "party": { "type": ["string", "null"] },
+                "is_incumbent": { "type": ["boolean", "null"] }
               }
-            },
-            "about": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "source": {
-              "type": "string",
-              "minLength": 1,
-              "description": "Where this seed row came from, e.g. 'election-api'."
             }
-          }
+          },
+          "civics_win_number": { "type": ["integer", "null"] },
+          "contacts_needed_estimate": { "type": ["integer", "null"] },
+          "filing_date_end": { "type": ["string", "null"] },
+          "general_election_date": { "type": ["string", "null"] },
+          "number_of_seats": { "type": ["integer", "null"] },
+          "office_level": { "type": ["string", "null"] },
+          "office_type": { "type": ["string", "null"] },
+          "official_office_name": { "type": ["string", "null"] },
+          "primary_election_date": { "type": ["string", "null"] },
+          "projected_turnout": { "type": ["integer", "null"] },
+          "relevant_election_date": { "type": ["string", "null"] },
+          "state": { "type": ["string", "null"] },
+          "win_number_effective": { "type": ["integer", "null"] },
+          "win_number_estimate": { "type": ["integer", "null"] },
+          "projected_voter_turnout": { "type": ["integer", "null"] },
+          "registered_voters": { "type": ["integer", "null"] },
+          "unique_cellphones": { "type": ["integer", "null"] },
+          "unique_landlines": { "type": ["integer", "null"] }
         }
       }
     }
