@@ -108,126 +108,60 @@
     "type": "object",
     "additionalProperties": false,
     "required": [
-      "markdown",
-      "opponents",
-      "race",
-      "generated_at"
+      "opponents"
     ],
     "properties": {
-      "markdown": {
-        "type": "string",
-        "minLength": 1,
-        "description": "The exact '### Opposition Research' section per the runbook step-6 spec. No preamble, no closing summary."
-      },
       "opponents": {
         "type": "array",
-        "description": "Per-opponent structured research, one entry per researched opponent.",
+        "description": "Opponents identified from the seed roster + web search. Empty array if the race is uncontested. gp-api renders the campaign-plan markdown from this structured data.",
         "items": {
           "type": "object",
           "additionalProperties": false,
           "required": [
             "full_name",
-            "incumbent",
-            "summary",
-            "facts",
-            "websites",
-            "no_info"
+            "party_affiliation",
+            "incumbent"
           ],
           "properties": {
             "full_name": {
               "type": "string",
               "minLength": 1
             },
-            "incumbent": {
+            "party_affiliation": {
               "type": "string",
-              "enum": [
-                "Yes",
-                "No",
-                "Unknown"
-              ]
+              "description": "Party name, 'Nonpartisan', or 'Unknown'."
             },
-            "summary": {
+            "incumbent": {
               "type": [
-                "string",
+                "boolean",
                 "null"
               ],
-              "description": "2-3 sentence profile grounded in verified sources, or null when no_info is true."
+              "description": "true if known to be the incumbent, false if known not to be, null if unknown."
             },
-            "facts": {
+            "political_summary": {
+              "type": "string",
+              "description": "2-3 sentence profile grounded in verified sources, with inline citations as written. Empty string when nothing was found."
+            },
+            "key_facts": {
               "type": "array",
               "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "text",
-                  "source_label",
-                  "url"
-                ],
-                "properties": {
-                  "text": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "source_label": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "url": {
-                    "type": "string",
-                    "pattern": "^https?://",
-                    "description": "Must have returned HTTP 200 via pmf_runtime.http.get."
-                  }
-                }
-              }
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 0,
+              "maxItems": 3,
+              "description": "Up to 3 key positions/background facts, each a string with its citation inlined. Empty when nothing was found."
             },
             "websites": {
               "type": "array",
               "items": {
                 "type": "string",
                 "pattern": "^https?://"
-              }
-            },
-            "no_info": {
-              "type": "boolean",
-              "description": "True when nothing was found beyond the name."
+              },
+              "description": "Campaign / social URLs found for this opponent (each verified HTTP 200). May be empty."
             }
           }
         }
-      },
-      "race": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "office_name",
-          "state",
-          "partisanType",
-          "opponent_count"
-        ],
-        "properties": {
-          "office_name": {
-            "type": "string",
-            "minLength": 1
-          },
-          "state": {
-            "type": "string",
-            "pattern": "^[A-Z]{2}$"
-          },
-          "partisanType": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "opponent_count": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Number of researched opponents (excludes cross-primary candidates and the candidate themselves)."
-          }
-        }
-      },
-      "generated_at": {
-        "type": "string",
-        "format": "date-time"
       }
     }
   }
