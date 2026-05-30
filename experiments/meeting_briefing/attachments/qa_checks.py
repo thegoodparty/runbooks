@@ -18,7 +18,8 @@ Two phases:
        - tier_reason / display consistency (budget_threshold → budget_impact non-null, etc.)
        - briefing_status / content consistency (awaiting_agenda → claims empty, etc.)
        - source_extract presence-in-source (substring check, not LLM)
-       - awaiting_agenda / no_meeting_found: all 7 discovery channels attempted (channel_<N>_ prefixes)
+       - awaiting_agenda / no_meeting_found: discovery channels attempted (channel_<N>_ prefixes;
+         all of 1-4 for near-term meetings, channel 1 only for beyond-cutoff publish-lag early-exits)
 
 No LLM calls. No external API requirements. Runs in well under a second on a typical artifact.
 
@@ -38,6 +39,7 @@ import json
 import re
 import sys
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -444,19 +446,61 @@ def check_run_decisions_meaningful(artifact: dict, findings: list[Finding]) -> N
         ))
 
 
+# Channel prefixes now span 1-4 (the high-yield discovery set). Channels 5-7
+# (local-news re-host, clerk/records page, past-meeting URL probe) were retired
+# as low-yield (~1% of packet finds) in the WS5 cost pass.
 _CHANNEL_PREFIX_RE = re.compile(r"^channel_([1-7])_")
-_REQUIRED_CHANNELS = frozenset(range(1, 8))
+_REQUIRED_CHANNELS = frozenset(range(1, 5))
+
+# Publish-lag early-exit cutoff. Meetings more than this many days out almost
+# never have a published packet (agenda packets appear ~3-5 days before the
+# meeting), so the agent short-circuits after channel 1 instead of exhausting
+# channels 2-4. Keep in sync with PUBLISH_LAG_CUTOFF_DAYS in instruction.md Step 2.
+PUBLISH_LAG_CUTOFF_DAYS = 7
+
+
+def _days_out(artifact: dict) -> int | None:
+    """Days from the run's own 'now' (generated_at date) to the meeting_date.
+
+    Self-contained: uses only fields already in the artifact, no external clock.
+    Returns None when either date is missing or unparseable (the check then
+    falls back to strict near-term enforcement — fail closed, not open).
+    """
+    meeting_raw = artifact.get("meeting_date")
+    if not meeting_raw:
+        return None
+    try:
+        meeting_d = date.fromisoformat(str(meeting_raw)[:10])
+    except ValueError:
+        return None
+
+    generated_raw = artifact.get("generated_at")
+    today: date | None = None
+    if generated_raw:
+        try:
+            today = datetime.fromisoformat(str(generated_raw).replace("Z", "+00:00")).date()
+        except ValueError:
+            today = None
+    if today is None:
+        return None
+    return (meeting_d - today).days
 
 
 def check_awaiting_agenda_discovery_depth(artifact: dict, findings: list[Finding]) -> None:
-    """awaiting_agenda / no_meeting_found requires all 7 discovery channels attempted.
+    """awaiting_agenda / no_meeting_found discovery-depth enforcement.
 
-    The packet-discovery procedure has 7 distinct channels (instruction.md). Each
-    attempted channel must produce a run_decisions[] entry whose `decision`
-    begins with `channel_<N>_` for N in 1-7. Channel 1's per-platform sub-attempts
+    The packet-discovery procedure has 4 high-yield channels (instruction.md Step 2).
+    Each attempted channel must produce a run_decisions[] entry whose `decision`
+    begins with `channel_<N>_` for N in 1-4. Channel 1's per-platform sub-attempts
     are grouped under a single channel_1_* entry (in its `reason`); they do NOT
     each get their own top-level entry — otherwise a 10-platform channel-1 run
-    could falsely clear a numeric-only count gate without touching channels 2-7.
+    could falsely clear a numeric-only count gate without touching channels 2-4.
+
+    Publish-lag relaxation (WS5): when the target meeting is more than
+    PUBLISH_LAG_CUTOFF_DAYS out, the packet is almost never published, so the
+    agent short-circuits after channel 1. For those beyond-cutoff runs, only
+    channel 1 is required. Near-term runs (<= cutoff, or undetermined days-out)
+    still require all of channels 1-4.
 
     This check is the teeth behind the instruction's claim that the validator
     rejects awaiting_agenda artifacts that skip channels — without it, the
@@ -471,15 +515,34 @@ def check_awaiting_agenda_discovery_depth(artifact: dict, findings: list[Finding
         m = _CHANNEL_PREFIX_RE.match((d.get("decision") or ""))
         if m:
             channels_seen.add(int(m.group(1)))
+
+    days_out = _days_out(artifact)
+    beyond_cutoff = days_out is not None and days_out > PUBLISH_LAG_CUTOFF_DAYS
+
+    if beyond_cutoff:
+        # Publish-lag early-exit path: only channel 1 is required.
+        if 1 not in channels_seen:
+            findings.append(Finding(
+                "run_decisions.discovery_channels_incomplete",
+                "error",
+                f"briefing_status='{status}' with meeting {days_out} days out "
+                f"(> {PUBLISH_LAG_CUTOFF_DAYS}-day cutoff) but run_metadata.run_decisions[] "
+                f"shows no channel 1 attempt. The publish-lag early-exit still requires the "
+                f"primary-platform (channel 1) probe before declaring awaiting_agenda. "
+                f"Saw channels: {sorted(channels_seen) or 'none'}.",
+            ))
+        return
+
     missing = sorted(_REQUIRED_CHANNELS - channels_seen)
     if missing:
         findings.append(Finding(
             "run_decisions.discovery_channels_incomplete",
             "error",
             f"briefing_status='{status}' but run_metadata.run_decisions[] is missing "
-            f"channel attempts for {missing}. Each of the 7 discovery channels "
-            f"requires a run_decisions[] entry whose decision begins with "
-            f"`channel_<N>_<short-label>` (N=1-7). Saw channels: {sorted(channels_seen) or 'none'}.",
+            f"channel attempts for {missing}. For near-term meetings each of the 4 "
+            f"high-yield discovery channels requires a run_decisions[] entry whose decision "
+            f"begins with `channel_<N>_<short-label>` (N=1-4). Saw channels: "
+            f"{sorted(channels_seen) or 'none'}.",
         ))
 
 

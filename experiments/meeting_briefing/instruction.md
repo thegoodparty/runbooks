@@ -226,9 +226,19 @@ If the briefing setup pre-stages a bundled agenda packet at `/workspace/input/ag
 
 **Packet-discovery procedure on the primary platform:** after finding the meeting on the platform, enumerate every link on the meeting detail page that returns `Content-Type: application/pdf` (or `application/octet-stream` with a `.pdf` filename in `Content-Disposition`). Each substantive item should have at least one such attachment. Cap at 50 link fetches per meeting (HEAD when possible to avoid downloading every PDF before deciding to chunk it).
 
-**Before declaring `awaiting_agenda`, you MUST exhaust 7 discovery channels.** Do NOT bail after only checking the streaming platform — Fulshear-style jurisdictions hide their packet on a CDN that no public-facing UI links to.
+**Publish-lag early-exit (check this BEFORE running the discovery channels).** The publish-lag constant is:
 
-Each channel attempted requires its own `run_decisions[]` entry whose `decision` field begins with `channel_<N>_` (where N is 1–7, matching the channel number below). Channel 1's per-platform sub-attempts (Legistar, PrimeGov, BoardDocs, etc.) go INSIDE the single `channel_1_*` entry's `reason` field — do NOT emit a separate `run_decisions[]` entry per sub-platform, that would inflate the count without exhausting the other 6 channels. The deterministic validator (`/workspace/qa_checks.py`) extracts the `channel_<N>_` prefix from each decision and rejects any `awaiting_agenda` / `no_meeting_found` artifact that doesn't show all 7 distinct channel numbers. Stop early ONLY when you find packet content for the target meeting.
+```
+PUBLISH_LAG_CUTOFF_DAYS = 7   # meetings beyond this are too far out to expect a published packet
+```
+
+Compute `days_out = (meeting_date - today)` in days using the `meeting_date` resolved earlier in this step. If `days_out > PUBLISH_LAG_CUTOFF_DAYS` AND **channel 1 (primary platform) yields no packet for the target meeting**, do NOT run the remaining channels (2–4). Agenda packets typically appear ~3–5 days before the meeting; for a meeting more than a week out the packet is almost never published, so exhausting the remaining channels is wasted work. Instead, route immediately to `briefing_status: "awaiting_agenda"` per Step 3, and record a `run_decisions[]` entry with `decision: "channel_1_streaming_platforms"` (documenting the channel-1 attempt) plus a separate entry with `decision: "publish_lag_early_exit"` and a terse `reason` such as `"packet_not_published — target 2026-06-20 is 21 days out (> 7-day cutoff); channel 1 empty; remaining channels skipped"`. The validator allows this short-circuited discovery for beyond-cutoff meetings (see Step 18 / `qa_checks.py`).
+
+If `days_out <= PUBLISH_LAG_CUTOFF_DAYS`, the packet should exist; run the full channel set below before declaring `awaiting_agenda`.
+
+**For near-term meetings (`days_out <= PUBLISH_LAG_CUTOFF_DAYS`), before declaring `awaiting_agenda` you MUST exhaust 4 discovery channels.** Do NOT bail after only checking the streaming platform — Fulshear-style jurisdictions hide their packet on a CDN that no public-facing UI links to.
+
+Each channel attempted requires its own `run_decisions[]` entry whose `decision` field begins with `channel_<N>_` (where N is 1–4, matching the channel number below). Channel 1's per-platform sub-attempts (Legistar, PrimeGov, BoardDocs, etc.) go INSIDE the single `channel_1_*` entry's `reason` field — do NOT emit a separate `run_decisions[]` entry per sub-platform, that would inflate the count without exhausting the other 3 channels. The deterministic validator (`/workspace/qa_checks.py`) extracts the `channel_<N>_` prefix from each decision and rejects any near-term `awaiting_agenda` / `no_meeting_found` artifact that doesn't show all 4 distinct channel numbers. Stop early ONLY when you find packet content for the target meeting.
 
 1. **Primary platform** (try in order; each requires its own search query + verification fetch):
    - Legistar: WebSearch `"<city>" "<state>" legistar` → extract `{client}` from `https://{client}.legistar.com` → verify `https://webapi.legistar.com/v1/{client}/events?$top=1` returns ≥1 event.
@@ -249,13 +259,12 @@ Each channel attempted requires its own `run_decisions[]` entry whose `decision`
    - `"<city>" agenda packet <target meeting date> site:cloudfront.net OR site:granicus.com OR site:s3.amazonaws.com OR site:civicclerk.com OR site:legistar.com OR site:boarddocs.com`
    - `"<city>" "agenda packet" "<MM/DD/YYYY of target meeting>"` (Google often indexes the PDF directly even when the city site doesn't link to it)
      For each candidate PDF URL: HEAD-check it — if `Content-Type: application/pdf` and size > 1KB, fetch and use it. Many Granicus installations expose packets at `d3*.cloudfront.net/<client>/...` URLs that are only discoverable via search.
-5. **Local news.** WebSearch `"<city>" <body> agenda <month> <year>` or `"<city>" city council meeting <date>` — local press regularly re-hosts packet PDFs, covers upcoming items, or confirms a packet exists somewhere. Cite news as supporting evidence; if news links to a PDF, fetch it.
-6. **The Council Clerk / Records Office page.** Search `"<city>" city clerk` or `"<city>" records office`. The clerk page often has a "how to obtain meeting materials" instruction or a direct link to the packet repository.
-7. **Past-meeting URL probe.** If you've found packets for recent past meetings on a particular host (city site, CDN, platform), the next meeting's packet often follows the same URL pattern with a different date or sequence number. Probe the predicted URL with a HEAD request before bailing.
 
-**Only after channels 1–7 yield no packet content for the target meeting may you declare `awaiting_agenda`.** The `run_decisions[]` array MUST contain one entry per channel attempted with `decision` prefixed `channel_<N>_<short-label>` (e.g. `channel_1_streaming_platforms`, `channel_4_cdn_search`, `channel_7_past_url_probe`). All 7 distinct channel numbers must appear. Per-platform sub-attempts in channel 1 go inside that single `channel_1_*` entry's `reason` field, not as separate entries. The deterministic validator at `/workspace/qa_checks.py` enforces this — artifacts missing any channel number get rejected.
+Channels 1–4 are the high-yield discovery set (primary platforms, city schedule page, deterministic PDF mirror, CDN web search). Lower-yield channels (local news re-hosting, the clerk/records page, and the past-meeting URL probe) have been retired — they produced roughly 1% of successful packet finds and are not worth the per-run cost. If channel 5/local-news coverage happens to surface a packet PDF while you are confirming the meeting date in the precondition above, you may still fetch it; just attribute it under the relevant channel 1–4 entry.
 
-**Publish-lag awareness.** Many jurisdictions release the packet on the Friday before a Monday or Tuesday meeting (~3 days lead time). If today is more than 7 days before the target meeting and channels 1–7 are empty, `awaiting_agenda` is the expected state, not a search failure — note this explicitly in the `awaiting_agenda` `run_decision` reason (e.g. `"packet_not_published — target meeting 2026-05-26 is 11 days out; typical Cheyenne lag is ~3 days, expected packet release Fri 2026-05-22"`).
+**Only after channels 1–4 yield no packet content for the target meeting may a near-term run declare `awaiting_agenda`.** The `run_decisions[]` array MUST contain one entry per channel attempted with `decision` prefixed `channel_<N>_<short-label>` (e.g. `channel_1_streaming_platforms`, `channel_4_cdn_search`). All 4 distinct channel numbers must appear for near-term meetings. Per-platform sub-attempts in channel 1 go inside that single `channel_1_*` entry's `reason` field, not as separate entries. The deterministic validator at `/workspace/qa_checks.py` enforces this — near-term artifacts missing any channel number get rejected. (Beyond-cutoff meetings short-circuit after channel 1 per the publish-lag early-exit above.)
+
+**Publish-lag awareness.** Many jurisdictions release the packet on the Friday before a Monday or Tuesday meeting (~3 days lead time). The publish-lag early-exit above is the primary handling for far-out meetings; for near-term meetings where channels 1–4 are empty, note the expected lag explicitly in the `awaiting_agenda` `run_decision` reason (e.g. `"packet_not_published — target meeting 2026-05-26 is 4 days out; typical Cheyenne lag is ~3 days, expected packet release Fri 2026-05-22"`).
 
 #### Agenda platform reference
 
@@ -444,141 +453,24 @@ Consent agenda items, procedural items (call to order, roll call, approval of mi
 
 For each: one sentence describing what it is and what the official should expect.
 
-### Step 6 — Pick Haystaq columns from the inline catalog
+### Step 6 — Pick Haystaq columns from the catalog
 
-Rules for selecting one Haystaq column per featured or queued item. The catalog below is the **complete, L2-verified** list of polarized constituent-sentiment columns available to this experiment. Do not query any catalog or dictionary table at runtime — every column you can use is listed here. Per-item work is an in-memory string match against this catalog; the actual mean scores are computed once at the end via a single batched query in Step 8.
+Rules for selecting one Haystaq column per featured or queued item.
 
-The catalog is grouped into 9 policy topics. Each entry pairs a column name with a one-line `meaning` that already encodes direction (e.g. `hs_gun_control_support` → "supports gun control").
+**Load the catalog once, here.** The catalog is delivered as a manifest attachment at `/workspace/haystaq_catalog.md`. Read that file a single time at this step — do NOT re-read it on every item. It is the **complete, L2-verified** list of polarized constituent-sentiment columns available to this experiment. Do not query any catalog or dictionary table at runtime — every column you can use is in that file.
 
-#### Inline Haystaq catalog (L2-verified)
+```python
+with open("/workspace/haystaq_catalog.md", encoding="utf-8") as f:
+    HAYSTAQ_CATALOG = f.read()   # read once; reuse in-memory for every item below
+```
 
-**housing** — Housing affordability, gentrification views, homeownership status
+Per-item work is an in-memory string match against `HAYSTAQ_CATALOG`; the actual mean scores are computed once at the end via a single batched query in Step 8.
 
-| Column                               | Meaning                                            |
-| ------------------------------------ | -------------------------------------------------- |
-| `hs_affordable_housing_gov_has_role` | agrees government has a role in affordable housing |
-| `hs_affordable_housing_gov_no_role`  | opposes government role in affordable housing      |
-| `hs_gentrification_support`          | supports gentrification                            |
-| `hs_gentrification_oppose`           | opposes gentrification                             |
-| `hs_new_home_buyer`                  | recently bought a home                             |
-| `hs_any_home_buyer`                  | has ever bought a home                             |
+The catalog is grouped into 9 policy topics. Each entry pairs a column name with a one-line `meaning` that already encodes direction (e.g. `hs_gun_control_support` → "supports gun control"). The 9 topics are: **housing**, **taxes**, **education**, **healthcare**, **climate_energy**, **immigration**, **crime_safety**, **social_issues**, **regulation_economy**. References below to "the catalog" or "the inline catalog" mean the columns in `/workspace/haystaq_catalog.md`.
 
-**taxes** — Tax cuts, gas tax, social security tax, minimum wage, fiscal ideology
+#### Catalog removed from this instruction (now `/workspace/haystaq_catalog.md`)
 
-| Column                                    | Meaning                                |
-| ----------------------------------------- | -------------------------------------- |
-| `hs_tax_cuts_support`                     | supports tax cuts                      |
-| `hs_tax_cuts_oppose`                      | opposes tax cuts                       |
-| `hs_gas_tax_support`                      | supports the gas tax                   |
-| `hs_gas_tax_oppose`                       | opposes the gas tax                    |
-| `hs_social_security_tax_increase_support` | supports raising social security taxes |
-| `hs_social_security_tax_increase_oppose`  | opposes raising social security taxes  |
-| `hs_min_wage_15_increase_support`         | supports raising min wage to $15       |
-| `hs_min_wage_15_increase_oppose`          | opposes raising min wage to $15        |
-| `hs_ideology_fiscal_conserv`              | fiscally conservative ideology         |
-| `hs_ideology_fiscal_liberal`              | fiscally liberal ideology              |
-
-**education** — School choice, school funding, charter schools, teachers union views
-
-| Column                              | Meaning                          |
-| ----------------------------------- | -------------------------------- |
-| `hs_school_choice_support`          | supports school choice           |
-| `hs_school_choice_oppose`           | opposes school choice            |
-| `hs_school_funding_more`            | favors more school funding       |
-| `hs_school_funding_less`            | favors less school funding       |
-| `hs_charter_schools_support`        | supports charter schools         |
-| `hs_charter_schools_oppose`         | opposes charter schools          |
-| `hs_teachers_union_positive`        | positive view of teachers unions |
-| `hs_teachers_union_negative`        | negative view of teachers unions |
-| `hs_community_college_free_support` | supports free community college  |
-| `hs_community_college_free_oppose`  | opposes free community college   |
-
-**healthcare** — Medicaid expansion, Medicare for All, ACA, family medical leave, opioid policy
-
-| Column                            | Meaning                                         |
-| --------------------------------- | ----------------------------------------------- |
-| `hs_medicaid_expansion_support`   | supports medicaid expansion                     |
-| `hs_medicaid_expansion_oppose`    | opposes medicaid expansion                      |
-| `hs_medicare_for_all_support`     | supports Medicare for All                       |
-| `hs_medicare_for_all_oppose`      | opposes Medicare for All                        |
-| `hs_obamacare_aca_expand`         | supports expanding the ACA                      |
-| `hs_obamacare_aca_protect`        | supports protecting ACA                         |
-| `hs_obamacare_aca_oppose`         | opposes the ACA                                 |
-| `hs_family_medical_leave_support` | supports paid family/medical leave              |
-| `hs_family_medical_leave_oppose`  | opposes paid family/medical leave               |
-| `hs_opioid_crisis_treat`          | treats opioid crisis as a health issue          |
-| `hs_opioid_crisis_enforce`        | treats opioid crisis as a law-enforcement issue |
-
-**climate_energy** — Climate change belief, EVs, solar, fracking, federal lands, Green New Deal
-
-| Column                             | Meaning                                 |
-| ---------------------------------- | --------------------------------------- |
-| `hs_climate_change_believer`       | believes in human-caused climate change |
-| `hs_climate_change_nonbeliever`    | rejects human-caused climate change     |
-| `hs_electric_vehicle_likely_buyer` | likely to buy an electric vehicle       |
-| `hs_electric_vehicle_not_likely`   | unlikely to buy an electric vehicle     |
-| `hs_solar_panel_buyer_yes`         | has bought solar panels                 |
-| `hs_solar_panel_buyer_no`          | has not bought solar panels             |
-| `hs_pipeline_fracking_support`     | supports pipelines/fracking             |
-| `hs_pipeline_fracking_oppose`      | opposes pipelines/fracking              |
-| `hs_green_new_deal_support`        | supports the Green New Deal             |
-| `hs_green_new_deal_oppose`         | opposes the Green New Deal              |
-| `hs_sell_federal_lands_support`    | supports selling federal lands          |
-| `hs_sell_federal_lands_oppose`     | opposes selling federal lands           |
-
-**immigration** — Mass deportations, border wall, immigration policy views
-
-| Column                          | Meaning                                |
-| ------------------------------- | -------------------------------------- |
-| `hs_mass_deporations_support`   | supports mass deportations             |
-| `hs_mass_deporations_oppose`    | opposes mass deportations              |
-| `hs_mexican_wall_support`       | supports a border wall                 |
-| `hs_mexican_wall_oppose`        | opposes a border wall                  |
-| `hs_immigration_process_unfair` | sees the immigration process as unfair |
-| `hs_immigration_undesirable`    | sees more immigration as undesirable   |
-
-**crime_safety** — Violent crime concern, gun control, police trust, death penalty
-
-| Column                          | Meaning                          |
-| ------------------------------- | -------------------------------- |
-| `hs_violent_crime_very_worried` | very worried about violent crime |
-| `hs_violent_crime_not_worried`  | not worried about violent crime  |
-| `hs_gun_control_support`        | supports gun control             |
-| `hs_gun_control_oppose`         | opposes gun control              |
-| `hs_police_trust_yes`           | trusts the police                |
-| `hs_police_trust_no`            | does not trust the police        |
-| `hs_death_penalty_support`      | supports the death penalty       |
-| `hs_death_penalty_oppose`       | opposes the death penalty        |
-
-**social_issues** — Abortion, same-sex marriage, trans athletes, DEI, religion salience
-
-| Column                         | Meaning                                 |
-| ------------------------------ | --------------------------------------- |
-| `hs_abortion_pro_choice`       | pro-choice on abortion                  |
-| `hs_abortion_pro_life`         | pro-life on abortion                    |
-| `hs_same_sex_marriage_support` | supports same-sex marriage              |
-| `hs_same_sex_marriage_oppose`  | opposes same-sex marriage               |
-| `hs_trans_athlete_yes`         | supports trans athlete participation    |
-| `hs_trans_athlete_no`          | opposes trans athlete participation     |
-| `hs_dei_support`               | supports DEI initiatives                |
-| `hs_dei_oppose`                | opposes DEI initiatives                 |
-| `hs_religion_important`        | religion is important in their life     |
-| `hs_religion_not_important`    | religion is not important in their life |
-
-**regulation_economy** — Regulation, capitalism, unions, income inequality, infrastructure spending
-
-| Column                                   | Meaning                                     |
-| ---------------------------------------- | ------------------------------------------- |
-| `hs_regulations_too_harsh`               | sees regulations as too harsh               |
-| `hs_regulations_good`                    | sees regulations as good                    |
-| `hs_capitalism_believe_sound`            | believes capitalism is fundamentally sound  |
-| `hs_capitalism_believe_flawed`           | believes capitalism is fundamentally flawed |
-| `hs_unions_beneficial`                   | views unions as beneficial                  |
-| `hs_unions_not_beneficial`               | views unions as not beneficial              |
-| `hs_income_inequality_serious`           | sees income inequality as a serious problem |
-| `hs_income_inequality_no_issue`          | sees income inequality as not a real issue  |
-| `hs_infrastructure_funding_fund_more`    | favors more infrastructure funding          |
-| `hs_infrastructure_funding_enough_spent` | believes enough is spent on infrastructure  |
+The full 9-topic column tables previously lived inline here. They were moved to the attachment above to keep this instruction out of the every-turn prompt prefix. Read the attachment for the column list and meanings.
 
 ### Step 6b — Selection rules
 
@@ -638,7 +530,7 @@ WHERE Voters_Active = 'A';
 
 Notes:
 
-- `{col_N}` are validated `hs_*` column names interpolated via f-string. Every value in the inline catalog above is L2-verified — column-existence checks are not required.
+- `{col_N}` are validated `hs_*` column names interpolated via f-string. Every value in the catalog (`/workspace/haystaq_catalog.md`, loaded in Step 6) is L2-verified — column-existence checks are not required.
 - `{l2_type}` is the district column identifier (e.g. `City_Ward`), backtick-quoted and validated as `re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", l2_type)` (ASCII-only).
 - `:l2_name` is bound via named placeholder. Use the value confirmed in Step 7 — not raw `PARAMS.l2DistrictName` if the discovery query found a different exact match.
 - Do NOT add a `Residence_Addresses_City` clause — there is no city in PARAMS, and adding one returns `ScopeViolation`. State-scope queries are state-wide intentionally.
@@ -1000,6 +892,8 @@ Assemble the final JSON artifact and write it to `/workspace/output/meeting_brie
   }
   ```
   Append an entry to `run_decisions[]` every time you make a non-mechanical choice that shapes the resulting artifact — meeting selection, fallback to a different meeting, decision to skip a section, decision to proceed without a required source, decision to set `briefing_status` to anything other than `briefing_ready`. Mechanical actions (download a file, parse a PDF, run a query) do not need entries.
+
+  **Keep each `reason` terse — one sentence, ≤ 280 characters (the schema caps it at 280).** Output volume is a cost driver: every token in `run_decisions[].reason` is re-read on subsequent turns. State the decision and the one fact that justifies it; do not narrate the search, paste URLs in full, or restate the instruction. Good: `"packet_not_published — target 2026-06-20 is 21 days out (> 7-day cutoff); channel 1 empty; remaining channels skipped"`. Bad: a multi-paragraph recap of every platform you probed. Likewise keep `executive_summary.lead_in` within its 300-char schema cap (a single framing sentence) and each `executive_summary.items[].overview` within its 300-char cap.
 - `items`: per Steps 3–9. Each section that supports per-section `source_ids` (constituent_sentiment per Step 16, budget_impact per Step 12) must populate the field with ids from `sources[]`; empty `[]` is permitted when no defensible citation exists, but do not fabricate.
 - `claims`: per Step 13. May be empty when `briefing_status` is `awaiting_agenda` or `no_meeting_found`.
 - `sources`: per Step 14.
