@@ -429,7 +429,7 @@ An item qualifies as featured or queued if it meets one or more of:
 - Has significant budget impact
 - Overlaps with a constituent sentiment topic from the inline Haystaq catalog — see Step 6.
 
-Constituent resonance is a selection signal, not a mechanical threshold. For each priority-eligible item, scan the inline catalog in Step 6 for a topic whose substance maps to the item, then pick a polarized column. The chosen column feeds both tier ranking here and the sentiment section's output downstream. The actual mean score is computed once at the end via the batched AVG query in Step 8.
+Constituent resonance is a selection signal, not a mechanical threshold. For each priority-eligible item, scan the catalog loaded in Step 6 (`/workspace/haystaq_catalog.md`) for a topic whose substance maps to the item, then pick a polarized column. The chosen column feeds both tier ranking here and the sentiment section's output downstream. The actual mean score is computed once at the end via the batched AVG query in Step 8.
 
 Initial tier assignment uses qualitative signals (vote_required, public position, budget impact, topic alignment with the inline Haystaq catalog). Tier may be revised after Step 8 if district-vs-city divergence (≥10-point gap) elevates an item's importance.
 
@@ -466,7 +466,7 @@ with open("/workspace/haystaq_catalog.md", encoding="utf-8") as f:
 
 Per-item work is an in-memory string match against `HAYSTAQ_CATALOG`; the actual mean scores are computed once at the end via a single batched query in Step 8.
 
-The catalog is grouped into 9 policy topics. Each entry pairs a column name with a one-line `meaning` that already encodes direction (e.g. `hs_gun_control_support` → "supports gun control"). The 9 topics are: **housing**, **taxes**, **education**, **healthcare**, **climate_energy**, **immigration**, **crime_safety**, **social_issues**, **regulation_economy**. References below to "the catalog" or "the inline catalog" mean the columns in `/workspace/haystaq_catalog.md`.
+The catalog is grouped into 9 policy topics. Each entry pairs a column name with a one-line `meaning` that already encodes direction (e.g. `hs_gun_control_support` → "supports gun control"). The 9 topics are: **housing**, **taxes**, **education**, **healthcare**, **climate_energy**, **immigration**, **crime_safety**, **social_issues**, **regulation_economy**. References below to "the catalog" mean the columns in `/workspace/haystaq_catalog.md` (the list is no longer inline in this instruction).
 
 #### Catalog removed from this instruction (now `/workspace/haystaq_catalog.md`)
 
@@ -826,16 +826,16 @@ Emit this exact array (it is briefing-type-determined, not arbitrary per run —
 
 ### Step 16 — Format the constituent sentiment output
 
-For each featured/queued item where Step 6/6b picked a column from the inline catalog, populate `display.constituent_sentiment` using the Step 8 query results. For items with no defensible topic match, set `display.constituent_sentiment` to `null`.
+For each featured/queued item where Step 6/6b picked a column from the catalog, populate `display.constituent_sentiment` using the Step 8 query results. For items with no defensible topic match, set `display.constituent_sentiment` to `null`.
 
 Fields:
 
 - `summary` — short prose using the column's directional `meaning` and the `mean_score`. Always label as a modeled estimate. Example: `"Modeled lean toward supporting gun control: 62.4 on a 0-100 scale."`
 - `detail` — one sentence describing what the score measures as a modeled estimate, not a survey result.
 - `mean_score` — the `AVG(...)` result from Step 8 (float, 0–100). District scope when `l2DistrictType` was set and confirmed in Step 7; state scope otherwise.
-- `score_direction` — the column's `meaning` line from the inline catalog (e.g. for `hs_gun_control_support` use `"supports gun control"`).
+- `score_direction` — the column's `meaning` line from the catalog (e.g. for `hs_gun_control_support` use `"supports gun control"`).
 - `voter_count` — the `COUNT(*) AS voter_count` from Step 8 (district or state scope, matching `mean_score`).
-- `haystaq_column` — the picked column name from the inline catalog (e.g. `hs_gun_control_support`).
+- `haystaq_column` — the picked column name from the catalog (e.g. `hs_gun_control_support`).
 - `haystaq_status` — `"ok"` when the Step 8 query returned a non-null mean; `"no_match"` when no defensible topic match (Step 6/6b returned null for this item) **or** when `l2DistrictType` was set but the value did not resolve in Step 7 (fell back to state scope); `"no_column"` defensively when the picked column wasn't queryable (shouldn't occur with the L2-verified catalog). The `"city_mismatch"` enum value is retained in the output schema for backward compatibility but is **deprecated** — do not emit it.
 - `district_note` — **deprecated**, always set to `null`. With city scope removed there is no within-jurisdiction baseline to compare district against.
 - `source_ids` — array of `id` values from the top-level `sources[]` list that back this section. For `haystaq_status: "ok"`, reference the Haystaq source entry you compiled in Step 14. Required-but-may-be-empty: emit `[]` only when no source defensibly backs the section (e.g. `haystaq_status` other than `"ok"`); do not fabricate citations. The UI renders these as inline source pills below the section.
@@ -924,7 +924,7 @@ Validator-passing JSON can still be garbage. Before declaring success, walk this
 
 - **`briefing_status` consistency:** `briefing_ready` requires ≥1 featured OR queued item (Step 5 may produce zero featured items if no item qualifies). `awaiting_agenda` AND `no_meeting_found` require `claims[]` empty.
 - **Every featured item must have at least one talking point.** Empty array is a schema violation; set `display.talking_points` to a non-empty list or `null`.
-- **Every Haystaq score reported in `display.constituent_sentiment`** must trace to a column in the Step 6 inline catalog and a row in the Step 8 batched L2 query.
+- **Every Haystaq score reported in `display.constituent_sentiment`** must trace to a column in the Step 6 catalog (`/workspace/haystaq_catalog.md`) and a row in the Step 8 batched L2 query.
 - **`district_note` is always `null`** — deprecated since city scope was removed.
 - **When `l2DistrictType` is set, `voter_count` should reflect the district, not the whole state** → if it looks state-sized, the L2 district WHERE clause matched zero rows and you silently fell back to state scope. Fix: re-confirm `l2DistrictType` and `l2DistrictName` came verbatim from PARAMS_JSON and were discovered via the L2 value-format check; set `haystaq_status: "no_match"` if the value genuinely doesn't resolve.
 - **All sentiment percentages <5%** → you used `= 1` instead of treating `hs_*` as 0-100 scores. Re-do the distribution check.
