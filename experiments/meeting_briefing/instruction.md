@@ -660,6 +660,8 @@ Every factual claim in the briefing must reference at least one source. For each
 
 - `source_extracts[]` — verbatim passages from the source that support the claim. Must be extractable from `retrieved_text_or_snapshot`.
 - `source_ids[]` — references to `id` values in the sources array.
+
+**Every claim MUST carry at least one source excerpt.** `source_extracts[]` must contain a minimum of one entry, and each entry must be a **direct quote copied verbatim from the cited source's `retrieved_text_or_snapshot`** — not a paraphrase, not a summary, not your own restatement. A claim with an empty `source_extracts[]`, or with an extract that does not appear verbatim in one of its `source_ids[]` sources, is a provenance failure: the deterministic validator (`/workspace/qa_checks.py`) rejects it (the schema requires `minItems: 1`, and the substring check confirms the excerpt is present in a cited source). If you cannot pull a verbatim excerpt that supports the claim, do not emit the claim — drop it or route it per `route_if_unsupported`. This rule applies to every claim regardless of `claim_weight`.
 - `required_source_type` — the minimum acceptable source type for this claim to be released. See routing table below.
 - `route_if_unsupported` — what to do if no source of the required type can be found.
 
