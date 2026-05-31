@@ -31,6 +31,8 @@ Produce the Opportunities and Challenges of a candidate's campaign plan: up to 3
    It returns `{"status": int, "final_url": str}`. Cite a URL only if `status == 200`; on a redirect, cite the `final_url` unless the redirect only added tracking params.
 3. `pmf_runtime.http.get(url)` (browser render) is a LAST RESORT — only when `head` returns 403/405 on a real site or you must read the page body.
 
+**Opponent data is provisional — do NOT build bullets on it.** The roster in `campaign_strategy_context` (`candidate_count`, `candidates[]`, and each candidate's `is_incumbent`) is currently incomplete and lags reality; who is actually running is owned by a separate opposition-research process, not this one. Do NOT base any opportunity or challenge on the number of opponents, whether it is an open seat, or whether anyone is an incumbent, as read from this roster. Build every bullet from the reliable race numbers (`win_number_estimate`, `projected_turnout`, `contacts_needed_estimate`, `registered_voters`, election dates, `number_of_seats`, `office_level`/`office_type`, `state`, `partisan_type`) and from web search. If you want to make a point about the field (open seat, crowded race, a strong incumbent), confirm it with a web search and cite that source — never assert it from the provided roster.
+
 **Bullet-content rules (every opportunity and challenge string):**
 - Plain, direct U.S. English. **No em dashes.** No jargon.
 - 1-3 sentences. No section headers, list markers, or preamble inside the string — just the bullet's prose plus its inline citation `... ([source](url))`.
@@ -67,14 +69,16 @@ EOF
 
 Treat any null / missing field as unknown. Do NOT invent a value and do NOT build a bullet on a number you do not have.
 
-### Step 1 — Derive the signals (numbers first)
+### Step 1 — Derive the signals (reliable race numbers first)
 
-Most bullets come straight from the numbers above and cite `GoodParty.org Data`. For THIS race, identify:
+Most bullets come straight from the reliable numbers below and cite `GoodParty.org Data`. For THIS race, identify:
 
-- **Opportunity signals** — a low `win_number_estimate`; an open seat (no candidate with `is_incumbent: true`); `candidate_count` small relative to `number_of_seats`; a long runway from today to `general_election_date`; a `contacts_needed_estimate` that is achievable.
-- **Challenge signals** — a crowded field (vote-splitting risk); an incumbent (`is_incumbent: true`), especially with party backing in a partisan race; an election very soon (short outreach window); a high win number relative to a first-time or independent campaign's resources.
+- **Opportunity signals** — a low `win_number_estimate` relative to `projected_turnout` (how small a share of the vote wins); a `contacts_needed_estimate` that is achievable against the available `registered_voters` / `unique_cellphones`; a long runway from today to `general_election_date` / `primary_election_date`; favorable office structure (`number_of_seats`).
+- **Challenge signals** — a high win number relative to a first-time or independent campaign's resources; a large `contacts_needed_estimate` against the `registered_voters` you must mobilize; an election very soon (short outreach window from today to the relevant date).
 
-If `partisan_type` is `nonpartisan`, the party labels are voter-registration noise, not the contest — do not frame a bullet around party. In a partisan race, an opponent in a different party's primary is not yet a general-election contestant.
+Do NOT derive a bullet from the opponent roster (`candidate_count`, `candidates[]`, `is_incumbent`) — see the opponent-data warning in CRITICAL RULES. If a point about the field (open seat, crowded race, a strong incumbent) is genuinely central, confirm it with a web search in Step 2 and cite that source; never assert it from the provided roster.
+
+If `partisan_type` is `nonpartisan`, party labels are voter-registration noise, not the contest — do not frame a bullet around party.
 
 ### Step 2 — Corroborate external claims (web)
 
@@ -108,6 +112,7 @@ Fix any schema error before declaring success.
 - The candidate's name does NOT appear in any bullet (you replaced it with "you").
 - No em dash (U+2014) appears anywhere in the output.
 - Opportunities and challenges are distinct, not the same fact stated twice.
+- No bullet relies on the opponent roster — no claim about opponent count, open-seat status, or incumbency comes from `candidate_count` / `candidates[]` / `is_incumbent` (only from a web-confirmed source).
 - If `partisan_type` is `nonpartisan`, no bullet treats party as the contest.
 - Every external (non-`GoodParty.org Data`) citation URL returned 200.
 
@@ -117,6 +122,7 @@ Fix any schema error before declaring success.
 | A bullet is generic campaign advice | Not tied to a number in the context | Anchor every bullet to a specific field (win number, seats, date, roster) |
 | A bullet cites a `not available` number | Built on a null/missing field | Drop it; only reason over numbers actually present |
 | Opportunity and challenge mirror each other | Thin signal set | Pick distinct structural facts for each list |
+| Bullet claims open seat / N opponents / incumbent | Read it from the provisional roster | Drop it, or web-confirm and cite that source — the roster is not authoritative for the field |
 | Run hangs ~30s on a URL | Used `urllib`/`curl`/`requests` | Use `pmf_runtime.http.head` only; never direct egress |
 | `validate_output.py` fails on empty array | A list came back empty | Each array needs at least 1 bullet — emit one on the strongest available number |
 | Party framed as the contest | `partisan_type` is `nonpartisan` | Treat party as registration noise; reframe the bullet on a structural number |

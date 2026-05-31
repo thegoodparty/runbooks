@@ -24,14 +24,15 @@ Both lists are built from the SAME context. Opportunities reframe the numbers as
 
 ## What you need to know about the data
 
-The opportunities and the challenges are DERIVED from `campaign_strategy_context`, not researched from scratch. The fields that drive them:
+The opportunities and the challenges are DERIVED from `campaign_strategy_context`, not researched from scratch. The RELIABLE fields that drive them:
 
 - `win_number_estimate` / `projected_turnout` — a low win number is an opportunity; a high one relative to the candidate's resources is a challenge.
-- `number_of_seats` vs `candidate_count` (and the roster in `candidates[]`) — few opponents for the seats available is an opportunity; a crowded field that splits the vote is a challenge.
-- incumbency — no candidate with `is_incumbent: true` means an open seat (opportunity); a `true` incumbent with party backing is a challenge.
+- `contacts_needed_estimate` / `registered_voters` / `unique_cellphones` — the voter-contact goal (5× the win number) against the reachable universe; frames how achievable the win number is.
 - `general_election_date` / `primary_election_date` vs `today` — a long runway is an opportunity; an election very soon is a challenge.
-- `partisan_type` / `user_party_affiliation` — `nonpartisan` means party labels are registration noise, not the contest. In a partisan race, watch for opponents in a different party's primary (not yet a contestant until the general).
-- `contacts_needed_estimate` — the voter-contact goal (5× the win number); frames how reachable the win number is.
+- `number_of_seats`, `office_level` / `office_type`, `state` — office structure.
+- `partisan_type` / `user_party_affiliation` — `nonpartisan` means party labels are registration noise, not the contest.
+
+**The opponent roster is provisional — do NOT base bullets on it.** `candidate_count`, the `candidates[]` roster, and each candidate's `is_incumbent` are currently incomplete and lag reality; who is actually running is owned by the separate `opposition_research` experiment. Do NOT derive an opportunity or challenge from the number of opponents, open-seat status, or incumbency as read from this roster. Base every bullet on the reliable numbers above plus web search. If a field point (open seat, crowded race, strong incumbent) is genuinely central, confirm it with a web search and cite that source — never assert it from the seed roster.
 
 Treat `not available` / null fields as unknown — do not invent values, and do not build a bullet on a number you do not have.
 
@@ -64,10 +65,10 @@ jq '[.candidates[] | {full_name, party, is_incumbent, is_user}]' context.json
 
 Most bullets come straight from the numbers above and cite `GoodParty.org Data`. Identify, for THIS race:
 
-- **Opportunity signals** — a low `win_number_estimate`; an open seat (no `is_incumbent: true` in the roster); `candidate_count` small relative to `number_of_seats`; a long runway to `general_election_date`; a reachable `contacts_needed_estimate`.
-- **Challenge signals** — a crowded field (vote-splitting); an incumbent (`is_incumbent: true`), especially with party backing in a partisan race; an election very soon (short outreach window); a high win number relative to a first-time/independent campaign's resources.
+- **Opportunity signals** — a low `win_number_estimate` relative to `projected_turnout`; a `contacts_needed_estimate` achievable against the available `registered_voters` / `unique_cellphones`; a long runway to `general_election_date` / `primary_election_date`; favorable office structure (`number_of_seats`).
+- **Challenge signals** — a high win number relative to a first-time/independent campaign's resources; a large `contacts_needed_estimate` against the `registered_voters` to mobilize; an election very soon (short outreach window).
 
-Use **web search only** to corroborate an external fact you want to cite (e.g. an incumbent's fundraising, a recent local result, a redistricting change). The structural bullets do not need the web; the numbers carry them.
+Do NOT derive a bullet from the opponent roster (`candidate_count`, `candidates[]`, `is_incumbent`) — it is provisional (see above). Use **web search** to corroborate any external fact you want to cite (e.g. a verified incumbent, an opponent's fundraising, a redistricting change), and to confirm any field point before making it; cite that source. The number-based bullets do not need the web; the numbers carry them.
 
 ### 3. Write the bullets
 
