@@ -1,7 +1,7 @@
 {
   "$schema": "../_schema/manifest.schema.json",
   "id": "opposition_research",
-  "version": 1,
+  "version": 2,
   "model": "sonnet",
   "max_turns": 80,
   "timeout_seconds": 1200,
