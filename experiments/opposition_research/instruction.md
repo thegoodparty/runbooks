@@ -1,6 +1,6 @@
 # Opposition Research
 
-Produce a strategic `### Opposition Research` section for a candidate's campaign plan: the opponents in the race, party affiliation, incumbent status, a 2-3 sentence summary, and vetted source URLs (every URL returns HTTP 200). You combine two signals: the candidate roster inside the `campaign_strategy_context` handed to you in params (gp-api hydrated it from election-api before dispatch) and live web search, which catches late filers, write-ins, and independents the roster misses.
+Produce **structured opposition-research data** for a candidate's campaign plan — one record per opponent (party affiliation, incumbent status, a 2-3 sentence summary, up to 3 key facts, and vetted source URLs that each return HTTP 200). The artifact is `{ "opponents": [...] }`; gp-api renders the `### Opposition Research` markdown section from it. You combine two signals: the candidate roster inside the `campaign_strategy_context` handed to you in params (gp-api hydrated it from election-api before dispatch) and live web search, which catches late filers, write-ins, and independents the roster misses.
 
 ## BEFORE YOU START
 1. Read this entire instruction end-to-end before executing anything.
@@ -16,7 +16,7 @@ Produce a strategic `### Opposition Research` section for a candidate's campaign
 3. Finalize the opponent set — every non-self opponent (Step 2).
 4. Research each opponent as an independent research unit (Step 3, the fan-out).
 5. Final URL audit across every cited URL (Step 4).
-6. Assemble the exact markdown section (Step 5).
+6. Assemble the structured `{ "opponents": [...] }` artifact (Step 5).
 7. Write `/workspace/output/opposition_research.json` and validate.
 
 ## CRITICAL RULES
@@ -46,9 +46,9 @@ The one thing you must derive — the rest of the instruction depends on it:
 
 1. **Seed opponents** — find the candidate's own row via `is_user` (match `user_email` to `candidates[].email`, case-insensitive + trimmed; fall back to exact normalized `full_name`). The seed opponents are every OTHER row; each carries `first_name`, `last_name`, `full_name`, `party`, `is_incumbent`, `website_url`, `email` — treat their facts as "GoodParty.org Data", `source: "election-api"`.
 
-`partisanType` is given to you at `campaign_strategy_context.partisanType` (do not infer it — read it; it may be `null`). It only affects the party line in Step 5.
+`partisan_type` is given to you at `campaign_strategy_context.partisan_type` (do not infer it — read it; it may be `null`). It only affects the party line in Step 5.
 
-Write `/workspace/scratch/_race.json` = `{"candidate_name", "office_name", "state", "partisanType"}` (your derived values) so the assembler can read them — it no longer gets them from PARAMS. (`mkdir -p /workspace/scratch` first.)
+Write `/workspace/scratch/_race.json` = `{"candidate_name", "office_name", "state", "partisan_type"}` (your derived values) so the assembler can read them — it no longer gets them from PARAMS. (`mkdir -p /workspace/scratch` first.)
 
 ### Step 1 — Discover late filers via web search and merge
 
@@ -81,7 +81,7 @@ If BOTH the seed roster and web search find no opponent other than the candidate
 
 This experiment runs only on **general elections**, so there are no party-specific primaries: every non-self opponent (seed + confirmed web adds from Step 1) is a real opponent — research all of them in Step 3. There is no cross-primary set and no party-based filtering.
 
-(If primary support is added later, `partisanType` / `isPrimary` would arrive as inputs and re-introduce cross-primary tagging here.)
+(If primary support is added later, `partisan_type` / `is_primary` would arrive as inputs and re-introduce cross-primary tagging here.)
 
 ### Step 3 — Research each opponent (the fan-out unit)
 
@@ -110,24 +110,23 @@ Emit ALL N of these short `Agent` calls in a SINGLE assistant turn, back to back
 - **Verify URLs inside the research unit with `pmf_runtime.http.head(url)`** (the cheap, non-browser check — see the escalation ladder in CRITICAL RULES): drop any URL whose `r["status"] != 200`; if it redirected, cite `r["final_url"]`. Only if `head` returns 403/405 on a site you believe is real should you escalate to `http.get(url)` (browser). **NEVER verify with `curl`, `wget`, `requests`, `httpx`, or `urllib`** — the container has no egress and each HANGS ~30s+ before failing, multiplied across every URL in every unit. `pmf_runtime.http.head` is the ONLY verification call. LinkedIn URLs almost never verify for non-authenticated bots — drop them. The URLs you return are now considered verified; the parent will NOT re-verify them.
 - **When you author each subagent's prompt, COPY the verification rule into it verbatim:** "Verify URLs with `pmf_runtime.http.head(url)` only. Never use curl/wget/requests/urllib — they hang in this container." A subagent that improvises `curl` is the #1 cause of a research unit running for minutes instead of seconds.
 - **If you cannot confirm an opponent in your 1-2 searches, return `no_info: true` immediately — do NOT keep searching or escalate to browser/curl to chase a name that may not exist.** A mismatched or low-coverage name (e.g. a seed name not found on the ballot) must bail fast; a research unit that flails on an unconfirmable name gates the entire fan-out.
-- **Each research unit also formats its OWN markdown block.** This is the single biggest assembly speedup: per-opponent formatting is the slow serial step when the parent does it for all N at the end, so push it into the parallel units. The unit returns a `markdown_block` string — the fully-formatted, final bullet for THIS opponent, following the exact template in Step 5, with every global rule already applied (refer to the campaign owner as "you" and NEVER name `candidate_name` (from Step 0); no em dashes; the party line follows Step 5 (`partisanType` case-insensitively `nonpartisan` → `Nonpartisan (race is nonpartisan)`, else the opponent's `party` or "Unknown"); only 200-verified URLs; if `no_info`, the block is the single "No public information found as of <today's date>." line under the opponent's name). The parent will concatenate these blocks verbatim — it will NOT re-format, re-summarize, or re-verify them, so the block must be publish-ready.
-- **Return contract (exactly this shape per opponent):**
+- **Return contract (exactly this shape per opponent — structured data, NO markdown):**
   ```json
   {
     "full_name": "Jane Doe",
+    "party": "Democratic | Nonpartisan | null",
     "incumbent": "Yes | No | Unknown",
     "summary": "2-3 sentence profile, grounded in verified sources",
     "facts": [
       {"text": "fact in 1-2 sentences", "source_label": "LAist", "url": "https://...verified-200..."}
     ],
     "websites": ["https://...verified-200 campaign or social URL..."],
-    "no_info": false,
-    "markdown_block": "- Jane Doe\n  - Party affiliation: ...\n  - Incumbent: ...\n  - Political summary: ...\n    - fact ([source](url))\n  - Websites found:\n    - https://..."
+    "no_info": false
   }
   ```
-  An opponent with nothing found returns `{"full_name": "...", "incumbent": "Unknown", "summary": null, "facts": [], "websites": [], "no_info": true, "markdown_block": "- <full name>\n  - No public information found as of <today's date>. You should conduct local research."}`. Map the seed `is_incumbent`: `true` -> "Yes", `false` -> "No", `null` -> "Unknown".
-- **The brief (`researcher_brief.md`) must include the exact Step 5 per-opponent template and the global format rules**, and require `markdown_block` in the written fragment. A block that is already publish-ready is what lets assembly be a pure concatenation.
-- **Each research unit WRITES ITS RESULT TO A FILE instead of returning it inline.** Before dispatching, `mkdir -p /workspace/scratch` and assign each opponent a zero-padded index NN in original opponent order (01, 02, 03, ...). Each unit writes its complete return-contract JSON object (all fields incl. `markdown_block`) to `/workspace/scratch/opp_<NN>.json` and returns ONLY the line `opp_<NN> written` — NOT the JSON. This keeps the parent's context lean (it never re-reads N full blobs) and lets assembly be a single deterministic merge over the files.
+  `party` is the opponent's party from the seed (or what you found), or `null`. Map the seed `is_incumbent`: `true` -> "Yes", `false` -> "No", `null` -> "Unknown". An opponent with nothing found returns `{"full_name": "...", "party": <seed party or null>, "incumbent": "Unknown", "summary": null, "facts": [], "websites": [], "no_info": true}`. Do NOT format markdown — `assemble.py` maps these fields into the final structured artifact in Step 5.
+- **The brief (`researcher_brief.md`) must include the source rules + this return contract** so every unit emits the same shape.
+- **Each research unit WRITES ITS RESULT TO A FILE instead of returning it inline.** Before dispatching, `mkdir -p /workspace/scratch` and assign each opponent a zero-padded index NN in original opponent order (01, 02, 03, ...). Each unit writes its complete return-contract JSON object to `/workspace/scratch/opp_<NN>.json` and returns ONLY the line `opp_<NN> written` — NOT the JSON. This keeps the parent's context lean and lets assembly be a single deterministic merge over the files.
 
 After all units return, the fragments are on disk at `/workspace/scratch/opp_*.json`, one per opponent. You will merge them in Step 5 with ONE script — do not read them turn-by-turn.
 
@@ -141,50 +140,24 @@ After all units return, the fragments are on disk at `/workspace/scratch/opp_*.j
 
 If you DO have a concrete reason to re-check a specific URL (a unit's return looked malformed, or you gathered a new URL yourself during assembly), verify it with **`pmf_runtime.http.head(url)` and NOTHING ELSE.** Verification is ALWAYS `http.head`. **NEVER use `curl`, `wget`, `requests`, `httpx`, or `urllib` to check a URL** — the container has no egress, so each of those HANGS ~30s+ before failing and torches the time budget. If you catch yourself typing `curl` in a Bash command to check a status code, STOP and use `pmf_runtime.http.head` instead. Never `http.get` (browser) here. Drop any URL that is not 200 before assembling Step 5. The published section contains only 200-verified URLs.
 
-### Step 5 — Assemble the output
+### Step 5 — Assemble the structured artifact
 
-**Assembly is ONE command — do NOT write a merge script, regenerate, re-summarize, re-verify, or hand-compose.** A ready-made merge script `/workspace/assemble.py` is provided for you. The research units already wrote publish-ready fragments to `/workspace/scratch/opp_*.json`. To assemble:
+`/workspace/assemble.py` reads the fragments at `/workspace/scratch/opp_*.json` + `/workspace/scratch/_race.json` (`candidate_name`, `partisan_type` from Step 0) and writes `/workspace/output/opposition_research.json` as `{ "opponents": [...] }`. **Run it once — do NOT regenerate, re-summarize, re-verify, or hand-compose.** For each fragment it produces one opponent object:
 
-1. Run **`python3 /workspace/assemble.py`** once. It reads the fragments + `/workspace/scratch/_race.json` (the derived race fields from Step 0 — `candidate_name`, `office_name`, `state`), concatenates each fragment's `markdown_block` under the `### Opposition Research` header, builds `opponents` (without `markdown_block`), sets `race.{office_name,state,opponent_count}` and `generated_at`, writes `/workspace/output/opposition_research.json`, and runs the STRUCTURAL/FORMAT spot-checks (candidate name absent, no em dash, opponent_count matches) — printing a PASS/FAIL block and exiting non-zero on FAIL. `assemble.py` does NOT do the URL-quality checks — you still perform those from the `## Spot-check` section below (a cited URL actually loads and mentions the opponent; every fact URL returned 200 in Step 4).
-2. Run **`python3 /workspace/validate_output.py`** once.
+- `full_name` ← the fragment's `full_name`.
+- `party_affiliation` ← `"Nonpartisan"` if `partisan_type` is `nonpartisan` (case-insensitive, trimmed — election-api may send `"Nonpartisan"`); else the fragment's `party`; else `"Unknown"`.
+- `incumbent` ← `true` / `false` / `null` from the fragment's `"Yes"` / `"No"` / `"Unknown"`.
+- `political_summary` ← the fragment's `summary`; if `no_info` is true, `"No public information found as of <today's date>. You should conduct local research."`
+- `key_facts` ← each fact rendered as `"<text> ([<source_label>](<url>))"`, up to 3 (200-verified URLs only).
+- `websites` ← the fragment's verified campaign/social URLs (campaign site, Facebook, Instagram, X, official campaign LinkedIn — NOT employer or government-office pages). May be empty.
 
-Do NOT run WebSearch, `http.head`, or `http.get` here, and do NOT read the fragments turn-by-turn. If `assemble.py` reports a FAILED spot-check, open the offending `/workspace/scratch/opp_<NN>.json` fragment, fix its text in place (no network, no regeneration), and re-run `assemble.py`.
+An uncontested race (no fragments) yields `{"opponents": []}`. The experiment emits **no markdown** — gp-api renders the `### Opposition Research` section from this structured data.
 
-For the uncontested case (zero fragments — both the seed roster and web search found only the candidate), `assemble.py` emits the standard uncontested line automatically.
-
-```markdown
-### Opposition Research
-
-- [Opponent full name]
-  - Party affiliation: [see rule below]
-  - Incumbent: [Yes / No / Unknown]
-  - Political summary: [2-3 sentence summary, grounded in search results]
-    - [Key position or background fact 1] ([source](url))
-    - [Key position or background fact 2] ([source](url))
-    - [Key position or background fact 3, if available] ([source](url))
-  - Websites found:
-    - [URL 1, e.g. campaign website]
-    - [URL 2, e.g. Facebook account]
-    - [URL 3, e.g. Instagram account]
+```bash
+python3 /workspace/assemble.py
 ```
 
-**Party affiliation line:** if `partisanType` is `nonpartisan` (match case-insensitively, trimmed — election-api may send `"Nonpartisan"`), write `Nonpartisan (race is nonpartisan)` (the party labels are registration noise, not the contest). Otherwise write the opponent's `party` value (e.g. "Democratic", "Republican"), or `Unknown` if it is null.
-
-**Websites found line:** include only campaign and social URLs (campaign site, Facebook, Instagram, X, official campaign LinkedIn). Drop URLs from `urls[]` that are not campaign assets — an employer or government-office page is not an opposition website. Use the verified URL from Step 4; if it redirected, cite `r["final_url"]` (the `http.head` redirect key — `source_url` only exists on `http.get`/browser results). If an opponent has no verifiable campaign or social site, write exactly one bullet: `No campaign or social websites found as of <today's date>.`
-
-If no opponent information is found for a given candidate (`no_info: true`), write: `No public information found as of <today's date>. You should conduct local research.`
-
-**Empty-field handling — evaluate in this order:**
-1. **Race uncontested** (merged list has zero opponents — both seed roster and web search found only the candidate): write `No opponents are currently registered for this race as of <today's date>. Continue to monitor, since filing windows may still be open.`
-2. **Otherwise**: render each opponent in the standard format above.
-
-Then build the JSON artifact:
-- `markdown` — the header + concatenated `markdown_block`s (in order). Built by joining, not regenerating.
-- `opponents` — the collected per-opponent return-contract objects (`full_name`, `incumbent`, `summary`, `facts`, `websites`, `no_info`), in order. Drop the `markdown_block` field from each object here (it lives in the assembled `markdown`, not duplicated per opponent).
-- `race` — `{office_name, state, opponent_count}` where `opponent_count` is the number of researched opponents.
-- `generated_at` — current ISO 8601 timestamp.
-
-Write it to `/workspace/output/opposition_research.json`.
+Do NOT run WebSearch, `http.head`, or `http.get` here, and do NOT read the fragments turn-by-turn. If `assemble.py` reports a FAILED spot-check, open the offending `/workspace/scratch/opp_<NN>.json` fragment, fix its text in place (no network, no regeneration), and re-run `assemble.py`.
 
 ### Step 6 — Validate
 
@@ -196,19 +169,19 @@ python3 /workspace/validate_output.py
 - Plain, direct U.S. English. No em dashes. No jargon.
 - Bullet points are 1-3 sentences each — not fragments, not essays.
 - Grounded in what web search actually returned. Do not fabricate names, affiliations, or URLs.
-- Produce ONLY the markdown section in `markdown`. No title page, no intro, no summary after.
-- Replace the candidate's name with "you" throughout.
+- Emit ONLY the structured `{ "opponents": [...] }` artifact — no markdown, no preamble, no extra top-level fields. gp-api renders the section from it.
+- Never refer to the candidate by name in any opponent's text; the candidate is excluded from `opponents` entirely.
 - Numbers, not words: "50% + 1", not "half"; "5x projected turnout", not "five times".
 - Be mindful of local election rules: North Dakota has no voter registration; Connecticut has no counties.
 - Every cited URL must have returned HTTP 200 in Step 4.
 
 ## Spot-check
 Validator-passing JSON can still be garbage. Run the spot-check as ONE script that loads the artifact a single time and prints every check at once — do NOT issue a separate `python3 -c` per check (each is a turn with inference between it, and the round-trips dominate the assembly phase). Load once, assert all of the following, print a single PASS/FAIL block, then fix and re-run only if something failed:
-- **A cited URL doesn't load or doesn't mention the opponent** — don't trust search snippets blindly. If you fetched the body with `pmf_runtime.http.get` during Step 3 (the last-resort case, when snippets were insufficient), confirm the body actually references the person and the claim. If you did NOT fetch the body (the common case — facts came from search snippets), confirm the snippet text you used is reflected in `facts[].text` with a matching source. Do NOT call `http.get` here — Steps 4 and 5 forbid network calls at assembly time.
-- **Every fact's URL returned 200** in Step 4. If any didn't, the citation must be gone from `markdown` AND from the opponent's `facts`/`websites`.
-- **`opponent_count` equals the number of opponents you rendered** in `markdown` (excludes you).
-- **The candidate's own name never appears** in `markdown`; it always reads "you".
-- **A seed opponent who returned `no_info` still appears** in `markdown` with the "No public information found" line — web silence does not delete a real filer.
+- **A cited URL doesn't load or doesn't mention the opponent** — don't trust search snippets blindly. Confirm the snippet text you used is reflected in each opponent's `key_facts` with a matching source. Do NOT call `http.get` here — Steps 4 and 5 forbid network calls at assembly time.
+- **Every cited URL returned 200** in Step 4. If any didn't, the citation must be gone from the opponent's `key_facts` and `websites`.
+- **The candidate is not in `opponents`** at all (excluded via `is_user`), and the candidate's own name never appears in any opponent's `political_summary` or `key_facts`.
+- **No em dash** in any `political_summary` or `key_facts` text.
+- **A seed opponent who returned `no_info` still appears** in `opponents` with the "No public information found" `political_summary` — web silence does not delete a real filer.
 
 ## Failure modes
 | Symptom | Cause | Fix |

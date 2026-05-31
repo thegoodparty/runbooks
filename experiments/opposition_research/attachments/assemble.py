@@ -2,7 +2,7 @@ import glob
 import json
 import os
 import sys
-from datetime import date, datetime, timezone
+from datetime import date
 
 
 def _workspace():
@@ -15,35 +15,13 @@ def _load_params():
         params = json.loads(raw)
     except (ValueError, TypeError):
         params = {}
-    if not isinstance(params, dict):
-        params = {}
-    return params
-
-
-def _load_fragments(scratch_dir):
-    fragments = []
-    paths = sorted(glob.glob(os.path.join(scratch_dir, "opp_*.json")))
-    for path in paths:
-        try:
-            with open(path, "r", encoding="utf-8") as fh:
-                data = json.load(fh)
-        except (ValueError, OSError) as exc:
-            sys.stderr.write(f"warning: skipping {path}: {exc}\n")
-            continue
-        if not isinstance(data, dict):
-            sys.stderr.write(
-                f"warning: skipping {path}: not a JSON object\n"
-            )
-            continue
-        fragments.append(data)
-    return fragments
+    return params if isinstance(params, dict) else {}
 
 
 def _load_race(scratch_dir):
-    # Derived race fields written by the agent in Step 0 (candidate_name,
-    # office_name, state, partisanType) — these used to come from PARAMS, but
-    # the input contract now nests the race under campaign_strategy_context, so
-    # the agent derives + writes them here for the assembler.
+    # candidate_name + partisan_type, derived by the agent in Step 0 (the input
+    # contract nests the race under campaign_strategy_context, so the agent
+    # writes the bits the assembler needs here).
     path = os.path.join(scratch_dir, "_race.json")
     try:
         with open(path, "r", encoding="utf-8") as fh:
@@ -53,86 +31,91 @@ def _load_race(scratch_dir):
     return data if isinstance(data, dict) else {}
 
 
-def _load_closing_note(scratch_dir):
-    path = os.path.join(scratch_dir, "_closing_note.txt")
-    if not os.path.exists(path):
-        return None
-    try:
-        with open(path, "r", encoding="utf-8") as fh:
-            return fh.read().strip()
-    except OSError as exc:
-        sys.stderr.write(f"warning: could not read closing note: {exc}\n")
-        return None
+def _load_fragments(scratch_dir):
+    fragments = []
+    for path in sorted(glob.glob(os.path.join(scratch_dir, "opp_*.json"))):
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (ValueError, OSError) as exc:
+            sys.stderr.write(f"warning: skipping {path}: {exc}\n")
+            continue
+        if isinstance(data, dict):
+            fragments.append(data)
+        else:
+            sys.stderr.write(f"warning: skipping {path}: not a JSON object\n")
+    return fragments
 
 
-def _build_markdown(fragments, closing_note):
-    header = "### Opposition Research\n\n"
-    if not fragments:
-        today = date.today().isoformat()
+_INCUMBENT = {"yes": True, "no": False, "unknown": None}
+
+
+def _party_affiliation(party, partisan_type):
+    # Nonpartisan race -> the party labels are registration noise, not the
+    # contest, so normalize to "Nonpartisan". Otherwise the opponent's party,
+    # or "Unknown".
+    if str(partisan_type or "").strip().lower() == "nonpartisan":
+        return "Nonpartisan"
+    if party:
+        return party
+    return "Unknown"
+
+
+def _key_facts(facts):
+    out = []
+    for f in facts or []:
+        if not isinstance(f, dict):
+            continue
+        text = (f.get("text") or "").strip()
+        label = (f.get("source_label") or "").strip()
+        url = (f.get("url") or "").strip()
+        if not text:
+            continue
+        out.append(f"{text} ([{label}]({url}))" if label and url else text)
+    return out[:3]
+
+
+def _political_summary(frag):
+    summary = frag.get("summary")
+    if isinstance(summary, str) and summary.strip():
+        return summary.strip()
+    if frag.get("no_info"):
         return (
-            header
-            + f"No opponents are currently registered for this race as of {today}. "
-            + "Continue to monitor, since filing windows may still be open."
+            f"No public information found as of {date.today().isoformat()}. "
+            "You should conduct local research."
         )
-    blocks = [str(frag.get("markdown_block") or "") for frag in fragments]
-    body = "\n\n".join(blocks)
-    markdown = header + body
-    if closing_note:
-        markdown = markdown + "\n\n" + closing_note
-    return markdown
+    return ""
 
 
-def _build_opponents(fragments):
-    opponents = []
-    for frag in fragments:
-        opp = {k: v for k, v in frag.items() if k != "markdown_block"}
-        opponents.append(opp)
-    return opponents
-
-
-def _build_artifact(params, fragments, closing_note):
+def _to_opponent(frag, partisan_type):
     return {
-        "markdown": _build_markdown(fragments, closing_note),
-        "opponents": _build_opponents(fragments),
-        "race": {
-            "office_name": params.get("office_name"),
-            "state": params.get("state"),
-            "partisanType": params.get("partisanType"),
-            "opponent_count": len(fragments),
-        },
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "full_name": frag.get("full_name"),
+        "party_affiliation": _party_affiliation(frag.get("party"), partisan_type),
+        "incumbent": _INCUMBENT.get(str(frag.get("incumbent") or "").strip().lower()),
+        "political_summary": _political_summary(frag),
+        "key_facts": _key_facts(frag.get("facts")),
+        "websites": [w for w in (frag.get("websites") or []) if isinstance(w, str)],
     }
 
 
-def _spot_checks(artifact, params):
+def _build_artifact(race, fragments):
+    partisan_type = race.get("partisan_type")
+    return {"opponents": [_to_opponent(f, partisan_type) for f in fragments]}
+
+
+def _spot_checks(artifact, race):
     reasons = []
-    markdown = artifact["markdown"]
-
-    candidate_name = params.get("candidate_name")
+    candidate_name = race.get("candidate_name")
+    texts = []
+    for opp in artifact["opponents"]:
+        texts.append(opp.get("political_summary") or "")
+        texts.extend(opp.get("key_facts") or [])
+    blob = "\n".join(texts)
     if isinstance(candidate_name, str) and candidate_name.strip():
-        if candidate_name.lower() in markdown.lower():
-            reasons.append(
-                f"candidate name '{candidate_name}' appears in markdown"
-            )
-
-    if "—" in markdown:
-        reasons.append("em dash (U+2014) present in markdown")
-
-    count = artifact["race"]["opponent_count"]
-    n_opp = len(artifact["opponents"])
-    if count != n_opp:
-        reasons.append(
-            f"opponent_count {count} does not match opponents length {n_opp}"
-        )
-
-    if str(params.get("partisanType") or "").strip().lower() == "nonpartisan":
-        allowed = "Party affiliation: Nonpartisan (race is nonpartisan)"
-        for line in markdown.splitlines():
-            content = line.strip().lstrip("-").strip()
-            if "Party affiliation:" in content and content != allowed:
-                reasons.append(
-                    f"nonpartisan race has non-nonpartisan party line: '{content}'"
-                )
+        if candidate_name.lower() in blob.lower():
+            reasons.append(f"candidate name '{candidate_name}' appears in opponent text")
+    if "—" in blob:
+        reasons.append("em dash (U+2014) present in opponent text")
     return reasons
 
 
@@ -152,20 +135,14 @@ def _validate_shape(workspace, artifact):
         jsonschema.validate(instance=artifact, schema=schema)
         return []
     except ImportError:
-        required = ["markdown", "opponents", "race", "generated_at"]
-        missing = [k for k in required if k not in artifact]
-        if missing:
-            return [f"artifact missing required keys: {', '.join(missing)}"]
-        return []
+        return [] if "opponents" in artifact else ["artifact missing 'opponents'"]
     except jsonschema.ValidationError as exc:
         return [f"artifact schema violation: {exc.message}"]
     except jsonschema.SchemaError as exc:
-        sys.stderr.write(f"warning: contract_schema.json is not a valid JSON Schema: {exc}\n")
-        required = ["markdown", "opponents", "race", "generated_at"]
-        missing = [k for k in required if k not in artifact]
-        if missing:
-            return [f"artifact missing required keys: {', '.join(missing)}"]
-        return []
+        sys.stderr.write(
+            f"warning: contract_schema.json is not a valid JSON Schema: {exc}\n"
+        )
+        return [] if "opponents" in artifact else ["artifact missing 'opponents'"]
 
 
 def main():
@@ -175,12 +152,11 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Prefer the agent's derived race fields (_race.json); fall back to PARAMS
-    # for older callers / tests that pass the race fields top-level.
+    # for older callers / tests that pass them top-level.
     race = _load_race(scratch_dir) or _load_params()
     fragments = _load_fragments(scratch_dir)
-    closing_note = _load_closing_note(scratch_dir)
 
-    artifact = _build_artifact(race, fragments, closing_note)
+    artifact = _build_artifact(race, fragments)
 
     output_path = os.path.join(output_dir, "opposition_research.json")
     with open(output_path, "w", encoding="utf-8") as fh:

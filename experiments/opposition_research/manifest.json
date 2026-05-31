@@ -84,7 +84,7 @@
           "office_level": { "type": ["string", "null"] },
           "office_type": { "type": ["string", "null"] },
           "official_office_name": { "type": ["string", "null"] },
-          "partisanType": {
+          "partisan_type": {
             "type": ["string", "null"],
             "description": "Race partisan type from election-api (e.g. 'partisan' / 'nonpartisan'). 'nonpartisan' means the party labels are voter-registration noise, not the contest. May be null until election-api populates it. Not enum-constrained — election-api is the source of truth for the value."
           },
