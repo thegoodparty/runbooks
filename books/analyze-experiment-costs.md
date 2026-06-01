@@ -17,10 +17,15 @@ writes the same S3 file layout.
 **Tools**: `aws` CLI (v2), `python3` (3.11+), enough local disk for the
 artifacts (typically 100MB-2GB depending on burst size).
 
-**books/.env variables**: `$AWS_PROFILE` (default: `goodparty`).
+**books/.env variables**: `$AWS_PROFILE`. Set it to whatever AWS named
+profile gives you access to the agent artifacts bucket (e.g. `export
+AWS_PROFILE=goodparty` if that is the name you configured locally). The
+AWS CLI honors `$AWS_PROFILE` natively, so commands below do not pass
+`--profile` explicitly; export the variable once and every command in
+this runbook picks it up.
 
-**AWS auth**: `aws sso login --profile goodparty`. Token lasts 8-12 hours
-typically. Verify with `aws --profile goodparty sts get-caller-identity`.
+**AWS auth**: `aws sso login`. Token lasts 8-12 hours typically. Verify
+with `aws sts get-caller-identity`.
 
 ## Data inventory
 
@@ -49,19 +54,19 @@ ENV=prod
 mkdir -p /tmp/${EXPERIMENT_ID}_artifacts /tmp/${EXPERIMENT_ID}_sessions /tmp/${EXPERIMENT_ID}_conv
 
 # 1. Artifacts (small, ~10KB each)
-aws --profile goodparty s3 sync \
+aws s3 sync \
   s3://gp-agent-artifacts-${ENV}/${EXPERIMENT_ID}/ \
   /tmp/${EXPERIMENT_ID}_artifacts/ \
   --exclude "*" --include "*/artifact.json" --no-progress
 
 # 2. Session.jsonl files (medium, ~400KB each). Needed for per-step token usage.
-aws --profile goodparty s3 sync \
+aws s3 sync \
   s3://gp-agent-artifacts-${ENV}/${EXPERIMENT_ID}/ \
   /tmp/${EXPERIMENT_ID}_sessions/ \
   --exclude "*" --include "*/logs/session.jsonl" --no-progress
 
 # 3. Conversation.jsonl files (small). Needed for authoritative per-run cost.
-aws --profile goodparty s3 sync \
+aws s3 sync \
   s3://gp-agent-artifacts-${ENV}/${EXPERIMENT_ID}/ \
   /tmp/${EXPERIMENT_ID}_conv/ \
   --exclude "*" --include "*/logs/workspace/conversation.jsonl" --no-progress
@@ -144,12 +149,13 @@ with open(out_csv, 'w', newline='') as f:
 print(f'Wrote {out_csv}')
 ```
 
-Then aggregate:
+Then aggregate (set `EXPERIMENT_ID` first):
 
 ```bash
+EXPERIMENT_ID=meeting_briefing  # or whatever you exported above
 python3 -c "
-import csv, collections, statistics
-rows = list(csv.DictReader(open('/tmp/meeting_briefing_run_costs.csv')))
+import csv, collections, os, statistics
+rows = list(csv.DictReader(open(f'/tmp/{os.environ[\"EXPERIMENT_ID\"]}_run_costs.csv')))
 by_status = collections.defaultdict(list)
 for r in rows:
     if r['cost_usd']:
@@ -157,7 +163,12 @@ for r in rows:
 for status, costs in sorted(by_status.items(), key=lambda x: -len(x[1])):
     n = len(costs)
     cs = sorted(costs)
-    print(f'{status:25s} n={n:5d} total=\${sum(costs):8.2f} mean=\${sum(costs)/n:.2f} median=\${cs[n//2]:.2f} p90=\${cs[int(n*0.9)]:.2f}')
+    # p90 = floor((n-1) * 0.9). Last index is n-1, so 90th percentile of an
+    # n-item sorted list lives at index round((n-1)*0.9) under the nearest-rank
+    # convention. Don't use int(n*0.9): that's off by one near small n and
+    # at the boundary returns out-of-range indices.
+    p90_idx = max(0, min(n - 1, int(round((n - 1) * 0.9))))
+    print(f'{status:25s} n={n:5d} total=\${sum(costs):8.2f} mean=\${sum(costs)/n:.2f} median=\${cs[n//2]:.2f} p90=\${cs[p90_idx]:.2f}')
 "
 ```
 
@@ -171,8 +182,10 @@ Two notions of runtime exist:
 import json, glob, statistics
 from datetime import datetime
 
+EXPERIMENT_ID = 'meeting_briefing'  # change to match what you synced
+
 durations = []
-for path in glob.glob('/tmp/meeting_briefing_sessions/*/logs/session.jsonl'):
+for path in glob.glob(f'/tmp/{EXPERIMENT_ID}_sessions/*/logs/session.jsonl'):
     lines = open(path).readlines()
     first_ts = last_ts = None
     for l in lines:
@@ -194,9 +207,10 @@ print(f'n={len(durations)}, mean={sum(durations)/len(durations):.0f}s, median={s
 **Turn count** (from `num_turns` in conversation.jsonl, already extracted above):
 
 ```bash
+EXPERIMENT_ID=meeting_briefing
 python3 -c "
-import csv, statistics
-turns = [int(r['num_turns']) for r in csv.DictReader(open('/tmp/meeting_briefing_run_costs.csv')) if r['num_turns']]
+import csv, os, statistics
+turns = [int(r['num_turns']) for r in csv.DictReader(open(f'/tmp/{os.environ[\"EXPERIMENT_ID\"]}_run_costs.csv')) if r['num_turns']]
 print(f'n={len(turns)}, mean={sum(turns)/len(turns):.0f} turns, median={statistics.median(turns):.0f}, max={max(turns)}')
 "
 ```
@@ -346,8 +360,12 @@ rescaled_step_cost = token_step_cost * scale
 # Status distribution from artifacts
 import json, glob, collections, os
 
+EXPERIMENT_ID = 'meeting_briefing'  # change to match what you synced
+artifacts_dir = f'/tmp/{EXPERIMENT_ID}_artifacts'
+sessions_dir = f'/tmp/{EXPERIMENT_ID}_sessions'
+
 statuses = collections.Counter()
-for path in glob.glob('/tmp/meeting_briefing_artifacts/*/artifact.json'):
+for path in glob.glob(f'{artifacts_dir}/*/artifact.json'):
     try:
         a = json.load(open(path))
         st = a.get('briefing_status') or a.get('status') or '?'
@@ -355,9 +373,9 @@ for path in glob.glob('/tmp/meeting_briefing_artifacts/*/artifact.json'):
     except: statuses['parse_error'] += 1
 
 # Crashed runs = sessions WITHOUT artifacts (the runner's heartbeat failed)
-session_rids = {d for d in os.listdir('/tmp/meeting_briefing_sessions')
-                if os.path.exists(f'/tmp/meeting_briefing_sessions/{d}/logs/session.jsonl')}
-artifact_rids = set(os.listdir('/tmp/meeting_briefing_artifacts'))
+session_rids = {d for d in os.listdir(sessions_dir)
+                if os.path.exists(f'{sessions_dir}/{d}/logs/session.jsonl')}
+artifact_rids = set(os.listdir(artifacts_dir))
 crashed = len(session_rids - artifact_rids)
 
 print('Status distribution:')
