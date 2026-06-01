@@ -42,6 +42,8 @@ Produce **structured opposition-research data** for a candidate's campaign plan 
 
 Read `PARAMS_JSON` once. Throughout this instruction: the candidate you write FOR is `user_full_name` (output calls them "you", never by name); `office_name` = `campaign_strategy_context.candidate_office` (fallback `official_office_name` — the readable name for web search); `state` / `electionDate` = the context's `state` / `relevant_election_date`. The roster is `campaign_strategy_context.candidates[]`, and it INCLUDES the candidate. (`race_id` is a trace id — ignore it; you never call election-api.)
 
+All of this data is focused on the GENERAL election. `campaign_primary_strategy_context` carries only the PRIMARY stage's candidate roster (`candidate_count` + `candidates`), or is `null` when the race has no primary (not every election has one). For offices that do hold a primary, this roster is typically the real filed field while the general roster (`campaign_strategy_context.candidates`) is often empty — so when `campaign_primary_strategy_context` is present, fold its `candidates[]` into your seed opponent list too (still excluding yourself, still deduping by fuzzy name). Treat both stages' rosters as `source: "election-api"`.
+
 The one thing you must derive — the rest of the instruction depends on it:
 
 1. **Seed opponents** — find the candidate's own row via `is_user` (match `user_email` to `candidates[].email`, case-insensitive + trimmed; fall back to exact normalized `full_name`). The seed opponents are every OTHER row; each carries `first_name`, `last_name`, `full_name`, `party`, `is_incumbent`, `website_url`, `email` — treat their facts as "GoodParty.org Data", `source: "election-api"`.

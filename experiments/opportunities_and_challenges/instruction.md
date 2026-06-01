@@ -48,6 +48,8 @@ Produce the Opportunities and Challenges of a candidate's campaign plan: up to 3
 
 Read `PARAMS_JSON` once. The candidate you write FOR is `user_full_name` (output says "you", never the name). Find the candidate's own row via `is_user`: match `user_email` to `campaign_strategy_context.candidates[].email` (case-insensitive + trimmed), falling back to exact normalized `full_name`. You do not list opponents here, but identifying the candidate keeps their name out of the bullets and lets you read the roster correctly. (`race_id` is a trace id — ignore it; you never call election-api.)
 
+All of this data is focused on the GENERAL election. `campaign_primary_strategy_context` carries only the PRIMARY stage's candidate roster (`candidate_count` + `candidates`), or is `null` when the race has no primary (not every election has one). This experiment is general-focused and derives its bullets from the general context's numbers, so you do not need the primary context, and you still do not base bullets on either roster (see the opponent-data rule above).
+
 Read the fields the bullets are derived from:
 
 ```bash

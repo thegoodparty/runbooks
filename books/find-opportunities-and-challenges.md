@@ -18,7 +18,8 @@ Both lists are built from the SAME context. Opportunities reframe the numbers as
 **Inputs (the injected contract)** — gp-api assembles these from its DB + one election-api call before dispatch; the agent just reads them:
 - `race_id` — trace / idempotency identifier only; the agent does not reason over it.
 - `user_email`, `user_first_name`, `user_last_name`, `user_full_name`, `user_party_affiliation`, `other_party` — the candidate identity (party resolves `Other` → `other_party`; bullets address them as "you", never by name).
-- `campaign_strategy_context` — the race-level numbers + roster (the raw election-api result). This is the only source besides light web search.
+- `campaign_strategy_context` — the race-level numbers + roster (the raw election-api result) for the GENERAL election. This is the primary source besides light web search.
+- `campaign_primary_strategy_context` — the race's PRIMARY-stage candidate roster only (`candidate_count` + `candidates`), or `null` when the race has no primary. **All of this data is focused on the general election; the primary roster is provided in addition. Not every election has a primary** (many local and single-stage races do not), so this field is often `null`. It deliberately carries only the candidates — no win number, turnout, or dates — because those are either stage-specific (and would conflict with the general numbers the plan is built on) or already on the general context. For offices that do hold a primary, this roster is the real filed field, while the general roster is often empty.
 
 **Output**: a JSON artifact `{ "opportunities": [...], "challenges": [...] }` — 1-3 strings each, where every string is one finished bullet with its citation inlined as `... ([source](url))`. There is no markdown render step; the JSON is the canonical and only output.
 
