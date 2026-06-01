@@ -33,6 +33,7 @@ Produce **structured opposition-research data** for a candidate's campaign plan 
 - **Never use `WebFetch`** — the runner's quarantined network can't reach its domain-safety check; it always fails. Discover with `WebSearch`, verify with `http.head`, render with `http.get` only when forced.
 - **Never make a direct network call from Python or the shell** — `urllib`/`urllib.request.urlopen`, `requests`, `httpx`, `curl`, `wget`, raw `socket`. The container has NO egress; these do not fail fast, they **HANG ~30s+ each and burn the time budget**. The ONLY way to reach a URL is `pmf_runtime.http.head` / `.get` / `.download` (broker-proxied). If you catch yourself importing `urllib` or `requests`, STOP and use `pmf_runtime.http`.
 - **Do NOT call election-api or any other internal API.** The runner has no direct internet egress and cannot reach election-api. The candidate roster is already in `PARAMS.campaign_strategy_context.candidates` (you derive the opponent list from it in Step 0). Web search + `pmf_runtime.http` are your only outside-world tools.
+- **Discovery is HARD-CAPPED at 2 WebSearch queries — never exceed it.** After those 2 searches your opponent list is final. If no opponent is confirmed and the seed rosters (general + primary) are empty, the race is uncontested: emit `{ "opponents": [] }` and stop. Do NOT keep opening sample-ballot / county-clerk / Secretary-of-State / petition pages to confirm or rule out a candidate (e.g. whether an incumbent re-filed). Chasing an empty field past the cap is what exhausts the turn budget and has caused real timeouts — an uncontested result returned fast is correct, a timeout is not.
 - **The only PUBLISHED artifact is `/workspace/output/opposition_research.json`.** The runner publishes nothing else. You may write intermediate per-opponent fragments to `/workspace/scratch/` (see Step 3) — that directory is scratch space, never published.
 - **Run `python3 /workspace/validate_output.py` before declaring success.** In-loop validation lets you fix violations cheaply; the runner-level validator rejects the artifact post-hoc if you skip it.
 
@@ -56,6 +57,8 @@ Write `/workspace/scratch/_race.json` = `{"candidate_name", "office_name", "stat
 
 The seed opponents (from Step 0, derived from `campaign_strategy_context.candidates`) are authoritative for known filers but lag reality: late filers, write-ins, and especially independents are often missing. Do discovery in **ONE upfront pass, BEFORE you research anyone** — run AT MOST 2 WebSearch queries, finalize the full opponent list, then never return to discovery. Dispatching researchers, then discovering more, then dispatching again serializes the run and is the #1 cause of slow runs — do not do it.
 
+**Hard stop after 2 discovery searches.** Those 2 searches ARE your discovery budget. Do not open a 3rd search, and do not start fetching sample-ballot / clerk / SOS / petition pages to confirm or deny whether someone (especially an incumbent) is actually on the ballot. If the 2 searches did not surface a confirmable opponent and the seed rosters are empty, treat the race as uncontested (below) — do not keep hunting. Over-researching an empty field is exactly what ran a real run out of turns.
+
 - `candidates running for <office_name> <state> <electionDate>`
 - `<office_name> candidates <election year>` and a ballot-info variant, e.g. `<state> sample ballot <office_name> <year>`
 
@@ -77,7 +80,7 @@ Prefer official sources for the roster: the county / state board of elections, t
 
 **Seed candidates are authoritative filers — keep them even when web search finds nothing.** A name in the seed roster is a real filing; web silence does not disconfirm it. Such a candidate stays in the list and routes to the "No public information found" line in Step 5. Web search can only ADD or ENRICH opponents — never remove a seed candidate. The one exception is obvious test/junk data (placeholder names like "Jack Test", `@goodparty.org` / `+tag` emails): drop those.
 
-If BOTH the seed roster and web search find no opponent other than the candidate, the race is uncontested as far as you can tell — handle it in Step 5.
+If BOTH the seed rosters (general + primary) and the 2 discovery searches find no opponent other than the candidate, the race is uncontested as far as you can tell: go straight to Step 5 and emit `{ "opponents": [] }`. STOP here — do not run more searches, fetch more pages, or try to prove or disprove that an incumbent re-filed. A fast uncontested result is the correct outcome for a thin field.
 
 ### Step 2 — Opponent set (no cross-primary)
 
@@ -194,3 +197,4 @@ Validator-passing JSON can still be garbage. Run the spot-check as ONE script th
 | A web-surfaced "candidate" isn't really in this race | Wrong district, past cycle, or withdrew | Confirm via an official roster before adding; if you can't confirm they're on THIS ballot for THIS election, drop them |
 | A seed opponent looks like test/junk data | Non-production rows leaked into the roster | Drop obvious test rows; do not publish them |
 | `No artifact files found in /workspace/output` | Ran out of turns or never wrote the file | Write `/workspace/output/opposition_research.json` early and update it; keep research units tight |
+| Ran out of turns on a thin / empty-field race | Over-researched: blew past the 2-search discovery cap hunting rosters to confirm or rule out a candidate | Honor the hard 2-search cap; if no opponent is confirmed and the seed is empty, emit `{ "opponents": [] }` and stop immediately |
