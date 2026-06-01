@@ -108,6 +108,14 @@ python3 /workspace/validate_output.py
 
 Fix any schema error before declaring success.
 
+## Glossary (preferred language: use these terms, do not invent synonyms)
+- **registered voters**: the total pool of voters eligible to cast a ballot for a race, from the latest voter file.
+- **projected voter turnout**: the estimated number of registered voters expected to cast a ballot in this specific election, from a turnout model on recent comparable cycles. Historically +/- 1.5% of actual turnout.
+- **projected votes needed to win**: the vote total at which a candidate wins the seat with certainty given the modeled turnout. 50% + 1 of projected voter turnout.
+- **targeted voter contact goal**: the total contacts the campaign aims to deliver. Rule of thumb: 5x the projected votes needed to win.
+- **voter contact**: a contact attempt that reaches an intended voter via a channel capable of conveying the message (delivered text, answered call, in-person conversation).
+- **likely votes**: the estimated votes on track to receive based on voter contacts completed to date. 1 likely vote per 5 voter contacts.
+
 ## Spot-check
 - Each array has 1-3 entries; neither is empty.
 - Every bullet is tied to a specific number from the context, not generic advice.

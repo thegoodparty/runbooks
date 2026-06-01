@@ -180,6 +180,14 @@ python3 /workspace/validate_output.py
 - Be mindful of local election rules: North Dakota has no voter registration; Connecticut has no counties.
 - Every cited URL must have returned HTTP 200 in Step 4.
 
+## Glossary (preferred language: use these terms, do not invent synonyms)
+- **registered voters**: the total pool of voters eligible to cast a ballot for a race, from the latest voter file.
+- **projected voter turnout**: the estimated number of registered voters expected to cast a ballot in this specific election, from a turnout model on recent comparable cycles. Historically +/- 1.5% of actual turnout.
+- **projected votes needed to win**: the vote total at which a candidate wins the seat with certainty given the modeled turnout. 50% + 1 of projected voter turnout.
+- **targeted voter contact goal**: the total contacts the campaign aims to deliver. Rule of thumb: 5x the projected votes needed to win.
+- **voter contact**: a contact attempt that reaches an intended voter via a channel capable of conveying the message (delivered text, answered call, in-person conversation).
+- **likely votes**: the estimated votes on track to receive based on voter contacts completed to date. 1 likely vote per 5 voter contacts.
+
 ## Spot-check
 Validator-passing JSON can still be garbage. Run the spot-check as ONE script that loads the artifact a single time and prints every check at once — do NOT issue a separate `python3 -c` per check (each is a turn with inference between it, and the round-trips dominate the assembly phase). Load once, assert all of the following, print a single PASS/FAIL block, then fix and re-run only if something failed:
 - **A cited URL doesn't load or doesn't mention the opponent** — don't trust search snippets blindly. Confirm the snippet text you used is reflected in each opponent's `key_facts` with a matching source. Do NOT call `http.get` here — Steps 4 and 5 forbid network calls at assembly time.
