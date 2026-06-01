@@ -18,6 +18,46 @@ Produce the Opportunities and Challenges of a candidate's campaign plan: up to 3
 5. Write the artifact JSON (Step 4).
 6. Validate, then spot-check (Step 5).
 
+**Top level**
+- `race_id` (string): BallotReady brHashId, trace id only.
+- `user_email` (string): candidate email, used for the is_user match.
+- `user_first_name` (string|null).
+- `user_last_name` (string|null).
+- `user_full_name` (string): candidate name.
+- `user_party_affiliation` (string|null): candidate party label; "Other" means see other_party.
+- `other_party` (string|null): candidate party when affiliation is "Other".
+- `campaign_strategy_context` (object): the GENERAL-election context (fields below). We are focused on the general elections.
+- `campaign_primary_strategy_context` (object|null): the PRIMARY-stage roster only (fields below); null if no primary. Not the campaign we are targeting, but data may be valable.
+
+**`campaign_strategy_context` (general election)**
+- `candidate_count` (int): count of the general roster.
+- `candidate_office` (string|null): readable office name.
+- `candidates[]`: general roster; each row {gp_candidate_id, first_name, last_name, full_name, email, website_url, party, is_incumbent}.
+- `civics_win_number` (int|null).
+- `contacts_needed_estimate` (int|null): always refer to this fields as "targeted voter contact goal". Never say "contacts needed estimate". A voter contact is a contact attempt that reaches an intended voter via a channel capable of conveying the message (delivered text, answered call, in-person conversation). The "targeted voter contact goal", is the number of voter contacts we estimate the candidate will need to win, which is equal to 5 times win_number_effective.
+- `filing_date_end` (date|null).
+- `general_election_date` (date|null): the date we want to focus on.
+- `number_of_seats` (int|null): how many seats this contest elects. Most races fill 1. When it is greater than 1, the top N vote-getters win rather than a single majority winner.
+- `office_level` (string|null).
+- `office_type` (string|null).
+- `official_office_name` (string|null).
+- `partisan_type` (string|null): 'partisan' or 'nonpartisan': whether this office is contested on a partisan or nonpartisan basis. partisan means candidates run under party labels and the race is organized by party (party primaries feeding a general election). nonpartisan means the contest is not organized by party. May be null when unknown.
+- `primary_election_date` (date|null): the data of the primary. This is not our priority, but worth noting.
+- `projected_turnout` (int|null): The estimated number of registered voters expected to cast a ballot in this specific general election, derived from a turnout model applied to recent comparable cycles. Historically our projections have been +/- 1.5% of actual voter turnout. This number does NOT represent a primary election and is for the general election.
+- `relevant_election_date` (date|null): the date of THIS race's stage.
+- `state` (2-letter string|null).
+- `win_number_effective` (int|null): Only refer to this field value as "projected votes needed to win", which is the total votes a candidate is targeting to win — a simple majority (50% + 1) of the projected voter turnout in their race, for the general election.
+- `win_number_estimate` (int|null): Only refer to this field value as "projected votes needed to win", which is the total votes a candidate is targeting to win — a simple majority (50% + 1) of the projected voter turnout in their race, for the general election.
+- `projected_voter_turnout` (int|null): Estimated general-election turnout for the year.
+- `registered_voters` (int|null): The total pool of voters eligible to cast a ballot for a race, pulled from the latest voter file.
+- `unique_cellphones` (int|null): Number of unique cellphone numbers known for within the district.
+- `unique_landlines` (int|null): Number of unique landline numbers known for within the district.
+
+**`campaign_primary_strategy_context` (primary stage, or null)**
+- `candidate_count` (int): count of the primary roster.
+- `candidates[]`: primary roster, same row shape as the general candidates.
+
+
 ## CRITICAL RULES
 
 **Network egress is quarantined.** The ONLY ways to reach the internet are `WebSearch` and the broker-proxied `pmf_runtime.http` helpers. `urllib`/`requests`/`httpx`/`curl`/`wget`/`socket` do NOT work — they hang ~30s+ then fail, torching the time budget. NEVER write code or shell that fetches a URL directly.
