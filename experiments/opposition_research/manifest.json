@@ -61,13 +61,6 @@
         ],
         "description": "The candidate's party when user_party_affiliation == 'Other'."
       },
-      "campaign_strategy_context_status": {
-        "type": [
-          "string",
-          "null"
-        ],
-        "description": "gp-api's fetch status for the context (e.g. 'ok'). Informational; the agent ignores it."
-      },
       "campaign_strategy_context": {
         "type": "object",
         "additionalProperties": false,
