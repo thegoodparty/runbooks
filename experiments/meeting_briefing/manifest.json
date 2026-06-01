@@ -272,7 +272,7 @@
           "briefing_status": {
             "type": "string",
             "enum": ["awaiting_agenda", "no_meeting_found", "error"],
-            "description": "Early-exit / placeholder artifact. UI renders a check-back state. Use 'awaiting_agenda' when the meeting is on the calendar but the agenda packet has not been published. Use 'no_meeting_found' when no upcoming meeting exists within the 60-day search window. Use 'error' for unrecoverable run failures \u2014 populate run_metadata.run_decisions[] with the diagnostic trail."
+            "description": "Early-exit / placeholder artifact. UI renders a check-back state. Use 'awaiting_agenda' when the meeting is on the calendar but the agenda packet has not been published. Use 'no_meeting_found' when the streaming platform shows no meeting of the official's body on the caller-supplied PARAMS.meetingDate (stale schedule signal). Use 'error' for unrecoverable run failures \u2014 populate run_metadata.run_decisions[] with the diagnostic trail."
           },
           "generated_at": {
             "type": "string",

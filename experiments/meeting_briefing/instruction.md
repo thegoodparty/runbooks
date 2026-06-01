@@ -15,8 +15,8 @@ Run a meeting briefing for one elected official's specific city council meeting.
 
 Two conditions abort the run with a placeholder artifact instead of a full briefing. Check both before you start downloading attachments or running Databricks queries:
 
-1. **No upcoming meeting on the calendar** within 60 days for the official's body → `briefing_status: "no_meeting_found"`. A past meeting is not a valid target; do not brief it.
-2. **No agenda packet published yet** for the upcoming meeting (only a summary exists) → `briefing_status: "awaiting_agenda"`.
+1. **No meeting on the platform for `PARAMS.meetingDate`** → `briefing_status: "no_meeting_found"`. The caller supplied the target date from the official's meeting_schedule; if the streaming platform shows no meeting of the official's body on that date, the schedule was stale or the meeting was cancelled. Do not invent a substitute date.
+2. **No agenda packet published yet** for the target meeting (only a summary exists) → `briefing_status: "awaiting_agenda"`.
 
 Either condition: emit the single-placeholder `items[]` shape (see Step 3), `claims: []`, write the artifact, validate, exit. Do not do web research or Databricks queries in either case — the artifact's job is to tell the UI "check back later," not to fabricate a briefing.
 
