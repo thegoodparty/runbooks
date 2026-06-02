@@ -24,7 +24,7 @@
       "race_id": {
         "type": "string",
         "minLength": 1,
-        "description": "BallotReady brHashId. Trace / idempotency identifier only \u2014 the agent does NOT reason over it or look anything up with it."
+        "description": "BallotReady brHashId. Trace / idempotency identifier only - the agent does NOT reason over it or look anything up with it."
       },
       "user_email": {
         "type": "string",
@@ -181,7 +181,7 @@
               "string",
               "null"
             ],
-            "description": "Race partisan type from election-api (e.g. 'partisan' / 'nonpartisan'). 'nonpartisan' means the party labels are voter-registration noise, not the contest. May be null until election-api populates it. Not enum-constrained \u2014 election-api is the source of truth for the value."
+            "description": "Race partisan type from election-api (e.g. 'partisan' / 'nonpartisan'). 'nonpartisan' means the party labels are voter-registration noise, not the contest. May be null until election-api populates it. Not enum-constrained - election-api is the source of truth for the value."
           },
           "primary_election_date": {
             "type": [

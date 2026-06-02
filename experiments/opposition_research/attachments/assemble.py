@@ -44,10 +44,14 @@ def _load_opponents(scratch_dir):
         return []
     out = []
     for item in data:
-        if isinstance(item, dict):
-            out.append(item)
-        else:
+        if not isinstance(item, dict):
             sys.stderr.write("warning: skipping non-object opponent entry\n")
+            continue
+        name = item.get("full_name")
+        if not isinstance(name, str) or not name.strip():
+            sys.stderr.write("warning: skipping opponent without a full_name\n")
+            continue
+        out.append(item)
     return out
 
 
@@ -139,16 +143,18 @@ def main():
 
     artifact = _build_artifact(race, opponents)
 
-    output_path = os.path.join(output_dir, "opposition_research.json")
-    with open(output_path, "w", encoding="utf-8") as fh:
-        json.dump(artifact, fh, indent=2, ensure_ascii=False)
-
+    # Validate before writing so a known-bad artifact never lands in the
+    # published output dir.
     reasons = _spot_checks(artifact, race)
     reasons += _validate_shape(workspace, artifact)
 
     if reasons:
         print("FAIL: " + "; ".join(reasons))
         sys.exit(1)
+
+    output_path = os.path.join(output_dir, "opposition_research.json")
+    with open(output_path, "w", encoding="utf-8") as fh:
+        json.dump(artifact, fh, indent=2, ensure_ascii=False)
     print("PASS")
     sys.exit(0)
 

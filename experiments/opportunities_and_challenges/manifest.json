@@ -24,7 +24,7 @@
       "race_id": {
         "type": "string",
         "minLength": 1,
-        "description": "BallotReady brHashId. Trace / idempotency identifier only \u2014 the agent does NOT reason over it or look anything up with it."
+        "description": "BallotReady brHashId. Trace / idempotency identifier only - the agent does NOT reason over it or look anything up with it."
       },
       "user_email": {
         "type": "string",
@@ -82,7 +82,7 @@
           },
           "candidates": {
             "type": "array",
-            "description": "Provisional seed roster \u2014 incomplete and lagging (the real field is owned by opposition_research). Do NOT derive opportunities/challenges from candidate_count, this roster, or is_incumbent; base bullets on the race numbers + web search.",
+            "description": "Provisional seed roster - incomplete and lagging (the real field is owned by opposition_research). Do NOT derive opportunities/challenges from candidate_count, this roster, or is_incumbent; base bullets on the race numbers + web search.",
             "items": {
               "type": "object",
               "additionalProperties": false,

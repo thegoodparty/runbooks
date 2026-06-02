@@ -166,3 +166,18 @@ def test_skips_non_dict_entries(tmp_path):
     proc = _run(ws)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert len(_artifact(ws)["opponents"]) == 1
+
+
+def test_skips_opponent_without_full_name(tmp_path):
+    # A row missing / blank full_name is dropped rather than emitted as null
+    # (which would violate the output_schema).
+    missing = {"party": "Democratic", "incumbent": "No"}
+    blank = {"full_name": "   ", "party": "Green", "incumbent": "No"}
+    ws = _setup_workspace(
+        tmp_path, [_seed_opponent(), missing, blank], _race()
+    )
+    proc = _run(ws)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    opps = _artifact(ws)["opponents"]
+    assert len(opps) == 1
+    assert opps[0]["full_name"] == "Jane Doe"
