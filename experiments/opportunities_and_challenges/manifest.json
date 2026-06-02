@@ -1,7 +1,7 @@
 {
   "$schema": "../_schema/manifest.schema.json",
   "id": "opportunities_and_challenges",
-  "version": 5,
+  "version": 6,
   "model": "sonnet",
   "max_turns": 40,
   "timeout_seconds": 900,

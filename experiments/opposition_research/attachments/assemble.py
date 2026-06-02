@@ -1,6 +1,26 @@
 import json
 import os
 import sys
+import unicodedata
+
+_NAME_SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "esq"}
+
+
+def _normalize_name(name):
+    # Match the instruction's fuzzy rule: case-fold, strip accents, drop
+    # middle initials (single-letter tokens) and common suffixes. So a roster
+    # "María A. Sánchez Jr." matches a candidate_name of "Maria Sanchez".
+    ascii_name = (
+        unicodedata.normalize("NFKD", name)
+        .encode("ascii", "ignore")
+        .decode("ascii")
+    )
+    tokens = [
+        t
+        for t in ascii_name.lower().split()
+        if len(t.rstrip(".")) > 1 and t.rstrip(".") not in _NAME_SUFFIXES
+    ]
+    return " ".join(tokens)
 
 
 def _workspace():
@@ -94,9 +114,10 @@ def _spot_checks(artifact, race):
     reasons = []
     candidate_name = race.get("candidate_name")
     if isinstance(candidate_name, str) and candidate_name.strip():
+        norm_candidate = _normalize_name(candidate_name)
         for opp in artifact["opponents"]:
             name = opp.get("full_name")
-            if isinstance(name, str) and name.strip().lower() == candidate_name.strip().lower():
+            if isinstance(name, str) and _normalize_name(name) == norm_candidate:
                 reasons.append(
                     f"candidate '{candidate_name}' appears as an opponent"
                 )

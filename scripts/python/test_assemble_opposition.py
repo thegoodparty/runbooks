@@ -158,7 +158,18 @@ def test_candidate_as_opponent_fails(tmp_path):
     proc = _run(ws)
     assert proc.returncode == 1, proc.stdout + proc.stderr
     assert proc.stdout.strip().startswith("FAIL:")
-    assert "Maria Sanchez" in proc.stdout
+    assert "appears as an opponent" in proc.stdout
+
+
+def test_candidate_as_opponent_fails_with_accents_and_suffix(tmp_path):
+    # Roster carries accents + middle initial + suffix; candidate_name is the
+    # plain form. Fuzzy normalization must still catch the self-as-opponent.
+    bad = _seed_opponent()
+    bad["full_name"] = "María A. Sánchez Jr."
+    ws = _setup_workspace(tmp_path, [bad], _race(candidate_name="Maria Sanchez"))
+    proc = _run(ws)
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert "appears as an opponent" in proc.stdout
 
 
 def test_skips_non_dict_entries(tmp_path):
