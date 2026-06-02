@@ -70,15 +70,18 @@ Every field gp-api provides. Fill in the glossary term for each value where one 
 
 Read `PARAMS_JSON` once. The candidate you write FOR is `user_full_name`; `office_name` = `campaign_strategy_context.candidate_office` (fallback `official_office_name`, used for web search); `state` / `electionDate` = the context's `state` / `relevant_election_date`. (`race_id` is a trace id - ignore it; you never call election-api.)
 
-The roster is `campaign_strategy_context.candidates[]` and it INCLUDES the candidate. `campaign_primary_strategy_context` carries only the PRIMARY stage's roster (`candidate_count` + `candidates`), or is `null` when the race has no primary. For offices that hold a primary, the primary roster is typically the real filed field while the general roster is often empty - so when `campaign_primary_strategy_context` is present, fold its `candidates[]` into your seed list too.
+The roster is `campaign_strategy_context.candidates[]` and it INCLUDES the candidate. `campaign_primary_strategy_context` carries only the PRIMARY stage's roster (`candidate_count` + `candidates`), or is `null` when the race has no primary. **You are handed both rosters on purpose: our data lags reality and the timing varies** - this can run before OR after the primary, so the general roster is often empty or stale before the field settles, while the primary roster usually has the real filed names. Treat both as evidence and **use judgment to build the list of who is actually running against the candidate in this (general) election.** Do not blindly merge the two.
 
 Build the seed opponent list:
-1. **Find the candidate's own row via `is_user`** - match `user_email` to `candidates[].email` (case-insensitive + trimmed; fall back to a fuzzy `full_name` match using the same normalization as dedup below: normalize case, strip middle initials / suffixes / accents).
-2. **Seed opponents = every OTHER row** across both rosters (general + primary), excluding the candidate. Use each row's `full_name`, `party`, and `is_incumbent` (ignore the other roster fields).
-3. **Dedupe** across the two rosters by fuzzy name (normalize case, strip middle initials / suffixes / accents).
-4. **Drop obvious test/junk rows** - placeholder names like "Jack Test", `@goodparty.org` / `+tag` emails.
+1. **Find the candidate's own row via `is_user`** - match `user_email` to `candidates[].email` (case-insensitive + trimmed; fall back to a fuzzy `full_name` match using the same normalization as dedup below: normalize case, strip middle initials / suffixes / accents). Exclude the candidate from the opponent list.
+2. **Decide each remaining person's relevance using both rosters and your judgment.** Two calls to make:
+   - The general roster lags, so pull in names from the primary roster when the general roster is thin or empty.
+   - **In a partisan race (`partisan_type == "partisan"`) the primary roster spans ALL parties' primaries.** Someone contesting a DIFFERENT party's primary is not a general-election opponent (only the eventual nominees are), so do not list them. In a **nonpartisan** race the primary roster IS the field, so include it. Use `partisan_type` and the candidate's `user_party_affiliation` (both in PARAMS) to make this call.
+3. For each person you keep, use their `full_name`, `party`, and `is_incumbent` (ignore the other roster fields).
+4. **Dedupe** across the two rosters by fuzzy name (normalize case, strip middle initials / suffixes / accents) - the same person can appear in both.
+5. **Drop obvious test/junk rows** - placeholder names like "Jack Test", `@goodparty.org` / `+tag` emails.
 
-`partisan_type` is given at `campaign_strategy_context.partisan_type` (read it; do not infer - it may be `null`). It only affects the party line in Step 2.
+`partisan_type` is given at `campaign_strategy_context.partisan_type` (read it; do not infer - it may be `null`). It informs the opponent judgment above and the party line in Step 2.
 
 `mkdir -p /workspace/scratch`, then write `/workspace/scratch/_race.json` = `{"candidate_name": <user_full_name>, "partisan_type": <value>}` so the assembler can read them.
 
