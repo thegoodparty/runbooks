@@ -172,6 +172,33 @@ def test_candidate_as_opponent_fails_with_accents_and_suffix(tmp_path):
     assert "appears as an opponent" in proc.stdout
 
 
+def test_candidate_as_opponent_fails_with_hyphenated_name(tmp_path):
+    # Hyphenated roster name vs spaced candidate_name must still match.
+    bad = _seed_opponent()
+    bad["full_name"] = "María-José Sánchez"
+    ws = _setup_workspace(
+        tmp_path, [bad], _race(candidate_name="Maria Jose Sanchez")
+    )
+    proc = _run(ws)
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert "appears as an opponent" in proc.stdout
+
+
+def test_empty_race_file_is_used_not_params_fallback(tmp_path):
+    # _race.json exists but is {} -> use it as-is (no partisan_type, so party is
+    # NOT normalized). It must NOT silently fall back to PARAMS_JSON; if it did,
+    # the nonpartisan partisan_type there would force party_affiliation.
+    opp = _seed_opponent()
+    opp["party"] = "Democratic"
+    ws = _setup_workspace(tmp_path, [opp], {})
+    proc = _run(
+        ws,
+        extra_env={"PARAMS_JSON": json.dumps({"partisan_type": "nonpartisan"})},
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert _artifact(ws)["opponents"][0]["party_affiliation"] == "Democratic"
+
+
 def test_skips_non_dict_entries(tmp_path):
     ws = _setup_workspace(
         tmp_path, [_seed_opponent(), "not an object", [1, 2, 3]], _race()

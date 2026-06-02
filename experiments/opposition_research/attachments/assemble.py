@@ -15,9 +15,10 @@ def _normalize_name(name):
         .encode("ascii", "ignore")
         .decode("ascii")
     )
+    # Treat hyphens as separators so "María-José" matches "Maria Jose".
     tokens = [
         t
-        for t in ascii_name.lower().split()
+        for t in ascii_name.lower().replace("-", " ").split()
         if len(t.rstrip(".")) > 1 and t.rstrip(".") not in _NAME_SUFFIXES
     ]
     return " ".join(tokens)
@@ -39,14 +40,16 @@ def _load_params():
 def _load_race(scratch_dir):
     # partisan_type (+ optional candidate_name) derived by the agent in Step 0.
     # The input contract nests the race under campaign_strategy_context, so the
-    # agent writes the bits the assembler needs here.
+    # agent writes the bits the assembler needs here. Returns None only when the
+    # file is missing/unreadable, so an explicit empty {} the agent wrote is
+    # used as-is rather than silently falling back to PARAMS_JSON.
     path = os.path.join(scratch_dir, "_race.json")
     try:
         with open(path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
     except (ValueError, OSError):
-        return {}
-    return data if isinstance(data, dict) else {}
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def _load_opponents(scratch_dir):
@@ -158,8 +161,11 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Prefer the agent's derived race fields (_race.json); fall back to PARAMS
-    # for older callers / tests that pass them top-level.
-    race = _load_race(scratch_dir) or _load_params()
+    # for older callers / tests that pass them top-level. Only fall back when
+    # the file is absent (None) — an explicit {} the agent wrote is used as-is.
+    race = _load_race(scratch_dir)
+    if race is None:
+        race = _load_params()
     opponents = _load_opponents(scratch_dir)
 
     artifact = _build_artifact(race, opponents)
