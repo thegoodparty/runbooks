@@ -47,9 +47,11 @@ def _setup_workspace(tmp_path, opponents, race):
     return ws
 
 
-def _run(ws):
+def _run(ws, extra_env=None):
     env = dict(os.environ)
     env["ASSEMBLE_WORKSPACE"] = str(ws)
+    if extra_env:
+        env.update(extra_env)
     return subprocess.run(
         [sys.executable, str(ws / "assemble.py")],
         env=env,
@@ -181,3 +183,68 @@ def test_skips_opponent_without_full_name(tmp_path):
     opps = _artifact(ws)["opponents"]
     assert len(opps) == 1
     assert opps[0]["full_name"] == "Jane Doe"
+
+
+def test_missing_opponents_file_yields_empty(tmp_path):
+    ws = _setup_workspace(tmp_path, [_seed_opponent()], _race())
+    (ws / "scratch" / "opponents.json").unlink()
+    proc = _run(ws)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert _artifact(ws) == {"opponents": []}
+
+
+def test_non_array_opponents_file_yields_empty(tmp_path):
+    # A JSON object (not an array) is rejected, not iterated.
+    ws = _setup_workspace(tmp_path, {"not": "a list"}, _race())
+    proc = _run(ws)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert _artifact(ws) == {"opponents": []}
+
+
+def test_race_falls_back_to_params_json(tmp_path):
+    # No _race.json on disk -> assemble reads race fields from PARAMS_JSON.
+    # The nonpartisan partisan_type from PARAMS must still normalize the party.
+    ws = _setup_workspace(tmp_path, [_seed_opponent()], _race())
+    (ws / "scratch" / "_race.json").unlink()
+    proc = _run(
+        ws,
+        extra_env={
+            "PARAMS_JSON": json.dumps(
+                {"candidate_name": "Maria Sanchez", "partisan_type": "nonpartisan"}
+            )
+        },
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert _artifact(ws)["opponents"][0]["party_affiliation"] == "Nonpartisan"
+
+
+def test_schema_validation_passes_with_contract_schema(tmp_path):
+    ws = _setup_workspace(tmp_path, [_seed_opponent()], _race())
+    (ws / "contract_schema.json").write_text(
+        json.dumps(
+            {
+                "type": "object",
+                "required": ["opponents"],
+                "properties": {"opponents": {"type": "array"}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    proc = _run(ws)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert proc.stdout.strip().splitlines()[-1] == "PASS"
+    assert len(_artifact(ws)["opponents"]) == 1
+
+
+def test_schema_violation_fails_without_writing_artifact(tmp_path):
+    ws = _setup_workspace(tmp_path, [_seed_opponent()], _race())
+    # Require a top-level field the assembler never emits -> validation fails.
+    (ws / "contract_schema.json").write_text(
+        json.dumps({"type": "object", "required": ["opponents", "extra_top"]}),
+        encoding="utf-8",
+    )
+    proc = _run(ws)
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    assert proc.stdout.strip().startswith("FAIL:")
+    # the bad artifact must NOT be written to the published output dir
+    assert not (ws / "output" / "opposition_research.json").exists()
