@@ -1017,7 +1017,22 @@ python3 /workspace/qa_checks.py
 
 If validation fails, fix the artifact in-loop and re-run before declaring success. Exit codes: `0` = schema-valid + QA passed; `1` = schema invalid; `2` = schema valid but deterministic QA failed.
 
-Note: `/workspace/validate_output.py` (the runner's generic shim) only does JSON-schema validation. `qa_checks.py` (shipped as a manifest attachment) is the full deterministic validator — schema + cross-references + required_data_points coverage + discovery-channel depth + source-extract presence. Always use `qa_checks.py` here; `validate_output.py` is OK as a fast fail-fast schema-only check earlier in the loop, but it does not gate `awaiting_agenda` discovery depth.
+Note: `/workspace/validate_output.py` (the runner's generic shim) only does JSON-schema validation, and it validates against the **raw `oneOf` schema** — so when your artifact has a small defect it emits a merged "doesn't match the Full branch AND doesn't match the Placeholder branch" error that names BOTH branches. Do NOT chase those merged errors, and do NOT hand-roll your own `jsonschema` against the raw schema — you will burn turns on phantom errors from the branch you aren't even on. Instead run `python3 /workspace/qa_checks.py` for the oneOf/schema check: it reads your `briefing_status`, selects the one applicable branch (Full vs Placeholder), and returns errors **scoped to your branch only** — the field path it reports is the field you actually need to fix. `qa_checks.py` (shipped as a manifest attachment) is the full deterministic validator — branch-aware schema + cross-references + required_data_points coverage + discovery-channel depth + source-extract presence. Always use `qa_checks.py` here; `validate_output.py` is OK as a fast fail-fast schema-only check earlier in the loop, but it does not gate `awaiting_agenda` discovery depth and its oneOf errors are confusing — prefer `qa_checks.py`.
+
+## Early structural check (do this BEFORE full artifact assembly)
+
+As soon as you know your `briefing_status` and have a skeleton artifact — top-level keys present, `items[]` shaped, but before you've authored every section — validate the **branch shape** so a structural mistake surfaces cheaply instead of after a full assembly pass. The schema is a `oneOf` of two branches keyed on `briefing_status`:
+
+- **Full branch** — `briefing_status` ∈ {`briefing_ready`, `agenda_provided_by_user`}.
+- **Placeholder branch** — `briefing_status` ∈ {`awaiting_agenda`, `no_meeting_found`, `error`}. The Placeholder branch requires `items` to be exactly one item (`item_001`, `tier: "standard"`, `tier_reason: ["placeholder"]`, all `display.*` deep fields `null`) and `claims[]` empty (`maxItems: 0`).
+
+Run `python3 /workspace/qa_checks.py` on the skeleton (it tolerates partial content for this shape check; deterministic checks only run once schema-valid). Because it is branch-aware, any schema error it returns is scoped to YOUR branch — fix that field, do not look at the other branch's requirements.
+
+**Front-load the three most common branch/shape failures — check these first:**
+
+1. **`oneOf` branch mismatch.** Your `briefing_status` must put you on the right branch, and every field must satisfy THAT branch. A Full-branch field on a Placeholder artifact (e.g. a populated `claims[]` when `briefing_status` is `awaiting_agenda`) is the #1 cause of merged validator noise. Confirm: does my `briefing_status` match the branch whose constraints my artifact actually satisfies?
+2. **`talking_points` null-vs-empty.** `display.talking_points` must be `null` OR a 3–5 item array — **never `[]`**. An empty array fails the schema. Featured items must have a non-empty array; queued/standard items that don't warrant guidance use `null`.
+3. **`district_note` null.** `display.constituent_sentiment.district_note` is a nullable string and is **always `null`** (deprecated since city scope was removed). It is fine for it to be null; do not invent a value to "fill it in."
 
 ## Spot-check
 
