@@ -37,7 +37,6 @@ Every field gp-api provides. Fill in the glossary term for each value where one 
 - `candidate_count` (int): count of the general roster.
 - `candidate_office` (string|null): readable office name.
 - `candidates[]`: general roster; each row {gp_candidate_id, first_name, last_name, full_name, email, website_url, party, is_incumbent}.
-- `civics_win_number` (int|null).
 - `contacts_needed_estimate` (int|null): always refer to this fields as "targeted voter contact goal". Never say "contacts needed estimate". A voter contact is a contact attempt that reaches an intended voter via a channel capable of conveying the message (delivered text, answered call, in-person conversation). The "targeted voter contact goal", is the number of voter contacts we estimate the candidate will need to win, which is equal to 5 times win_number_effective.
 - `filing_date_end` (date|null).
 - `general_election_date` (date|null): the date we want to focus on.
@@ -51,8 +50,6 @@ Every field gp-api provides. Fill in the glossary term for each value where one 
 - `relevant_election_date` (date|null): the date of THIS race's stage.
 - `state` (2-letter string|null).
 - `win_number_effective` (int|null): Only refer to this field value as "projected votes needed to win", which is the total votes a candidate is targeting to win — a simple majority (50% + 1) of the projected voter turnout in their race, for the general election.
-- `win_number_estimate` (int|null): Only refer to this field value as "projected votes needed to win", which is the total votes a candidate is targeting to win — a simple majority (50% + 1) of the projected voter turnout in their race, for the general election.
-- `projected_voter_turnout` (int|null): Estimated general-election turnout for the year.
 - `registered_voters` (int|null): The total pool of voters eligible to cast a ballot for a race, pulled from the latest voter file.
 - `unique_cellphones` (int|null): Number of unique cellphone numbers known for within the district.
 - `unique_landlines` (int|null): Number of unique landline numbers known for within the district.

@@ -33,7 +33,6 @@ Produce the Opportunities and Challenges of a candidate's campaign plan: up to 3
 - `candidate_count` (int): count of the general roster.
 - `candidate_office` (string|null): readable office name.
 - `candidates[]`: general roster; each row {gp_candidate_id, first_name, last_name, full_name, email, website_url, party, is_incumbent}.
-- `civics_win_number` (int|null).
 - `contacts_needed_estimate` (int|null): always refer to this fields as "targeted voter contact goal". Never say "contacts needed estimate". A voter contact is a contact attempt that reaches an intended voter via a channel capable of conveying the message (delivered text, answered call, in-person conversation). The "targeted voter contact goal", is the number of voter contacts we estimate the candidate will need to win, which is equal to 5 times win_number_effective.
 - `filing_date_end` (date|null).
 - `general_election_date` (date|null): the date we want to focus on.
@@ -47,8 +46,6 @@ Produce the Opportunities and Challenges of a candidate's campaign plan: up to 3
 - `relevant_election_date` (date|null): the date of THIS race's stage.
 - `state` (2-letter string|null).
 - `win_number_effective` (int|null): Only refer to this field value as "projected votes needed to win", which is the total votes a candidate is targeting to win — a simple majority (50% + 1) of the projected voter turnout in their race, for the general election.
-- `win_number_estimate` (int|null): Only refer to this field value as "projected votes needed to win", which is the total votes a candidate is targeting to win — a simple majority (50% + 1) of the projected voter turnout in their race, for the general election.
-- `projected_voter_turnout` (int|null): Estimated general-election turnout for the year.
 - `registered_voters` (int|null): The total pool of voters eligible to cast a ballot for a race, pulled from the latest voter file.
 - `unique_cellphones` (int|null): Number of unique cellphone numbers known for within the district.
 - `unique_landlines` (int|null): Number of unique landline numbers known for within the district.
@@ -71,7 +68,7 @@ Produce the Opportunities and Challenges of a candidate's campaign plan: up to 3
    It returns `{"status": int, "final_url": str}`. Cite a URL only if `status == 200`; on a redirect, cite the `final_url` unless the redirect only added tracking params.
 3. `pmf_runtime.http.get(url)` (browser render) is a LAST RESORT — only when `head` returns 403/405 on a real site or you must read the page body.
 
-**Opponent data is provisional — do NOT build bullets on it.** The roster in `campaign_strategy_context` (`candidate_count`, `candidates[]`, and each candidate's `is_incumbent`) is currently incomplete and lags reality; who is actually running is owned by a separate opposition-research process, not this one. Do NOT base any opportunity or challenge on the number of opponents, whether it is an open seat, or whether anyone is an incumbent, as read from this roster. Build every bullet from the reliable race numbers (`win_number_estimate`, `projected_turnout`, `contacts_needed_estimate`, `registered_voters`, election dates, `number_of_seats`, `office_level`/`office_type`, `state`, `partisan_type`) and from web search. If you want to make a point about the field (open seat, crowded race, a strong incumbent), confirm it with a web search and cite that source — never assert it from the provided roster.
+**Opponent data is provisional — do NOT build bullets on it.** The roster in `campaign_strategy_context` (`candidate_count`, `candidates[]`, and each candidate's `is_incumbent`) is currently incomplete and lags reality; who is actually running is owned by a separate opposition-research process, not this one. Do NOT base any opportunity or challenge on the number of opponents, whether it is an open seat, or whether anyone is an incumbent, as read from this roster. Build every bullet from the reliable race numbers (`win_number_effective`, `projected_turnout`, `contacts_needed_estimate`, `registered_voters`, election dates, `number_of_seats`, `office_level`/`office_type`, `state`, `partisan_type`) and from web search. If you want to make a point about the field (open seat, crowded race, a strong incumbent), confirm it with a web search and cite that source — never assert it from the provided roster.
 
 **Bullet-content rules (every opportunity and challenge string):**
 - Plain, direct U.S. English. **No em dashes.** No jargon.
@@ -101,7 +98,7 @@ print("office:", c.get("candidate_office") or c.get("official_office_name"))
 print("state:", c.get("state"), "| partisan_type:", c.get("partisan_type"))
 print("party (you):", p.get("user_party_affiliation"), "| other_party:", p.get("other_party"))
 print("seats:", c.get("number_of_seats"), "| candidate_count:", c.get("candidate_count"))
-print("win_number_estimate:", c.get("win_number_estimate"), "| projected_turnout:", c.get("projected_turnout"))
+print("win_number_effective:", c.get("win_number_effective"), "| projected_turnout:", c.get("projected_turnout"))
 print("contacts_needed_estimate:", c.get("contacts_needed_estimate"))
 print("general:", c.get("general_election_date"), "| primary:", c.get("primary_election_date"))
 for cand in c.get("candidates", []):
@@ -115,7 +112,7 @@ Treat any null / missing field as unknown. Do NOT invent a value and do NOT buil
 
 Most bullets come straight from the reliable numbers below and cite `GoodParty.org Data`. For THIS race, identify:
 
-- **Opportunity signals** — a low `win_number_estimate` relative to `projected_turnout` (how small a share of the vote wins); a `contacts_needed_estimate` that is achievable against the available `registered_voters` / `unique_cellphones`; a long runway from today to `general_election_date` / `primary_election_date`; favorable office structure (`number_of_seats`).
+- **Opportunity signals** — a low `win_number_effective` relative to `projected_turnout` (how small a share of the vote wins); a `contacts_needed_estimate` that is achievable against the available `registered_voters` / `unique_cellphones`; a long runway from today to `general_election_date` / `primary_election_date`; favorable office structure (`number_of_seats`).
 - **Challenge signals** — a high win number relative to a first-time or independent campaign's resources; a large `contacts_needed_estimate` against the `registered_voters` you must mobilize; an election very soon (short outreach window from today to the relevant date).
 
 Do NOT derive a bullet from the opponent roster (`candidate_count`, `candidates[]`, `is_incumbent`) — see the opponent-data warning in CRITICAL RULES. If a point about the field (open seat, crowded race, a strong incumbent) is genuinely central, confirm it with a web search in Step 2 and cite that source; never assert it from the provided roster.

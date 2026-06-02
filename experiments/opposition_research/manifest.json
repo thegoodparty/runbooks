@@ -134,12 +134,6 @@
               }
             }
           },
-          "civics_win_number": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
           "contacts_needed_estimate": {
             "type": [
               "integer",
@@ -214,18 +208,6 @@
             ]
           },
           "win_number_effective": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
-          "win_number_estimate": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
-          "projected_voter_turnout": {
             "type": [
               "integer",
               "null"
