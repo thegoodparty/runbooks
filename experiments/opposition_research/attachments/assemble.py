@@ -1,8 +1,6 @@
-import glob
 import json
 import os
 import sys
-from datetime import date
 
 
 def _workspace():
@@ -19,9 +17,9 @@ def _load_params():
 
 
 def _load_race(scratch_dir):
-    # candidate_name + partisan_type, derived by the agent in Step 0 (the input
-    # contract nests the race under campaign_strategy_context, so the agent
-    # writes the bits the assembler needs here).
+    # partisan_type (+ optional candidate_name) derived by the agent in Step 0.
+    # The input contract nests the race under campaign_strategy_context, so the
+    # agent writes the bits the assembler needs here.
     path = os.path.join(scratch_dir, "_race.json")
     try:
         with open(path, "r", encoding="utf-8") as fh:
@@ -31,23 +29,37 @@ def _load_race(scratch_dir):
     return data if isinstance(data, dict) else {}
 
 
-def _load_fragments(scratch_dir):
-    fragments = []
-    for path in sorted(glob.glob(os.path.join(scratch_dir, "opp_*.json"))):
-        try:
-            with open(path, "r", encoding="utf-8") as fh:
-                data = json.load(fh)
-        except (ValueError, OSError) as exc:
-            sys.stderr.write(f"warning: skipping {path}: {exc}\n")
-            continue
-        if isinstance(data, dict):
-            fragments.append(data)
+def _load_opponents(scratch_dir):
+    # The agent writes the full confirmed opponent list (seed roster + any
+    # web-confirmed late filers, candidate excluded) to a single file. No
+    # per-opponent fan-out, no research fragments.
+    path = os.path.join(scratch_dir, "opponents.json")
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (ValueError, OSError):
+        return []
+    if not isinstance(data, list):
+        sys.stderr.write(f"warning: {path} is not a JSON array\n")
+        return []
+    out = []
+    for item in data:
+        if isinstance(item, dict):
+            out.append(item)
         else:
-            sys.stderr.write(f"warning: skipping {path}: not a JSON object\n")
-    return fragments
+            sys.stderr.write("warning: skipping non-object opponent entry\n")
+    return out
 
 
 _INCUMBENT = {"yes": True, "no": False, "unknown": None}
+
+
+def _incumbent(value):
+    # Accept the "Yes" / "No" / "Unknown" strings the instruction asks for, and
+    # also a raw boolean / null straight from the roster's is_incumbent.
+    if value is True or value is False or value is None:
+        return value
+    return _INCUMBENT.get(str(value).strip().lower())
 
 
 def _party_affiliation(party, partisan_type):
@@ -61,61 +73,46 @@ def _party_affiliation(party, partisan_type):
     return "Unknown"
 
 
-def _key_facts(facts):
+def _websites(frag):
+    # Pure pass-through. Whatever campaign URL is already on file for this
+    # opponent (the roster's website_url, or a websites list) flows straight
+    # through. We do NOT discover, fetch, or HTTP-verify URLs anymore.
+    raw = frag.get("websites")
+    if raw is None:
+        single = frag.get("website_url")
+        raw = [single] if single else []
     out = []
-    for f in facts or []:
-        if not isinstance(f, dict):
-            continue
-        text = (f.get("text") or "").strip()
-        label = (f.get("source_label") or "").strip()
-        url = (f.get("url") or "").strip()
-        if not text:
-            continue
-        out.append(f"{text} ([{label}]({url}))" if label and url else text)
-    return out[:3]
-
-
-def _political_summary(frag):
-    summary = frag.get("summary")
-    if isinstance(summary, str) and summary.strip():
-        return summary.strip()
-    if frag.get("no_info"):
-        return (
-            f"No public information found as of {date.today().isoformat()}. "
-            "You should conduct local research."
-        )
-    return ""
+    for w in raw if isinstance(raw, list) else []:
+        if isinstance(w, str) and w.strip().lower().startswith("http"):
+            out.append(w.strip())
+    return out
 
 
 def _to_opponent(frag, partisan_type):
     return {
         "full_name": frag.get("full_name"),
         "party_affiliation": _party_affiliation(frag.get("party"), partisan_type),
-        "incumbent": _INCUMBENT.get(str(frag.get("incumbent") or "").strip().lower()),
-        "political_summary": _political_summary(frag),
-        "key_facts": _key_facts(frag.get("facts")),
-        "websites": [w for w in (frag.get("websites") or []) if isinstance(w, str)],
+        "incumbent": _incumbent(frag.get("incumbent")),
+        "websites": _websites(frag),
     }
 
 
-def _build_artifact(race, fragments):
+def _build_artifact(race, opponents):
     partisan_type = race.get("partisan_type")
-    return {"opponents": [_to_opponent(f, partisan_type) for f in fragments]}
+    return {"opponents": [_to_opponent(o, partisan_type) for o in opponents]}
 
 
 def _spot_checks(artifact, race):
     reasons = []
     candidate_name = race.get("candidate_name")
-    texts = []
-    for opp in artifact["opponents"]:
-        texts.append(opp.get("political_summary") or "")
-        texts.extend(opp.get("key_facts") or [])
-    blob = "\n".join(texts)
     if isinstance(candidate_name, str) and candidate_name.strip():
-        if candidate_name.lower() in blob.lower():
-            reasons.append(f"candidate name '{candidate_name}' appears in opponent text")
-    if "—" in blob:
-        reasons.append("em dash (U+2014) present in opponent text")
+        for opp in artifact["opponents"]:
+            name = opp.get("full_name")
+            if isinstance(name, str) and name.strip().lower() == candidate_name.strip().lower():
+                reasons.append(
+                    f"candidate '{candidate_name}' appears as an opponent"
+                )
+                break
     return reasons
 
 
@@ -154,9 +151,9 @@ def main():
     # Prefer the agent's derived race fields (_race.json); fall back to PARAMS
     # for older callers / tests that pass them top-level.
     race = _load_race(scratch_dir) or _load_params()
-    fragments = _load_fragments(scratch_dir)
+    opponents = _load_opponents(scratch_dir)
 
-    artifact = _build_artifact(race, fragments)
+    artifact = _build_artifact(race, opponents)
 
     output_path = os.path.join(output_dir, "opposition_research.json")
     with open(output_path, "w", encoding="utf-8") as fh:

@@ -1,12 +1,12 @@
 {
   "$schema": "../_schema/manifest.schema.json",
   "id": "opposition_research",
-  "version": 4,
+  "version": 5,
   "model": "sonnet",
-  "max_turns": 80,
-  "timeout_seconds": 1200,
+  "max_turns": 30,
+  "timeout_seconds": 600,
   "runtime": {
-    "max_parallel_subagents": 20,
+    "max_parallel_subagents": 0,
     "max_thinking_tokens": 0
   },
   "input_schema": {
@@ -317,7 +317,7 @@
     "properties": {
       "opponents": {
         "type": "array",
-        "description": "Opponents identified from the seed roster + web search. Empty array if the race is uncontested. gp-api renders the campaign-plan markdown from this structured data.",
+        "description": "Confirmed opponents running in this race (seed roster plus any web-confirmed late filers, candidate excluded). Empty array if uncontested. gp-api renders the campaign-plan Opposition Research section from this structured data.",
         "items": {
           "type": "object",
           "additionalProperties": false,
@@ -342,27 +342,13 @@
               ],
               "description": "true if known to be the incumbent, false if known not to be, null if unknown."
             },
-            "political_summary": {
-              "type": "string",
-              "description": "2-3 sentence profile grounded in verified sources, with inline citations as written. Empty string when nothing was found."
-            },
-            "key_facts": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "minLength": 1
-              },
-              "minItems": 0,
-              "maxItems": 3,
-              "description": "Up to 3 key positions/background facts, each a string with its citation inlined. Empty when nothing was found."
-            },
             "websites": {
               "type": "array",
               "items": {
                 "type": "string",
                 "pattern": "^https?://"
               },
-              "description": "Campaign / social URLs found for this opponent (each verified HTTP 200). May be empty."
+              "description": "Campaign / social URLs already on file for this opponent (pass-through from the election-api roster website_url). NOT discovered or HTTP-verified. Usually empty."
             }
           }
         }
