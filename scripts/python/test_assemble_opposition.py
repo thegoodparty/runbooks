@@ -286,3 +286,31 @@ def test_schema_violation_fails_without_writing_artifact(tmp_path):
     assert proc.stdout.strip().startswith("FAIL:")
     # the bad artifact must NOT be written to the published output dir
     assert not (ws / "output" / "opposition_research.json").exists()
+
+
+def test_dedupes_same_person_across_rosters(tmp_path):
+    # The agent folds the primary roster into the general one, so the same
+    # person can land in opponents.json twice; the assembler must publish them
+    # once (matched by normalized name, ignoring accents / middle initials).
+    a = _seed_opponent()
+    b = _seed_opponent()
+    b["full_name"] = "Jane A. Doe"  # same person, primary-roster spelling
+    ws = _setup_workspace(tmp_path, [a, b], _race())
+    proc = _run(ws)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    opps = _artifact(ws)["opponents"]
+    assert len(opps) == 1
+    assert opps[0]["full_name"] == "Jane Doe"
+
+
+def test_candidate_as_opponent_no_candidate_name_bypass(tmp_path):
+    # When _race.json has no candidate_name the self-inclusion guard cannot
+    # fire — it silently no-ops. This documents that the bypass is known and
+    # expected (candidate_name is optional in _race.json; the contract relies
+    # on the agent always writing it).
+    bad = _seed_opponent()
+    bad["full_name"] = "Maria Sanchez"  # the candidate, but no candidate_name to match
+    ws = _setup_workspace(tmp_path, [bad], {"partisan_type": "nonpartisan"})
+    proc = _run(ws)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert _artifact(ws)["opponents"][0]["full_name"] == "Maria Sanchez"

@@ -97,12 +97,14 @@ c = p["campaign_strategy_context"]
 print("office:", c.get("candidate_office") or c.get("official_office_name"))
 print("state:", c.get("state"), "| partisan_type:", c.get("partisan_type"))
 print("party (you):", p.get("user_party_affiliation"), "| other_party:", p.get("other_party"))
-print("seats:", c.get("number_of_seats"), "| candidate_count:", c.get("candidate_count"))
+print("seats:", c.get("number_of_seats"))
 print("win_number_effective:", c.get("win_number_effective"), "| projected_turnout:", c.get("projected_turnout"))
 print("contacts_needed_estimate:", c.get("contacts_needed_estimate"))
+print("registered_voters:", c.get("registered_voters"))
 print("general:", c.get("general_election_date"), "| primary:", c.get("primary_election_date"))
-for cand in c.get("candidates", []):
-    print("  -", cand.get("full_name"), "| party=", cand.get("party"), "| incumbent=", cand.get("is_incumbent"))
+# Do NOT print candidate_count or the candidates[] roster (incl. is_incumbent):
+# the opponent-data rule forbids building bullets on them (opposition research
+# owns the field). Read only the reliable race numbers above.
 EOF
 ```
 

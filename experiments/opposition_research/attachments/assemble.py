@@ -66,6 +66,7 @@ def _load_opponents(scratch_dir):
         sys.stderr.write(f"warning: {path} is not a JSON array\n")
         return []
     out = []
+    seen_names = set()
     for item in data:
         if not isinstance(item, dict):
             sys.stderr.write("warning: skipping non-object opponent entry\n")
@@ -74,6 +75,14 @@ def _load_opponents(scratch_dir):
         if not isinstance(name, str) or not name.strip():
             sys.stderr.write("warning: skipping opponent without a full_name\n")
             continue
+        # Dedup by normalized name: the same person can legitimately appear in
+        # both the general and primary rosters (the agent folds primary into
+        # the seed list), and must not be published twice.
+        norm = _normalize_name(name)
+        if norm in seen_names:
+            sys.stderr.write(f"warning: skipping duplicate opponent '{name}'\n")
+            continue
+        seen_names.add(norm)
         out.append(item)
     return out
 
