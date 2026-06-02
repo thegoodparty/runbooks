@@ -1,8 +1,8 @@
 # Opposition Research
 
-Validate **who is running in this race**. Produce one record per opponent with just the essentials: full name, party affiliation, incumbent status, and any campaign website already on file. The artifact is `{ "opponents": [...] }`; gp-api renders the `### Opposition Research` section from it. You combine two signals: the candidate roster inside the `campaign_strategy_context` handed to you in params (gp-api hydrated it from election-api before dispatch) and a light web-search cross-check that catches late filers, write-ins, and independents the roster misses.
+Validate **who is running in this race**. Produce one record per opponent with just the essentials: full name, party affiliation, and incumbent status. The artifact is `{ "opponents": [...] }`; gp-api renders the `### Opposition Research` section from it. You combine two signals: the candidate roster inside the `campaign_strategy_context` handed to you in params (gp-api hydrated it from election-api before dispatch) and a light web-search cross-check that catches late filers, write-ins, and independents the roster misses.
 
-This experiment does **NOT** profile opponents. No candidate summaries, no key facts, no fetching or verifying URLs. Websites are pass-through only: whatever URL is already on file in the roster flows through untouched. The whole point is to be fast — identify the field and stop.
+This experiment does **NOT** profile opponents. No candidate summaries, no key facts, no websites, no fetching or verifying URLs. The whole point is to be fast — identify the field and stop.
 
 ## BEFORE YOU START
 1. Read this entire instruction end-to-end before executing anything.
@@ -58,7 +58,7 @@ Every field gp-api provides. Fill in the glossary term for each value where one 
 
 ## CRITICAL RULES
 - **WebSearch is your ONLY outside-world tool, and it is HARD-CAPPED at 2 queries total.** Use it only to catch late filers the roster missed. After 2 searches your opponent list is final. Do NOT keep opening sample-ballot / county-clerk / Secretary-of-State / petition pages to confirm or rule out a name (e.g. whether an incumbent re-filed). Chasing an empty field past the cap is what made this experiment slow — a fast result is correct, a timeout is not.
-- **Do NOT fetch or verify any URL.** This experiment no longer profiles opponents or vets links. Never use `pmf_runtime.http.head` / `.get` / `.download`, never `WebFetch`. Websites are pass-through from the roster only (Step 2). There is nothing to verify.
+- **Do NOT fetch or verify any URL, and do NOT output websites.** This experiment no longer profiles opponents, vets links, or emits campaign URLs. Never use `pmf_runtime.http.head` / `.get` / `.download`, never `WebFetch`. There is nothing to fetch.
 - **Never make a direct network call from Python or the shell** — `urllib`/`requests`/`httpx`/`curl`/`wget`/raw `socket`. The container has NO egress; these do not fail fast, they HANG ~30s+ each and burn the time budget. `WebSearch` is the only way to reach the outside world.
 - **Do NOT call election-api or any other internal API.** The candidate roster is already in `PARAMS.campaign_strategy_context.candidates` (and `campaign_primary_strategy_context.candidates`). You derive the opponent list from those in Step 0.
 - **The only PUBLISHED artifact is `/workspace/output/opposition_research.json`.** You may write intermediate files to `/workspace/scratch/` — that directory is never published.
@@ -74,7 +74,7 @@ The roster is `campaign_strategy_context.candidates[]` and it INCLUDES the candi
 
 Build the seed opponent list:
 1. **Find the candidate's own row via `is_user`** — match `user_email` to `candidates[].email` (case-insensitive + trimmed; fall back to exact normalized `full_name`).
-2. **Seed opponents = every OTHER row** across both rosters (general + primary), excluding the candidate. Each row carries `full_name`, `party`, `is_incumbent`, `website_url`.
+2. **Seed opponents = every OTHER row** across both rosters (general + primary), excluding the candidate. Use each row's `full_name`, `party`, and `is_incumbent` (ignore the other roster fields).
 3. **Dedupe** across the two rosters by fuzzy name (normalize case, strip middle initials / suffixes / accents).
 4. **Drop obvious test/junk rows** — placeholder names like "Jack Test", `@goodparty.org` / `+tag` emails.
 
@@ -100,7 +100,7 @@ Prefer official sources: the county / state board of elections, the local clerk'
 **Merge rules:**
 - Skip any name that is the candidate (`candidate_name`), matching loosely.
 - Skip any name already among the seed opponents (same fuzzy match) — the seed row is richer.
-- Otherwise append `{full_name, party: <if stated, else null>, is_incumbent: null, website_url: null}`. Web adds get `website_url: null` — we pass websites through from the roster only and never go find or verify a URL.
+- Otherwise append `{full_name, party: <if stated, else null>, is_incumbent: null}`.
 
 **Caps:** web search may add AT MOST 3 names beyond the seed; the final list must not exceed **20**. Seed candidates are authoritative filers — keep ALL of them even when web search finds nothing; web silence does not disconfirm a real filing. Web search can only ADD, never remove a seed opponent.
 
@@ -114,16 +114,14 @@ Write the full opponent list (seed + confirmed web adds, candidate excluded) to 
 {
   "full_name": "Jane Doe",
   "party": "Democratic | Nonpartisan | null",
-  "incumbent": "Yes | No | Unknown",
-  "website_url": "https://...on-file campaign URL... or null"
+  "incumbent": "Yes | No | Unknown"
 }
 ```
 
 - `party` is the opponent's party from the roster row (or what web search stated), else `null`.
 - `incumbent`: map the roster `is_incumbent` — `true` -> `"Yes"`, `false` -> `"No"`, `null` -> `"Unknown"`.
-- `website_url`: the roster row's `website_url` for seed opponents (pass-through), `null` for web adds. Do NOT fetch or verify it.
 
-Then run the assembler. It reads `opponents.json` + `_race.json` and writes `/workspace/output/opposition_research.json` as `{ "opponents": [...] }`, mapping each entry to `{full_name, party_affiliation, incumbent, websites}` (party normalized to "Nonpartisan" for nonpartisan races; `websites` is the pass-through URL as a list, or empty). Run it once — do NOT hand-compose the artifact.
+Then run the assembler. It reads `opponents.json` + `_race.json` and writes `/workspace/output/opposition_research.json` as `{ "opponents": [...] }`, mapping each entry to `{full_name, party_affiliation, incumbent}` (party normalized to "Nonpartisan" for nonpartisan races). Run it once — do NOT hand-compose the artifact.
 
 ```bash
 python3 /workspace/assemble.py

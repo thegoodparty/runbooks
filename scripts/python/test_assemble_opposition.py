@@ -16,22 +16,20 @@ SCRIPT_SRC = (
 
 def _seed_opponent():
     # Shape the agent writes per opponent into scratch/opponents.json: roster
-    # pass-through, no summary / facts / verified URLs.
+    # essentials only, no summary / facts / websites.
     return {
         "full_name": "Jane Doe",
         "party": "Nonpartisan",
         "incumbent": "Yes",
-        "website_url": "https://janedoe.example.com",
     }
 
 
 def _web_add():
-    # A late filer surfaced by web search: no website on file -> pass-through empty.
+    # A late filer surfaced by web search.
     return {
         "full_name": "John Roe",
         "party": None,
         "incumbent": "Unknown",
-        "website_url": None,
     }
 
 
@@ -82,16 +80,14 @@ def test_two_opponents_structured(tmp_path):
     assert len(art["opponents"]) == 2
 
     jane, john = art["opponents"]
-    # slimmed per-opponent contract: no political_summary / key_facts
-    assert set(jane.keys()) == {"full_name", "party_affiliation", "incumbent", "websites"}
+    # slimmed per-opponent contract: no political_summary / key_facts / websites
+    assert set(jane.keys()) == {"full_name", "party_affiliation", "incumbent"}
     assert jane["full_name"] == "Jane Doe"
     assert jane["party_affiliation"] == "Nonpartisan"
     assert jane["incumbent"] is True
-    assert jane["websites"] == ["https://janedoe.example.com"]
 
     assert john["full_name"] == "John Roe"
     assert john["incumbent"] is None
-    assert john["websites"] == []
 
 
 def test_zero_opponents_empty(tmp_path):
@@ -151,15 +147,6 @@ def test_incumbent_raw_boolean(tmp_path):
     assert proc.returncode == 0, proc.stdout + proc.stderr
     opps = _artifact(ws)["opponents"]
     assert [o["incumbent"] for o in opps] == [True, False, None]
-
-
-def test_website_passthrough_drops_non_http(tmp_path):
-    opp = _seed_opponent()
-    opp["website_url"] = "not-a-url"
-    ws = _setup_workspace(tmp_path, [opp], _race(partisan_type="partisan"))
-    proc = _run(ws)
-    assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert _artifact(ws)["opponents"][0]["websites"] == []
 
 
 def test_candidate_as_opponent_fails(tmp_path):

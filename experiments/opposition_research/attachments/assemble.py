@@ -73,27 +73,11 @@ def _party_affiliation(party, partisan_type):
     return "Unknown"
 
 
-def _websites(frag):
-    # Pure pass-through. Whatever campaign URL is already on file for this
-    # opponent (the roster's website_url, or a websites list) flows straight
-    # through. We do NOT discover, fetch, or HTTP-verify URLs anymore.
-    raw = frag.get("websites")
-    if raw is None:
-        single = frag.get("website_url")
-        raw = [single] if single else []
-    out = []
-    for w in raw if isinstance(raw, list) else []:
-        if isinstance(w, str) and w.strip().lower().startswith("http"):
-            out.append(w.strip())
-    return out
-
-
 def _to_opponent(frag, partisan_type):
     return {
         "full_name": frag.get("full_name"),
         "party_affiliation": _party_affiliation(frag.get("party"), partisan_type),
         "incumbent": _incumbent(frag.get("incumbent")),
-        "websites": _websites(frag),
     }
 
 
