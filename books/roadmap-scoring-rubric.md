@@ -37,6 +37,6 @@ A small pilot batch produced a clean SEND/REVIEW split (lowest SEND ~7.4, highes
 - Whether the strategic advice is actually good. A well-sourced recommendation can still be politically wrong.
 - Readability or tone. Two documents with the same claims score the same.
 - How the EO will react. Reception is unmeasured.
-- A high Context and Actionability score can mask weak Credibility, so do not send on the combined number alone if any one cluster is below 5.0.
+- A high Context and Actionability score can mask weak Credibility, so do not send on the combined number alone if any one cluster is below 5.0. The 5.0 floor is per cluster, not per dimension: a single dimension below 5.0 (for example D3 Voter Intelligence with no poll) is fine as long as its cluster still averages 5.0 or above.
 
 > Note: some older `scoring-report.md` files use a legacy Breadth-over-120 formula on a 0-100 scale (SEND at Combined > 55). It is not equivalent to the 0-10 formula above. The 0-10 cluster formula is canonical; check which scale an old report uses before comparing.

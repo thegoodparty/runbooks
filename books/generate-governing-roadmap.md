@@ -10,8 +10,8 @@ Three deliverables per EO:
 
 | Deliverable | File | Length | Audience |
 |---|---|---|---|
-| **D-Long** (Strategic Governing Roadmap) | `[eo-slug]-variant-d-long.md` | ~20-25 pages | The EO. Full reference document. |
-| **D-Short** (Tactical Action Plan) | `[eo-slug]-variant-d-tactical.md` | 2-3 pages | The EO. The "read on your phone" action brief. |
+| **D-Long** (Strategic Governing Roadmap) | `[eo-slug]-variant-d-long.md` | All 10 sections | The EO. Full reference document. |
+| **D-Short** (Tactical Action Plan) | `[eo-slug]-variant-d-tactical.md` | 4 sections (2-3 pages) | The EO. The "read on your phone" action brief. |
 | **AM Summary** (internal handoff) | `am-summary.md` | ~2 pages | The assigned account manager (AM). NOT for the EO. Scoring, verification follow-ups, assumptions, warnings, talking points. |
 
 Both EO-facing documents are written TO the EO in the second person, use inline parenthetical citations, and contain no em dashes and no banned filler words.
@@ -25,7 +25,7 @@ The EO's full name, their office, and their jurisdiction (city or district). Opt
 This workflow provisions what it can on its own. The only required input is the EO's name and office; the items below are either automatic or optional.
 
 **Config (all optional, defaults used if unset)**: `$ROADMAP_OUTPUT_DIR` (default `./roadmap-output`), `$COMPLETED_ROADMAPS_DRIVE_FOLDER`, `$CHROME_BIN` (default: macOS Chrome path).
-**Tools (automatic)**: web search/fetch (built in); `pandoc` and Google Chrome for the PDF step. Step 0 installs `pandoc` if it is missing.
+**Tools (automatic)**: web search/fetch (built in); `pandoc` and Google Chrome for the PDF step. Step 0 installs `pandoc` if it is missing. Install `poppler` (`pdftotext`) too if you need to read numbers out of source PDFs (election results are often published as PDFs).
 **Optional access**: HubSpot (only to enrich with CRM fields if connected) and Google Drive (only to auto-upload the PDFs). Neither is required; without them the roadmap still generates and the PDFs land in the output folder.
 **Companion book**: `books/roadmap-scoring-rubric.md` (used in Step 5)
 **Script**: `scripts/shell/generate-roadmap-pdf.sh` (used in Step 6)
@@ -34,6 +34,7 @@ This workflow provisions what it can on its own. The only required input is the 
 Before Step 1, self-provision so the rest runs unattended:
 - **pandoc**: if not on PATH, install it (`brew install pandoc` on macOS, or the platform equivalent).
 - **Chrome**: confirm Google Chrome is installed; if its path is non-standard, set `$CHROME_BIN`.
+- **poppler (optional)**: install if you expect to verify figures from source PDFs (`brew install poppler` gives you `pdftotext`).
 - **Optional logins**: only if the user wants CRM enrichment or auto-upload, prompt them to log into HubSpot and/or Google once. Otherwise skip.
 
 Skip Step 0 on later runs unless a check fails.
@@ -55,7 +56,7 @@ Use a lowercase kebab-case `[eo-slug]` derived from the EO's name (e.g. `jane-do
 ## The pipeline (7 steps)
 
 ### Step 1 — EO inputs
-Start from what the requester gives you: the EO's full name, office, and jurisdiction, plus an intake form if they have one. That is enough to proceed. If HubSpot is connected, enrich with CRM fields (account manager, election date, win status, onboarding status, poll dashboard URL) and note in the AM summary any fields that were unavailable. Check for a prior roadmap in the same jurisdiction so you can reuse research.
+Start from what the requester gives you: the EO's full name, office, and jurisdiction, plus an intake form if they have one. That is enough to proceed. If HubSpot is connected, enrich with CRM fields (account manager, election date, win status, onboarding status, poll dashboard URL) and note in the AM summary any fields that were unavailable. If you have access to past roadmaps (a Drive folder or shared output dir), check for a prior one in the same jurisdiction so you can reuse research; skip this if you have no way to look one up.
 
 ### Step 2 — Research pass
 Web research across nine categories, recording every source URL and access date in `research-notes.md`:
@@ -71,6 +72,10 @@ Web research across nine categories, recording every source URL and access date 
 9. Upcoming calendar (meetings, budget hearings, filing deadlines)
 
 **Quality bar**: exact vote counts (no approximations), verified quotes, modeled data explicitly labeled, every gap flagged. See the research-notes template below.
+
+Two rules when sources conflict or can't be confirmed:
+- **Official record wins.** When the official source (clerk's results, charter, posted agenda) and press disagree on a number, use the official figure and note the override in the methodology.
+- **No unverifiable quotes.** If you cannot confirm a quote is word-for-word from the source text (for example your fetch tool only returned a paraphrase), do not quote it. Paraphrase the fact with a citation instead.
 
 ### Step 3 — Draft D-Long and D-Short
 
@@ -101,7 +106,7 @@ Run the PDF script for the EO:
 scripts/shell/generate-roadmap-pdf.sh <eo-slug> "$ROADMAP_OUTPUT_DIR/<eo-slug>/pdfs"
 ```
 
-It converts each markdown variant to clean HTML with `pandoc`, then to PDF with headless Chrome. Content starts at the first heading with no title block and no page headers/footers.
+Pass the EO's actual `pdfs` directory as the second argument. If you did not set `$ROADMAP_OUTPUT_DIR`, give the full path to the output folder you used so the PDFs land next to the markdown, not in a default location. It converts each markdown variant to clean HTML with `pandoc`, then to PDF with headless Chrome. Content starts at the first heading with no title block and no page headers/footers.
 
 ### Step 7 — Deliver the PDFs
 The finished PDFs are in the output folder. If Google Drive is connected, upload both to the completed-roadmaps folder (`$COMPLETED_ROADMAPS_DRIVE_FOLDER`), updating in place when replacing an existing file so shared links keep working. If Drive is not connected, leave the PDFs in the output folder for the requester to share.
