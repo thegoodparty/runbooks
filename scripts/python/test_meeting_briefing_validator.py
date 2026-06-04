@@ -533,6 +533,25 @@ class TestBranchAwareSchemaValidation:
         assert "is not valid under any of the given schemas" not in joined
         assert "oneof" not in joined
 
+    def test_full_body_with_placeholder_status_yields_scoped_errors(self):
+        """A Full-shaped body mislabeled with a Placeholder-branch status
+        (awaiting_agenda) must produce errors scoped to the Placeholder branch
+        the status selects, NOT the merged top-level oneOf error that names both
+        branches. This is the headline lever2 behavior: scope errors to the
+        branch briefing_status selects, even when the body fits the other one."""
+        v = _load_validator()
+        mislabeled = _valid_full_artifact()
+        mislabeled["briefing_status"] = "awaiting_agenda"
+        errors = v.validate_schema(mislabeled, _output_schema())
+        assert errors, "expected the mislabeled Full body to fail Placeholder validation"
+        joined = " ".join(errors).lower()
+        # Scoped to the selected branch, not the merged full-oneOf signature.
+        assert "is not valid under any of the given schemas" not in joined
+        assert "oneof" not in joined
+        # Errors point into the artifact body (the items the Placeholder branch
+        # constrains), not a bare top-level oneOf miss.
+        assert any("item" in e.lower() for e in errors), errors
+
     def test_ambiguous_missing_status_falls_back_without_crashing(self):
         """No briefing_status → no branch matches → fall back to full oneOf
         validation. Must not crash and should report the artifact as invalid.

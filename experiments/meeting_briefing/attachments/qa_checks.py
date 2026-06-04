@@ -481,8 +481,7 @@ def check_disclosure_present(artifact: dict, findings: list[Finding]) -> None:
         findings.append(Finding(
             "disclosure.missing_required_phrases",
             "error",
-            f"disclosure is missing required phrases: {missing}. "
-            f"See required_disclosure.md for the canonical text.",
+            f"disclosure is missing required phrases: {missing}.",
         ))
 
 
@@ -499,9 +498,11 @@ def check_run_decisions_meaningful(artifact: dict, findings: list[Finding]) -> N
         ))
 
 
-# Channel prefixes now span 1-4 (the high-yield discovery set). Channels 5-7
+# Required channels are 1-4 (the high-yield discovery set). Channels 5-7
 # (local-news re-host, clerk/records page, past-meeting URL probe) were retired
-# as low-yield (~1% of packet finds) in the WS5 cost pass.
+# as low-yield (~1% of packet finds) in the WS5 cost pass. The regex still
+# accepts 1-7 so a stray legacy channel_5-7_ decision parses harmlessly; only
+# _REQUIRED_CHANNELS (1-4) is enforced as the required set.
 _CHANNEL_PREFIX_RE = re.compile(r"^channel_([1-7])_")
 _REQUIRED_CHANNELS = frozenset(range(1, 5))
 
