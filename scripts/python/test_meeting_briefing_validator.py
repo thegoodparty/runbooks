@@ -1,8 +1,8 @@
-"""Tests for experiments/meeting_briefing/validate_output.py.
+"""Tests for experiments/meeting_briefing/attachments/qa_checks.py.
 
 Specifically locks the contract claimed by instruction.md: when the agent
 declares awaiting_agenda or no_meeting_found, the validator MUST reject the
-artifact unless all 7 discovery channels are represented in
+artifact unless all 4 discovery channels are represented in
 run_metadata.run_decisions[] (via `channel_<N>_*` decision prefixes).
 
 The validator is the only thing standing between an agent that bails after
