@@ -45,16 +45,16 @@ def _decision(channel_n: int) -> dict:
     }
 
 
-def _all_seven_decisions() -> list[dict]:
-    return [_decision(n) for n in range(1, 8)]
+def _all_four_decisions() -> list[dict]:
+    return [_decision(n) for n in range(1, 5)]
 
 
 class TestAwaitingAgendaDiscoveryDepth:
-    def test_awaiting_agenda_with_all_7_channels_passes(self):
+    def test_awaiting_agenda_with_all_4_channels_passes(self):
         v = _load_validator()
         artifact = {
             "briefing_status": "awaiting_agenda",
-            "run_metadata": {"run_decisions": _all_seven_decisions()},
+            "run_metadata": {"run_decisions": _all_four_decisions()},
         }
         findings: list = []
         v.check_awaiting_agenda_discovery_depth(artifact, findings)
@@ -63,7 +63,7 @@ class TestAwaitingAgendaDiscoveryDepth:
     def test_awaiting_agenda_missing_a_channel_fails(self):
         v = _load_validator()
         # drop channel 4 (the CDN-search channel — the Fulshear-pattern fix)
-        decisions = [_decision(n) for n in range(1, 8) if n != 4]
+        decisions = [_decision(n) for n in range(1, 5) if n != 4]
         artifact = {
             "briefing_status": "awaiting_agenda",
             "run_metadata": {"run_decisions": decisions},
@@ -81,7 +81,7 @@ class TestAwaitingAgendaDiscoveryDepth:
         """The bot's compounding-problem case: an agent that runs 10 sub-platforms
         under channel 1 and emits 10 separate run_decisions entries (all with
         decision='channel_1_*') must NOT clear the validator just because the
-        count is high. Channels 2-7 are still untouched.
+        count is high. Channels 2-4 are still untouched.
         """
         v = _load_validator()
         decisions = [_decision(1) for _ in range(10)]  # 10 channel_1 entries, no others
@@ -92,11 +92,11 @@ class TestAwaitingAgendaDiscoveryDepth:
         findings: list = []
         v.check_awaiting_agenda_discovery_depth(artifact, findings)
         assert len(findings) == 1
-        assert "[2, 3, 4, 5, 6, 7]" in findings[0].message
+        assert "[2, 3, 4]" in findings[0].message
 
     def test_briefing_ready_skips_the_check(self):
         """Full-briefing branch: check does not apply. An agent that finds the
-        packet on channel 1 shouldn't be punished for not probing channels 2-7."""
+        packet on channel 1 shouldn't be punished for not probing channels 2-4."""
         v = _load_validator()
         artifact = {
             "briefing_status": "briefing_ready",
@@ -106,7 +106,7 @@ class TestAwaitingAgendaDiscoveryDepth:
         v.check_awaiting_agenda_discovery_depth(artifact, findings)
         assert findings == []
 
-    def test_no_meeting_found_also_requires_all_7(self):
+    def test_no_meeting_found_also_requires_all_4(self):
         """no_meeting_found uses the same exhaustion gate."""
         v = _load_validator()
         artifact = {
@@ -123,7 +123,7 @@ class TestAwaitingAgendaDiscoveryDepth:
         count as channel attempts. e.g. `derived_city_for_narrative` is a
         normal decision, not a discovery channel."""
         v = _load_validator()
-        decisions = _all_seven_decisions() + [
+        decisions = _all_four_decisions() + [
             {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "decision": "derived_city_for_narrative",
