@@ -66,7 +66,7 @@
         "type": "string",
         "minLength": 1,
         "maxLength": 2000,
-        "description": "Optional hint from a prior run describing where the agenda packet was last found. Usually a URL to the city's meetings index, the streaming platform's calendar page, or a CDN parent path. May include prose navigation notes when no single URL captures it. The agent SHOULD try this as channel 0 in Step 2's discovery before falling through to channels 1-7; if the hint is stale, continue with normal discovery — do not bail."
+        "description": "Optional hint from a prior run describing where the agenda packet was last found. Usually a URL to the city's meetings index, the streaming platform's calendar page, or a CDN parent path. May include prose navigation notes when no single URL captures it. The agent SHOULD try this as channel 0 in Step 2's discovery before falling through to channels 1-4; if the hint is stale, continue with normal discovery — do not bail."
       }
     }
   },
