@@ -10,7 +10,7 @@ The position name (`office`) usually contains the jurisdiction (e.g. `"Burnsvill
 2. Maintain a TodoWrite list mirroring the TODO CHECKLIST below.
 3. Your params are in the `PARAMS_JSON` env var. Read them once at the top.
 4. Write the final artifact to `/workspace/output/meeting_schedule.json` and nowhere else.
-5. Run `python3 /workspace/validate_output.py` before declaring success.
+5. Run `python3 /workspace/validate_output.py` (schema-only fast check) and then `python3 /workspace/qa_checks.py` (deterministic semantic checks, e.g. hint quality) before declaring success.
 6. Perform the spot-check at the bottom — validator-passing data can still be garbage.
 
 ## TODO CHECKLIST
@@ -25,7 +25,7 @@ The position name (`office`) usually contains the jurisdiction (e.g. `"Burnsvill
 8. Collect every URL touched into `sources` with a one-sentence `note` per entry.
 9. Set `discovered_schedule_location` to the best current prose for finding the schedule next time (prefer a URL to the parent page; see Step 8b).
 10. Assemble the artifact and write to `/workspace/output/meeting_schedule.json`.
-11. Run `python3 /workspace/validate_output.py`.
+11. Run `python3 /workspace/validate_output.py` (schema) and `python3 /workspace/qa_checks.py` (semantic checks).
 12. Perform the spot-check.
 
 If after STEP 4 you cannot find an explicit recurring schedule from an official source, set `status: "not_found"` with empty string / `0` defaults for all schedule fields. **You SHOULD still populate `sources` with the URLs you searched** so a reviewer can audit the search trail — `sources` is optional but useful for `not_found`. **Do not invent a schedule.**
@@ -80,7 +80,7 @@ If after STEP 4 you cannot find an explicit recurring schedule from an official 
 **Output (always include)**:
 
 - Write **only** to `/workspace/output/meeting_schedule.json`. The runner publishes nothing else.
-- Run `python3 /workspace/validate_output.py` before declaring success. The runner-level validator will reject the artifact post-hoc if you skip this; in-loop validation lets you fix violations cheaply.
+- Run `python3 /workspace/validate_output.py` (schema-only) and `python3 /workspace/qa_checks.py` (semantic — flags placeholder/deep-link `discovered_schedule_location`) before declaring success. The runner-level validator will reject the artifact post-hoc if you skip the schema check; qa_checks.py adds the hint-quality checks the schema can't express. In-loop validation lets you fix violations cheaply.
 - Every field in the schema MUST appear in the output, even when `status: "not_found"`. Use empty-string / `0` / `[]` defaults. Never use `null`.
 
 ## Steps
@@ -254,9 +254,10 @@ artifact = {
 
 ```bash
 python3 /workspace/validate_output.py
+python3 /workspace/qa_checks.py
 ```
 
-If validation fails, read the error, fix the artifact, re-run. Do NOT declare success until validation passes.
+If schema validation fails, read the error, fix the artifact, re-run. If `qa_checks.py` reports warnings (e.g. `discovered_schedule_location.placeholder` or `.deep_link`), fix the hint to be a real parent-page URL or set it to `null`. Do NOT declare success until both run cleanly.
 
 ## Spot-check
 
