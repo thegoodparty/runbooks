@@ -225,11 +225,9 @@ If the briefing setup pre-stages a bundled agenda packet at `/workspace/input/ag
 
 **Publish-lag early-exit (check this BEFORE running the channel ladder).** The publish-lag constant is:
 
-<!-- OPT:publish-lag-5day start -->
 ```
 PUBLISH_LAG_CUTOFF_DAYS = 5   # meetings beyond this are too far out to expect a published packet
 ```
-<!-- OPT:publish-lag-5day end -->
 
 Compute `days_out = (PARAMS.meetingDate - today)` in days (the target date is known up front from PARAMS). If `days_out > PUBLISH_LAG_CUTOFF_DAYS` AND **channel 1 (primary platform) yields no packet for the target meeting**, do NOT run the remaining channels (2–4). Agenda packets typically appear ~3–5 days before the meeting; for a meeting more than 5 days out the packet is almost never published, so exhausting the remaining channels is wasted work. Set `briefing_status: "awaiting_agenda"`, record a `run_decisions[]` entry with `decision: "channel_1_streaming_platforms"` documenting the channel-1 attempt, plus a separate entry with `decision: "publish_lag_early_exit"` and a terse reason such as `"packet_not_published — target 2026-06-20 is 21 days out (> 5-day cutoff); channel 1 empty; remaining channels skipped"`. The validator allows this short-circuited discovery for beyond-cutoff meetings. If `days_out <= PUBLISH_LAG_CUTOFF_DAYS`, run the full channel ladder below before declaring `awaiting_agenda`.
 

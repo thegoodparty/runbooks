@@ -510,9 +510,7 @@ _REQUIRED_CHANNELS = frozenset(range(1, 5))
 # never have a published packet (agenda packets appear ~3-5 days before the
 # meeting), so the agent short-circuits after channel 1 instead of exhausting
 # channels 2-4. Keep in sync with PUBLISH_LAG_CUTOFF_DAYS in instruction.md Step 2.
-# OPT:publish-lag-5day start
 PUBLISH_LAG_CUTOFF_DAYS = 5
-# OPT:publish-lag-5day end
 
 # When `no_meeting_found` is recorded as a stale-schedule signal (the agent
 # verified the caller-supplied date and the platform showed no meeting on
