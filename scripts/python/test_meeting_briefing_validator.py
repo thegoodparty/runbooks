@@ -137,3 +137,118 @@ class TestAwaitingAgendaDiscoveryDepth:
         findings: list = []
         v.check_awaiting_agenda_discovery_depth(artifact, findings)
         assert findings == []
+
+
+class TestDiscoveredAgendaLocation:
+    """check_discovered_agenda_location nudges agents toward emitting a usable
+    next-run hint. Warning-level (does not block release)."""
+
+    def test_briefing_ready_with_missing_field_warns(self):
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "briefing_ready",
+            "run_metadata": {},
+        }
+        findings: list = []
+        v.check_discovered_agenda_location(artifact, findings)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f.check == "discovered_agenda_location.missing"
+        assert f.severity == "warning"
+
+    def test_briefing_ready_with_null_warns(self):
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "briefing_ready",
+            "run_metadata": {"discovered_agenda_location": None},
+        }
+        findings: list = []
+        v.check_discovered_agenda_location(artifact, findings)
+        assert len(findings) == 1
+        assert findings[0].check == "discovered_agenda_location.missing"
+
+    def test_placeholder_status_with_missing_does_not_warn(self):
+        """Only briefing_ready triggers the missing-warning; placeholder runs
+        can legitimately have no hint when the parent page was unreachable."""
+        v = _load_validator()
+        for status in ("awaiting_agenda", "no_meeting_found", "error"):
+            artifact = {"briefing_status": status, "run_metadata": {}}
+            findings: list = []
+            v.check_discovered_agenda_location(artifact, findings)
+            assert findings == [], f"unexpected finding for status={status}"
+
+    def test_placeholder_text_warns(self):
+        v = _load_validator()
+        for placeholder in ("TBD", "unknown", "n/a", "N/A", "none", "?", "-"):
+            artifact = {
+                "briefing_status": "briefing_ready",
+                "run_metadata": {"discovered_agenda_location": placeholder},
+            }
+            findings: list = []
+            v.check_discovered_agenda_location(artifact, findings)
+            assert len(findings) == 1, f"expected warning for placeholder={placeholder!r}"
+            assert findings[0].check == "discovered_agenda_location.placeholder"
+
+    def test_suspiciously_short_string_warns(self):
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "briefing_ready",
+            "run_metadata": {"discovered_agenda_location": "abc"},
+        }
+        findings: list = []
+        v.check_discovered_agenda_location(artifact, findings)
+        assert len(findings) == 1
+        assert findings[0].check == "discovered_agenda_location.placeholder"
+
+    def test_deep_link_pdf_warns(self):
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "briefing_ready",
+            "run_metadata": {
+                "discovered_agenda_location": "https://example.gov/agenda-2026-06-08.pdf",
+            },
+        }
+        findings: list = []
+        v.check_discovered_agenda_location(artifact, findings)
+        assert len(findings) == 1
+        assert findings[0].check == "discovered_agenda_location.deep_link"
+
+    def test_deep_link_metaviewer_warns(self):
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "briefing_ready",
+            "run_metadata": {
+                "discovered_agenda_location": "https://city.granicus.com/MetaViewer.php?meta_id=12345",
+            },
+        }
+        findings: list = []
+        v.check_discovered_agenda_location(artifact, findings)
+        assert len(findings) == 1
+        assert findings[0].check == "discovered_agenda_location.deep_link"
+
+    def test_valid_parent_url_passes(self):
+        v = _load_validator()
+        for url in (
+            "https://example.gov/government/city-council/meetings",
+            "https://city.granicus.com/ViewPublisher.php?view_id=5",
+            "https://city.primegov.com/Portal/Meeting",
+        ):
+            artifact = {
+                "briefing_status": "briefing_ready",
+                "run_metadata": {"discovered_agenda_location": url},
+            }
+            findings: list = []
+            v.check_discovered_agenda_location(artifact, findings)
+            assert findings == [], f"unexpected finding for url={url}"
+
+    def test_non_string_value_is_silently_ignored(self):
+        """Schema validation catches type errors elsewhere; the QA check
+        should not raise on a malformed value."""
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "briefing_ready",
+            "run_metadata": {"discovered_agenda_location": 42},
+        }
+        findings: list = []
+        v.check_discovered_agenda_location(artifact, findings)
+        assert findings == []

@@ -164,7 +164,11 @@
           "run_metadata": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["agenda_packet_url", "source_bundle_retrieved_at"],
+            "required": [
+              "agenda_packet_url",
+              "source_bundle_retrieved_at",
+              "discovered_agenda_location"
+            ],
             "properties": {
               "agenda_packet_url": {
                 "type": ["string", "null"],
@@ -329,7 +333,11 @@
           "run_metadata": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["agenda_packet_url", "source_bundle_retrieved_at"],
+            "required": [
+              "agenda_packet_url",
+              "source_bundle_retrieved_at",
+              "discovered_agenda_location"
+            ],
             "properties": {
               "agenda_packet_url": {
                 "type": ["string", "null"],
