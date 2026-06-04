@@ -95,27 +95,27 @@ class TestDiscoveredScheduleLocation:
         assert len(findings) == 1
         assert findings[0].check == "discovered_schedule_location.placeholder"
 
-    def test_deep_link_metaviewer_warns(self):
+    def test_deep_link_per_meeting_patterns_warn(self):
+        """Each pattern listed in _DEEP_LINK_HINTS should independently trigger
+        the deep_link warning. Locks the full set against silent regressions
+        (a pattern removed from the constant without breaking a test). Mirrors
+        the briefing checker's parametric test for the same constant."""
         v = _load_validator()
-        artifact = {
-            "status": "found",
-            "discovered_schedule_location": "https://city.granicus.com/MetaViewer.php?meta_id=12345",
-        }
-        findings: list = []
-        v.check_discovered_schedule_location(artifact, findings)
-        assert len(findings) == 1
-        assert findings[0].check == "discovered_schedule_location.deep_link"
-
-    def test_deep_link_legistar_matter_warns(self):
-        v = _load_validator()
-        artifact = {
-            "status": "found",
-            "discovered_schedule_location": "https://legistar.example.gov/LegislationDetail.aspx?ID=98765",
-        }
-        findings: list = []
-        v.check_discovered_schedule_location(artifact, findings)
-        assert len(findings) == 1
-        assert findings[0].check == "discovered_schedule_location.deep_link"
+        per_meeting_urls = (
+            "https://city.granicus.com/MetaViewer.php?meta_id=12345",
+            "https://city.granicus.com/ViewPage.php?meta_id=999",
+            "https://legistar.example.gov/matters/12345",
+            "https://legistar.example.gov/LegislationDetail.aspx?ID=98765",
+            "https://webapi.legistar.com/v1/example/events/42/eventitems",
+            "https://legistar.example.gov/MeetingDetail.aspx?ID=42",
+            "https://example.gov/calendar/event/2026-06-08-council-meeting",
+        )
+        for url in per_meeting_urls:
+            artifact = {"status": "found", "discovered_schedule_location": url}
+            findings: list = []
+            v.check_discovered_schedule_location(artifact, findings)
+            assert len(findings) == 1, f"expected deep_link warning for url={url}"
+            assert findings[0].check == "discovered_schedule_location.deep_link"
 
     def test_valid_parent_url_passes(self):
         v = _load_validator()

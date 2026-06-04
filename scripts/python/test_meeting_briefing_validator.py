@@ -139,6 +139,100 @@ class TestAwaitingAgendaDiscoveryDepth:
         assert findings == []
 
 
+class TestStaleScheduleExemption:
+    """no_meeting_found artifacts that explain themselves with the
+    `no_meeting_on_target_date` reason are exempt from the 4-channel gate —
+    the agent verified the caller-supplied date and the platform showed no
+    meeting, so packet discovery never applied.
+
+    These tests lock the exemption contract so a rename of `reason` to
+    `decision`, a typo in _STALE_SCHEDULE_REASONS, or an accidental extension
+    of the exemption to awaiting_agenda doesn't silently break (or silently
+    over-permit) the gate."""
+
+    def test_exemption_passes_with_no_channel_attempts(self):
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "no_meeting_found",
+            "run_metadata": {
+                "run_decisions": [
+                    {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "decision": "verified_meeting_date",
+                        "reason": "no_meeting_on_target_date",
+                    }
+                ]
+            },
+        }
+        findings: list = []
+        v.check_awaiting_agenda_discovery_depth(artifact, findings)
+        assert findings == []
+
+    def test_exemption_keys_on_reason_not_decision(self):
+        """The exemption matches the `reason` field, not the `decision` field.
+        A decision named 'no_meeting_on_target_date' WITHOUT the matching reason
+        must NOT trigger the exemption — channels are still required."""
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "no_meeting_found",
+            "run_metadata": {
+                "run_decisions": [
+                    {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "decision": "no_meeting_on_target_date",
+                        "reason": "checked the platform calendar and nothing showed",
+                    }
+                ]
+            },
+        }
+        findings: list = []
+        v.check_awaiting_agenda_discovery_depth(artifact, findings)
+        assert len(findings) == 1
+        assert findings[0].check == "run_decisions.discovery_channels_incomplete"
+
+    def test_exemption_does_not_apply_to_awaiting_agenda(self):
+        """The exemption is for no_meeting_found only. An awaiting_agenda
+        artifact with the same reason still requires the 4-channel sweep."""
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "awaiting_agenda",
+            "run_metadata": {
+                "run_decisions": [
+                    {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "decision": "verified_meeting_date",
+                        "reason": "no_meeting_on_target_date",
+                    }
+                ]
+            },
+        }
+        findings: list = []
+        v.check_awaiting_agenda_discovery_depth(artifact, findings)
+        assert len(findings) == 1
+        assert findings[0].check == "run_decisions.discovery_channels_incomplete"
+
+    def test_unrelated_reason_does_not_trigger_exemption(self):
+        """A no_meeting_found with a reason NOT in _STALE_SCHEDULE_REASONS
+        falls back to the normal channel-exhaustion gate."""
+        v = _load_validator()
+        artifact = {
+            "briefing_status": "no_meeting_found",
+            "run_metadata": {
+                "run_decisions": [
+                    {
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                        "decision": "something_else",
+                        "reason": "platform_api_error",
+                    }
+                ]
+            },
+        }
+        findings: list = []
+        v.check_awaiting_agenda_discovery_depth(artifact, findings)
+        assert len(findings) == 1
+        assert findings[0].check == "run_decisions.discovery_channels_incomplete"
+
+
 class TestDiscoveredAgendaLocation:
     """check_discovered_agenda_location nudges agents toward emitting a usable
     next-run hint. Warning-level (does not block release)."""
@@ -228,11 +322,14 @@ class TestDiscoveredAgendaLocation:
 
     def test_deep_link_per_meeting_patterns_warn(self):
         """Each per-meeting URL pattern listed in _DEEP_LINK_HINTS should
-        independently trigger the deep_link warning. Kept in sync with the
-        schedule checker's _DEEP_LINK_HINTS."""
+        independently trigger the deep_link warning. Locks the full set
+        against silent regressions. Kept in sync with the schedule checker's
+        _DEEP_LINK_HINTS."""
         v = _load_validator()
         per_meeting_urls = (
             "https://city.granicus.com/ViewPage.php?meta_id=999",
+            "https://legistar.example.gov/matters/12345",
+            "https://example.gov/file/12345?action=download",
             "https://legistar.example.gov/LegislationDetail.aspx?ID=98765",
             "https://webapi.legistar.com/v1/example/events/42/eventitems",
             "https://legistar.example.gov/MeetingDetail.aspx?ID=42",
