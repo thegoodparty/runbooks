@@ -81,7 +81,7 @@ If after STEP 4 you cannot find an explicit recurring schedule from an official 
 
 - Write **only** to `/workspace/output/meeting_schedule.json`. The runner publishes nothing else.
 - Run `python3 /workspace/validate_output.py` (schema-only) and `python3 /workspace/qa_checks.py` (semantic — flags placeholder/deep-link `discovered_schedule_location`) before declaring success. The runner-level validator will reject the artifact post-hoc if you skip the schema check; qa_checks.py adds the hint-quality checks the schema can't express. In-loop validation lets you fix violations cheaply.
-- Every field in the schema MUST appear in the output, even when `status: "not_found"`. Use empty-string / `0` / `[]` defaults. Never use `null`.
+- Every field in the schema MUST appear in the output, even when `status: "not_found"`. Use empty-string / `0` / `[]` defaults. Never use `null` — **with one exception**: `discovered_schedule_location` is typed `["string", "null"]` in the schema and Step 8b explicitly instructs you to set it to `null` on `not_found` when no plausible future-run starting point exists. Do NOT use an empty string `""` to fake a "missing" value for this field — that passes schema validation but seeds the next run with a useless hint and trips `qa_checks.py`. The empty-string / `0` / `[]` rule applies to every OTHER field in the schema.
 
 ## Steps
 

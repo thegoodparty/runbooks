@@ -226,6 +226,28 @@ class TestDiscoveredAgendaLocation:
         assert len(findings) == 1
         assert findings[0].check == "discovered_agenda_location.deep_link"
 
+    def test_deep_link_per_meeting_patterns_warn(self):
+        """Each per-meeting URL pattern listed in _DEEP_LINK_HINTS should
+        independently trigger the deep_link warning. Kept in sync with the
+        schedule checker's _DEEP_LINK_HINTS."""
+        v = _load_validator()
+        per_meeting_urls = (
+            "https://city.granicus.com/ViewPage.php?meta_id=999",
+            "https://legistar.example.gov/LegislationDetail.aspx?ID=98765",
+            "https://webapi.legistar.com/v1/example/events/42/eventitems",
+            "https://legistar.example.gov/MeetingDetail.aspx?ID=42",
+            "https://example.gov/calendar/event/2026-06-08-council-meeting",
+        )
+        for url in per_meeting_urls:
+            artifact = {
+                "briefing_status": "briefing_ready",
+                "run_metadata": {"discovered_agenda_location": url},
+            }
+            findings: list = []
+            v.check_discovered_agenda_location(artifact, findings)
+            assert len(findings) == 1, f"expected deep_link warning for url={url}"
+            assert findings[0].check == "discovered_agenda_location.deep_link"
+
     def test_valid_parent_url_passes(self):
         v = _load_validator()
         for url in (

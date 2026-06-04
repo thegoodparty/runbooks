@@ -33,7 +33,23 @@ class TestDiscoveredScheduleLocation:
     """check_discovered_schedule_location nudges agents toward emitting a usable
     next-run hint. Warning-level (does not block release)."""
 
-    def test_found_with_missing_field_warns(self):
+    def test_found_with_absent_key_warns(self):
+        """The key is entirely missing from the artifact. Covers the case where
+        an agent omits the field rather than emitting it as null."""
+        v = _load_validator()
+        artifact = {"status": "found"}
+        findings: list = []
+        v.check_discovered_schedule_location(artifact, findings)
+        assert len(findings) == 1
+        f = findings[0]
+        assert f.check == "discovered_schedule_location.missing"
+        assert f.severity == "warning"
+
+    def test_found_with_explicit_null_warns(self):
+        """The key is present but set to null. Same warning as absent-key,
+        but kept as a separate test so a future refactor (e.g. direct key
+        access, or schema enforcement of presence) can't silently leave one
+        path uncovered."""
         v = _load_validator()
         artifact = {"status": "found", "discovered_schedule_location": None}
         findings: list = []
@@ -43,9 +59,16 @@ class TestDiscoveredScheduleLocation:
         assert f.check == "discovered_schedule_location.missing"
         assert f.severity == "warning"
 
-    def test_not_found_with_null_does_not_warn(self):
-        """status='not_found' with null is legitimate: the agent couldn't
-        find a schedule and has no plausible future-run starting point."""
+    def test_not_found_with_absent_key_does_not_warn(self):
+        """status='not_found' with an absent key is legitimate: the agent
+        couldn't find a schedule and has no plausible future-run starting point."""
+        v = _load_validator()
+        artifact = {"status": "not_found"}
+        findings: list = []
+        v.check_discovered_schedule_location(artifact, findings)
+        assert findings == []
+
+    def test_not_found_with_explicit_null_does_not_warn(self):
         v = _load_validator()
         artifact = {"status": "not_found", "discovered_schedule_location": None}
         findings: list = []
