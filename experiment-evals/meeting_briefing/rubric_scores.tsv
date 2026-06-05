@@ -1,0 +1,33 @@
+# Collected 2026-06-05 from prod artifacts (s3://gp-agent-artifacts-prod/meeting_briefing/), fair-rebuild coldrun 20260605-101359.
+# Held-out cold-judge scores; DQ = disqualified at a Step-1 gate. Feed to scripts/python/rubric_verdict.py.
+# uuid	batch	judgeA	judgeB
+019e72bf-99f6	heldout1	DQ	DQ
+019e72bf-9a8a	heldout1	DQ	DQ
+019e72d1-edcf	heldout1	DQ	DQ
+019e72d1-f44a	heldout1	DQ	DQ
+019e72f6-c1d5	heldout1	DQ	DQ
+019e7352-8526	heldout1	DQ	DQ
+019e7364-f25a	heldout1	DQ	DQ
+019e73ae-6fa4	heldout1	DQ	DQ
+019e73ae-ca8a	heldout1	DQ	DQ
+019e73c0-c85d	heldout1	DQ	DQ
+019e7288-71ae	heldout2	DQ	DQ
+019e72ad-35cb	heldout2	DQ	DQ
+019e72ad-38d1	heldout2	DQ	DQ
+019e72ad-3ce0	heldout2	DQ	DQ
+019e72bf-8249	heldout2	DQ	DQ
+019e7389-f593	heldout2	DQ	DQ
+019e73ae-727b	heldout2	28	30
+019e73ae-c224	heldout2	DQ	DQ
+019e73ae-ce9b	heldout2	28	29
+019e73d3-2ac7	heldout2	DQ	DQ
+019e7228-5e9c	heldout_graded	29	27
+019e729a-cbef	heldout_graded	26	26
+019e729a-cde8	heldout_graded	28	28
+019e72bf-869b	heldout_graded	27	27
+019e72bf-8ef4	heldout_graded	28	29
+019e72bf-99cf	heldout_graded	25	26
+019e72d1-f3b8	heldout_graded	27	28
+019e72f6-ab8c	heldout_graded	28	27
+019e732d-ceab	heldout_graded	30	30
+019e732d-cee7	heldout_graded	28	27
