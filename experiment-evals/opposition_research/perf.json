@@ -1,0 +1,26 @@
+{
+  "experiment": "opposition_research",
+  "env": "dev",
+  "n": 240,
+  "status_field": null,
+  "fail_values": [],
+  "thresholds": {
+    "cost_max": 1.44,
+    "turns_max": 34,
+    "tool_errors_max": 2
+  },
+  "no_artifact_rate": 0.013,
+  "status_counts": {},
+  "distribution": {
+    "cost": {
+      "median": 0.4,
+      "p95": 1.44,
+      "max": 3.53
+    },
+    "turns": {
+      "median": 13,
+      "p95": 34,
+      "max": 63
+    }
+  }
+}

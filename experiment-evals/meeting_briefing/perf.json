@@ -1,0 +1,32 @@
+{
+  "experiment": "meeting_briefing",
+  "env": "dev",
+  "n": 214,
+  "status_field": "briefing_status",
+  "fail_values": [
+    "error"
+  ],
+  "thresholds": {
+    "cost_max": 9.18,
+    "turns_max": 89,
+    "tool_errors_max": 2
+  },
+  "no_artifact_rate": 0.327,
+  "status_counts": {
+    "awaiting_agenda": 120,
+    "briefing_ready": 19,
+    "None": 5
+  },
+  "distribution": {
+    "cost": {
+      "median": 2.33,
+      "p95": 9.18,
+      "max": 14.45
+    },
+    "turns": {
+      "median": 42.0,
+      "p95": 89,
+      "max": 148
+    }
+  }
+}

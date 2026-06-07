@@ -21,6 +21,11 @@ Each `experiment-evals/<id>/` holds:
 - `validation_log.md` — the build/tuning evidence trail for that rubric.
 - `rubric_scores.tsv` — example held-out cold-judge scores; feed it to
   `scripts/python/rubric_verdict.py` for the GO/NO-GO reliability verdict.
+- `perf.json` — the adopted **performance** config (the objective head): status field,
+  fail statuses, p95 cost/turns/error ceilings, and the no-artifact baseline. Derived by
+  `scripts/python/derive_perf_thresholds.py`, applied live by `perf_gate.py` / `perf_monitor.py`.
+  Env-stamped — derive it on the env you monitor (prod and dev distributions differ materially,
+  e.g. meeting_briefing no-artifact 13% prod vs 33% dev). See `books/build-performance-rubric.md`.
 
 How a rubric gets here: build + validate it per `books/build-output-quality-rubric.md`
 (run evidence accumulates in gitignored `outputs/rubric-runs/`), then an *adopted*

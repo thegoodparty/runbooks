@@ -1,0 +1,26 @@
+{
+  "experiment": "opportunities_and_challenges",
+  "env": "dev",
+  "n": 222,
+  "status_field": null,
+  "fail_values": [],
+  "thresholds": {
+    "cost_max": 0.49,
+    "turns_max": 17,
+    "tool_errors_max": 2
+  },
+  "no_artifact_rate": 0.0,
+  "status_counts": {},
+  "distribution": {
+    "cost": {
+      "median": 0.28,
+      "p95": 0.49,
+      "max": 0.8
+    },
+    "turns": {
+      "median": 10.0,
+      "p95": 17,
+      "max": 26
+    }
+  }
+}
