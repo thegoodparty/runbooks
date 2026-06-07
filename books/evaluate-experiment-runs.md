@@ -1,11 +1,14 @@
-Assess a PMF experiment's runs on two axes — **trajectory** (how the agent worked: turns, cost, errors, planning overhead, redundancy) and **quality** (how good the artifact is) — and A/B two prompt versions to check a change helps without regressing the measured quality axis.
+Assess a PMF experiment's runs on two axes — **performance** (how the agent worked: did it produce an artifact, at what turns, cost, errors, planning overhead, redundancy) and **quality** (how good the artifact is) — and A/B two prompt versions to check a change helps without regressing either axis.
 
 Two evals, one harness. Both read what the runner already uploaded to S3, so assessing historical runs is free.
 
 | Eval | Scores | Answers | Tool |
 |------|--------|---------|------|
-| **Trajectory** | the run's `conversation.jsonl` | *how did it work?* (turns, $, errors, repeats, planning %) | `scripts/python/eval_trajectory.py` |
+| **Performance — metrics** | the run's `conversation.jsonl` | *how did it work?* (turns, $, errors, repeats, planning %) | `scripts/python/eval_trajectory.py` |
+| **Performance — gate** | the trace + true artifact status | *did it run acceptably?* (PASS / FLAG / FAIL; no artifact = hard fail) | `scripts/python/perf_gate.py` |
 | **Quality** | the artifact JSON | *is the output good?* | cold-judge **subagents** apply `experiment-evals/meeting_briefing/quality_rubric.md`, tallied by `scripts/python/rubric_verdict.py` |
+
+The performance gate is the **objective head**: its FAIL line (a run that produced no artifact) is unambiguous, so it can gate now. The quality gate is reliable enough for *relative* (A/B) comparison but not yet validated against human truth, so use it to check parity, not as an absolute bar.
 
 ## Prerequisites
 
@@ -45,6 +48,23 @@ uv run python eval_trajectory.py /tmp/eval/traces \
 ```
 
 Per-run + aggregate: `turns`, `steps`, `cost`, `tool_errors`, `exact_dups` (verbatim-repeated calls), `planning_pct` (share of turns spent on `TaskCreate`/`TaskUpdate`/`TodoWrite` bookkeeping). The `--rules` file (a JSON list of `{pattern,label}` command-regexes) adds an experiment-specific category breakdown; omit it for tool-name-level metrics only. Reading: high `planning_pct`, `exact_dups`, or `tool_errors` are wasted-turn signals; trace each back to the instruction line that causes it.
+
+**Caveat on `--status-regex`:** it matches the last occurrence of those words *anywhere in the trace text*, so a bare word like `error` matches prose (a tool result that mentions an error) and badly overstates failures. It is a rough convenience only. For the **true** outcome, read the artifact's status field — which is what the gate below does.
+
+### Step 2b — Performance gate (turn the metrics into PASS / FLAG / FAIL)
+
+`eval_trajectory.py` reports raw metrics; `perf_gate.py` turns them into a verdict and adds the one signal the trace alone misses — whether the run produced an artifact at all (it joins the artifact's `briefing_status` from S3).
+
+```bash
+cd scripts/python
+AWS_PROFILE=work AWS_REGION=us-west-2 uv run python perf_gate.py /tmp/eval/traces --exp meeting_briefing
+```
+
+- **FAIL** — no valid artifact (status `NO_ARTIFACT` / `BAD_JSON` / `error`). The firm, objective gate. In a sampled meeting_briefing population ~20% hit this — a failure the artifact-only "~1% error" rate hides, because that rate only counts runs that *did* produce an artifact.
+- **FLAG** — artifact produced but over a cost / turns / tool-error ceiling. For review, not an auto-block (a legitimately complex run may cost more).
+- **PASS** — artifact produced, within ceilings.
+
+Thresholds (`--cost-max`, `--turns-max`, `--tool-errors-max`) are **provisional**, set near p90 of a 30-run sample; re-derive per experiment on a larger sample, and prefer **status-conditional** ceilings — a placeholder early-exit should cost far less than a full briefing, and placeholders burning ~$4 and ~50 turns to conclude "no agenda yet" are the real cost sink, not the rare expensive briefing. The no-artifact FAIL needs no tuning.
 
 ## Step 3 — Quality eval (rubric, applied by cold-judge subagents)
 
@@ -88,7 +108,7 @@ Treat the prompt as the **only** variable: clone the experiment to `<exp>_v2`, c
      --status-regex 'awaiting_agenda|agenda_provided_by_user|briefing_ready|no_meeting_found|error'
    ```
    It prints control-vs-treatment turns/cost/planning per input and an **outcome-parity check** — if any input lands a different `status` across arms, the comparison is confounded (the prompt changed *what* was produced, not just *how*), and the delta is meaningless until you fix it.
-5. **Gate on quality.** A turn/cost win is only valid if quality holds. Run Step 3 (quality eval) on **both** arms' artifacts and confirm parity before promoting the v2 edits into the real experiment.
+5. **Gate on performance AND quality before promoting.** A turn/cost win is only real if the change introduces no new failures and quality holds. Run the **performance gate** (Step 2b) on both arms: the treatment must add no `NO_ARTIFACT` FAILs the control didn't have, and must not push runs over ceilings the control stayed under. Then run the **quality eval** (Step 3) on both arms and confirm parity. Promote the v2 edits only if both gates hold; treat the quality check as relative parity (it is reliable, not yet validated against human truth), and the performance no-artifact FAIL as a hard block.
 
 ## Step 5 (optional, not required) — Fleet-wide waste discovery via embeddings
 
