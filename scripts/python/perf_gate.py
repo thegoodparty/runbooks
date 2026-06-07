@@ -2,20 +2,21 @@
 """Performance gate: the objective head of the two-headed eval.
 
 Judges HOW a run executed (did it produce an artifact, at what cost/turns/errors), not
-whether the output is good (that's the quality rubric). One hard, defensible failure:
-a run that produced no valid artifact. Cost/turns/tool-error ceilings are FLAGs for review,
-not hard fails, because a legitimately complex run may cost more without being wrong.
+whether the output is good (that's the quality rubric).
 
-For relative A/B gating (did v2 regress vs v1 on the same inputs), use
-`eval_trajectory.py --ab`; this module is the absolute per-run / per-batch health gate.
+Cross-experiment grounding showed there is NO universal status field (meeting_briefing uses
+`briefing_status`, meeting_schedule `status`, others none), so the gate is **config-driven
+per experiment**:
+  - the one UNIVERSAL hard FAIL is "produced no artifact" (`NO_ARTIFACT`);
+  - any status-based FAIL comes from the experiment's `fail_values`;
+  - cost/turns/tool-error ceilings (FLAG, for review) come from the experiment's `thresholds`.
+Derive the per-experiment config with `derive_perf_thresholds.py`; pass it via `--config`.
 
-Thresholds are PROVISIONAL, set near p90 of a 30-run meeting_briefing sample
-(cost median 3.89 / p90 5.92 / max 10.92; turns median 52 / p90 75 / max 126). They are
-meant to flag the worst ~10% for review, and should be re-derived per experiment on a
-larger sample before being treated as firm.
+For relative A/B gating (did v2 regress vs v1) use `eval_trajectory.py --ab`.
 
 Usage:
-  uv run python perf_gate.py <trace_dir> --bucket gp-agent-artifacts-prod --exp meeting_briefing
+  uv run python perf_gate.py <trace_dir> --config <exp>.perf.json
+  uv run python perf_gate.py <trace_dir> --exp meeting_schedule --status-field status
 """
 from __future__ import annotations
 
@@ -24,66 +25,75 @@ import glob
 import json
 import os
 import subprocess
-import sys
 
 from eval_trajectory import score, _load
 
+NO_ARTIFACT = "NO_ARTIFACT"
 DEFAULT_THRESHOLDS = {"cost_max": 6.0, "turns_max": 80, "tool_errors_max": 2}
-# Statuses that mean the run did not deliver a usable artifact -> hard FAIL.
-FAIL_STATUSES = {"NO_ARTIFACT", "BAD_JSON", "error"}
+# Default config is deliberately minimal: only NO_ARTIFACT is universal. Without a per-experiment
+# config the gate will NOT treat an arbitrary status string as a failure.
+DEFAULT_CONFIG = {"status_field": None, "fail_values": [], "thresholds": DEFAULT_THRESHOLDS}
 
 
-def evaluate(metrics: dict, status: str, thresholds: dict | None = None) -> dict:
+def evaluate(metrics: dict, status, config: dict | None = None) -> dict:
     """Pure gate decision for one run. Returns {verdict: PASS|FLAG|FAIL, reasons:[...]}."""
-    t = thresholds or DEFAULT_THRESHOLDS
-    if status in FAIL_STATUSES:
-        return {"verdict": "FAIL", "reasons": [f"no valid artifact (status={status})"]}
+    c = config or DEFAULT_CONFIG
+    fail_values = set(c.get("fail_values", []))
+    th = c.get("thresholds", DEFAULT_THRESHOLDS)
+
+    if status == NO_ARTIFACT:
+        return {"verdict": "FAIL", "reasons": ["no valid artifact produced"]}
+    if status is not None and status in fail_values:
+        return {"verdict": "FAIL", "reasons": [f"failure status ({status})"]}
 
     reasons = []
     cost = metrics.get("cost") or 0.0
     turns = metrics.get("turns")
     errs = metrics.get("tool_errors") or 0
-    if cost > t["cost_max"]:
-        reasons.append(f"cost ${cost:.2f} > ${t['cost_max']:.2f}")
+    if cost > th["cost_max"]:
+        reasons.append(f"cost ${cost:.2f} > ${th['cost_max']:.2f}")
     if turns is None:
         reasons.append("no result record (incomplete trace)")
-    elif turns > t["turns_max"]:
-        reasons.append(f"turns {turns} > {t['turns_max']}")
-    if errs > t["tool_errors_max"]:
-        reasons.append(f"tool_errors {errs} > {t['tool_errors_max']}")
+    elif turns > th["turns_max"]:
+        reasons.append(f"turns {turns} > {th['turns_max']}")
+    if errs > th["tool_errors_max"]:
+        reasons.append(f"tool_errors {errs} > {th['tool_errors_max']}")
     return {"verdict": "FLAG" if reasons else "PASS", "reasons": reasons}
 
 
-def _artifact_status(rid: str, bucket: str, exp: str) -> str:
-    env = {**os.environ}
+def artifact_status(rid: str, bucket: str, exp: str, status_field: str | None):
+    """NO_ARTIFACT if the run produced none; else the value of status_field (or None)."""
     p = subprocess.run(
         ["aws", "s3", "cp", f"s3://{bucket}/{exp}/{rid}/artifact.json", "-"],
-        capture_output=True, text=True, env=env,
+        capture_output=True, text=True, env={**os.environ},
     )
     if p.returncode != 0 or not p.stdout.strip():
-        return "NO_ARTIFACT"
+        return NO_ARTIFACT
     try:
-        return json.loads(p.stdout).get("briefing_status") or "NULL_STATUS"
+        art = json.loads(p.stdout)
     except json.JSONDecodeError:
         return "BAD_JSON"
+    if not status_field:
+        return None
+    return art.get(status_field)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("trace_dir")
+    ap.add_argument("--config", help="per-experiment perf config JSON (from derive_perf_thresholds.py)")
+    ap.add_argument("--exp", help="experiment id (if not in --config)")
     ap.add_argument("--bucket", default="gp-agent-artifacts-prod")
-    ap.add_argument("--exp", required=True)
-    ap.add_argument("--cost-max", type=float)
-    ap.add_argument("--turns-max", type=int)
-    ap.add_argument("--tool-errors-max", type=int)
+    ap.add_argument("--status-field", help="override the artifact status field")
     a = ap.parse_args()
-    th = dict(DEFAULT_THRESHOLDS)
-    if a.cost_max is not None:
-        th["cost_max"] = a.cost_max
-    if a.turns_max is not None:
-        th["turns_max"] = a.turns_max
-    if a.tool_errors_max is not None:
-        th["tool_errors_max"] = a.tool_errors_max
+
+    cfg = dict(DEFAULT_CONFIG)
+    if a.config:
+        cfg.update(json.load(open(a.config)))
+    exp = a.exp or cfg.get("experiment")
+    if not exp:
+        ap.error("need --exp or an 'experiment' in --config")
+    status_field = a.status_field if a.status_field is not None else cfg.get("status_field")
 
     counts = {"PASS": 0, "FLAG": 0, "FAIL": 0}
     no_artifact = 0
@@ -94,18 +104,19 @@ def main():
             continue
         rid = os.path.basename(f)[:-6]
         m = score(_load(f), [], None)
-        status = _artifact_status(rid, a.bucket, a.exp)
-        r = evaluate(m, status, th)
+        status = artifact_status(rid, a.bucket, exp, status_field)
+        r = evaluate(m, status, cfg)
         counts[r["verdict"]] += 1
-        no_artifact += status == "NO_ARTIFACT"
-        print(f"{rid[:13]:14s}{status[:16]:17s}{r['verdict']:8s}{(m.get('cost') or 0):>7.2f}"
+        no_artifact += status == NO_ARTIFACT
+        print(f"{rid[:13]:14s}{str(status)[:16]:17s}{r['verdict']:8s}{(m.get('cost') or 0):>7.2f}"
               f"{str(m.get('turns')):>6s}{m.get('tool_errors', 0):>5d}  {'; '.join(r['reasons'])}")
     n = sum(counts.values())
     print("-" * 78)
+    print(f"exp={exp}  status_field={status_field}  fail_values={cfg.get('fail_values')}")
     print(f"runs: {n}  PASS={counts['PASS']}  FLAG={counts['FLAG']}  FAIL={counts['FAIL']}")
     if n:
         print(f"no-artifact failure rate: {no_artifact}/{n} = {100*no_artifact/n:.0f}%")
-    print(f"thresholds: {th}  (provisional; re-derive per experiment on a larger sample)")
+    print(f"thresholds: {cfg.get('thresholds')}")
 
 
 if __name__ == "__main__":
