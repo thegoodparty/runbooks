@@ -42,15 +42,12 @@ cp outputs/perf-eval/<exp>/<exp>.perf.json experiment-evals/<exp>/perf.json
 ```
 
 ## Step 4 — Measure in real time against deployed dev
-Dev run ids are UUIDv7 (time-ordered), so "latest N" is the newest deployed runs. Pull and gate on a cadence:
+`perf_monitor.py` does it in one command: it pulls the **latest N** deployed dev runs (run ids are UUIDv7, so the tail is newest), gates each against the adopted config, and **alarms on drift**.
 ```bash
-EXP=<exp>; B=$ARTIFACTS_BUCKET-dev; TD=outputs/perf-eval/$EXP/live; mkdir -p "$TD"
-aws s3 ls "s3://$B/$EXP/" | grep PRE | sed -E 's#.*PRE (.*)/#\1#' | grep -E '^[0-9a-f]{8}-' \
-  | sort | tail -30 \
-  | xargs -P8 -I{} sh -c 'aws s3 cp "s3://'"$B"'/'"$EXP"'/{}/logs/workspace/conversation.jsonl" "'"$TD"'/{}.jsonl" --quiet 2>/dev/null || true'
-uv run scripts/python/perf_gate.py "$TD" --config experiment-evals/$EXP/perf.json --bucket "$B"
+AWS_PROFILE=... AWS_REGION=... uv run scripts/python/perf_monitor.py \
+  --config experiment-evals/<exp>/perf.json --env dev -n 30
 ```
-Run it on a schedule (a `/loop`, a cron, or a launchd job). **Alarm** when the live no-artifact rate or FLAG rate drifts materially above the config's `no_artifact_rate` baseline — that is a regression in how the deployed agent is executing, independent of output quality.
+It prints PASS/FLAG/FAIL counts and the live no-artifact + FLAG rates, and **exits non-zero with `ALARM`** when the no-artifact rate drifts above the config's baseline (+10pts) or the FLAG rate exceeds 20%. Schedule it (a `/loop`, cron, or launchd job) and wire the non-zero exit to your alert. A no-artifact-rate climb is a real execution regression, independent of output quality; a FLAG-rate spike on a small `-n` is noisier (treat as advisory and re-check with a larger window).
 
 ## Step 5 — Gate prompt promotions on it
 Before promoting an `instruction.md` change, run the gate on both arms per `books/evaluate-experiment-runs.md` Step 5: the treatment must add no new no-artifact FAILs and must not push runs over the ceilings the control stayed under.
