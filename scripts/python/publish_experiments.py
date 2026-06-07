@@ -20,13 +20,17 @@ any extra fields on the next publish (the script only emits a fixed set:
 Usage:
     AWS_PROFILE=work uv run python publish_experiments.py --env=dev
 
-The publisher always publishes the FULL set of experiments under
-`experiments/<id>/`. There is intentionally no per-experiment filter — the
-git branch is the curation surface (dev branch → dev S3, qa branch → qa S3,
-main branch → prod S3). A partial publish would have to either truncate
-`index.json` (silently unpublishing other experiments) or merge against the
-live index (mixing CI bytes with whatever was last pushed). Neither
-behaviour is safe; promote experiments by merging branches instead.
+By DEFAULT the publisher publishes the FULL set of experiments under
+`experiments/<id>/` and replaces `index.json` wholesale. This is correct for
+prod, where CI publishes the canonical set atomically and the git branch is the
+curation surface (dev branch → dev S3, qa branch → qa S3, main branch → prod S3).
+
+But shared dev/qa have many developers iterating at once, and a full-replace from
+one person's local branch silently unpublishes everyone else's experiments. For
+that case use `--merge`: it overlays only the local experiments onto the LIVE
+`index.json` (update/add by id, preserve every other entry), so a partial publish
+never clobbers others' work. `--merge` is refused for prod, which keeps the atomic
+full-replace model intact.
 
 In CI: GH Actions assumes role `agent-experiment-metadata-publish-{env}` via
 OIDC (no long-lived credentials).
@@ -354,6 +358,35 @@ def _build_index(
     return index, attachments_by_id
 
 
+def merge_index(local: dict, remote: dict | None) -> dict:
+    """Overlay local experiment entries onto the live remote index (shared-env publishes).
+
+    Local entries update/add by id; every experiment that exists ONLY in the remote index is
+    preserved, so publishing a subset never silently unpublishes anyone else's work. Top-level
+    provenance (published_at, git_sha) is this publish's. Inputs are not mutated. This is the
+    opposite of the default full-replace publish and is intentionally limited to non-prod.
+    """
+    if not remote or "experiments" not in remote:
+        return local
+    by_id = {e["id"]: e for e in remote.get("experiments", [])}
+    for e in local.get("experiments", []):
+        by_id[e["id"]] = e
+    merged = dict(local)
+    merged["experiments"] = sorted(by_id.values(), key=lambda e: e["id"])
+    return merged
+
+
+def _fetch_remote_index(s3, bucket: str) -> dict | None:
+    """Return the live index.json, or None if the bucket has none yet."""
+    try:
+        obj = s3.get_object(Bucket=bucket, Key="index.json")
+        return json.loads(obj["Body"].read())
+    except ClientError as e:
+        if e.response.get("Error", {}).get("Code") in ("NoSuchKey", "404", "NoSuchBucket"):
+            return None
+        raise
+
+
 def _git_sha() -> str:
     import subprocess
     try:
@@ -382,9 +415,14 @@ def _upload(s3, bucket: str, key: str, body: bytes, content_type: str) -> None:
         raise
 
 
-def publish(env: str, dry_run: bool = False) -> int:
+def publish(env: str, dry_run: bool = False, merge: bool = False) -> int:
     if env not in VALID_ENVS:
         print(f"error: --env must be one of {sorted(VALID_ENVS)}", file=sys.stderr)
+        return 1
+    if merge and env == "prod":
+        print("error: --merge is not allowed for prod — prod uses the atomic full-replace "
+              "publish (the git branch is the curation surface). Merge is for shared dev/qa.",
+              file=sys.stderr)
         return 1
 
     bucket = f"agent-experiment-metadata-{env}"
@@ -403,8 +441,20 @@ def publish(env: str, dry_run: bool = False) -> int:
     index, attachments_by_id = _build_index(env, dirs, meta)
     defs = meta.get("$defs", {})
 
-    print(f"\n== publish target: s3://{bucket}/  (env={env}, git={index['git_sha']}) ==")
-    print(f"   {len(index['experiments'])} experiment(s) to publish")
+    # merge mode (shared dev/qa): overlay these experiments onto the live index instead of
+    # replacing it, so a partial publish never unpublishes anyone else's work. Fetch the
+    # remote index up front so dry-run shows the true preserved count.
+    s3 = None
+    final_index = index
+    preserved = 0
+    if merge:
+        s3 = boto3.client("s3")
+        final_index = merge_index(index, _fetch_remote_index(s3, bucket))
+        preserved = len(final_index["experiments"]) - len(index["experiments"])
+
+    print(f"\n== publish target: s3://{bucket}/  (env={env}, git={index['git_sha']}{', MERGE' if merge else ''}) ==")
+    print(f"   {len(index['experiments'])} local experiment(s) to publish"
+          + (f"; preserving {preserved} other(s) already live" if merge else ""))
 
     if dry_run:
         print("\n[DRY RUN] would upload (manifest.json + instruction.md + attachments per experiment):")
@@ -430,10 +480,16 @@ def publish(env: str, dry_run: bool = False) -> int:
                     f"     (attachments subtotal: {att_total:,} bytes of "
                     f"{ATTACHMENTS_TOTAL_SIZE_LIMIT_BYTES:,} cap)"
                 )
-        print("\n[DRY RUN] would write index.json LAST as atomic switch")
+        if merge:
+            print(f"\n[DRY RUN] would write MERGED index.json LAST "
+                  f"({len(final_index['experiments'])} total = {len(index['experiments'])} local "
+                  f"+ {preserved} preserved)")
+        else:
+            print("\n[DRY RUN] would write index.json LAST as atomic switch")
         return 0
 
-    s3 = boto3.client("s3")
+    if s3 is None:
+        s3 = boto3.client("s3")
 
     # Upload per-experiment files in parallel, then index.json LAST so readers
     # never see a partial publish. The executor join (`as_completed` loop)
@@ -472,11 +528,12 @@ def publish(env: str, dry_run: bool = False) -> int:
         att_summary = f" + {att_count} attachment(s)" if att_count else ""
         print(f"   ✓ {entry['id']} v{entry['version']}{att_summary}")
 
-    print("\n== writing index.json (atomic switch) ==")
+    print(f"\n== writing {'MERGED ' if merge else ''}index.json (atomic switch) ==")
     _upload(s3, bucket, "index.json",
-            (json.dumps(index, indent=2) + "\n").encode(),
+            (json.dumps(final_index, indent=2) + "\n").encode(),
             "application/json")
-    print(f"   ✓ s3://{bucket}/index.json ({len(index['experiments'])} experiments live)")
+    print(f"   ✓ s3://{bucket}/index.json ({len(final_index['experiments'])} experiments live"
+          + (f", {preserved} preserved via merge)" if merge else ")"))
     return 0
 
 
@@ -485,8 +542,12 @@ def main() -> int:
     parser.add_argument("--env", required=True, help="Target env: dev | qa | prod")
     parser.add_argument("--dry-run", action="store_true",
                         help="Validate + show what would publish, do not touch S3")
+    parser.add_argument("--merge", action="store_true",
+                        help="Non-clobbering publish for shared dev/qa: merge these experiments "
+                             "into the live index instead of replacing it (preserves others' "
+                             "work). Not allowed for prod.")
     args = parser.parse_args()
-    return publish(env=args.env, dry_run=args.dry_run)
+    return publish(env=args.env, dry_run=args.dry_run, merge=args.merge)
 
 
 if __name__ == "__main__":
