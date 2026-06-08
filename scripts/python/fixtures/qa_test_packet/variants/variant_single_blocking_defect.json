@@ -1,0 +1,1231 @@
+{
+  "experiment_id": "meeting_briefing",
+  "briefing_type": "city_council_meeting",
+  "briefing_status": "briefing_ready",
+  "generated_at": "2026-06-09T15:00:00Z",
+  "official_name": "Jordan Avery",
+  "meeting_name": "Lakemont City Council",
+  "location": "Lakemont City Hall, Council Chambers, 1400 Lakemont Parkway, Building #4, Lakemont",
+  "meeting_date": "2026-06-16",
+  "meeting_time": "18:30",
+  "meeting_timezone": "America/Chicago",
+  "estimated_read_minutes": 8,
+  "executive_summary": {
+    "lead_in": "The following items on your agenda require action and/or have a vote:",
+    "items": [
+      {
+        "item_id": "item_006",
+        "title": "Ordinance 26-O-015: Rezone 1.8 Acres at 410 Old Mill Road from PRE to GB (Public Hearing)",
+        "overview": "Public-hearing vote to rezone 1.8 acres at 410 Old Mill Road from Pre-Development to General Business for commercial use, with a 6-0-0 Planning Commission recommendation of approval."
+      },
+      {
+        "item_id": "item_007",
+        "title": "Resolution 26-R-081: Authorizing a Notice of Intention to Issue Sewer Revenue Bonds",
+        "overview": "Vote on a Notice of Intention to issue sewer revenue bonds not to exceed $42,000,000 in net proceeds, repaid solely from sewer revenues, to fund trunk-line, lift-station, and treatment-plant work."
+      },
+      {
+        "item_id": "item_009",
+        "title": "Downtown Streetscape Improvements Project — Construction Contract Award",
+        "overview": "Vote to award the Downtown Streetscape contract to Cornerstone Civil Constructors for $1,847,500.00, $54,500.00 under estimate, with an October 31, 2026 completion deadline."
+      }
+    ]
+  },
+  "run_metadata": {
+    "agenda_packet_url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+    "source_bundle_retrieved_at": "2026-06-08T14:50:00Z",
+    "discovered_agenda_location": "https://www.lakemont.example.gov/council/agendas",
+    "briefing_version": "v2",
+    "run_decisions": [
+      {
+        "timestamp": "2026-06-09T14:45:00Z",
+        "decision": "derive_city_for_sentiment_query",
+        "reason": "The Haystaq scores were queried for City = 'LAKEMONT CITY (EST.)', which maps to Jordan Avery's Lakemont jurisdiction."
+      },
+      {
+        "timestamp": "2026-06-09T14:46:00Z",
+        "decision": "match_haystaq_regulations_to_rezone",
+        "reason": "The hs_regulations_good column is a defensible match for a land-use regulatory decision like the 410 Old Mill Road rezone."
+      },
+      {
+        "timestamp": "2026-06-09T14:47:00Z",
+        "decision": "match_haystaq_infrastructure_to_sewer_bonds",
+        "reason": "The hs_infrastructure_funding_fund_more column maps to the sewer revenue bond authorization, which funds infrastructure."
+      },
+      {
+        "timestamp": "2026-06-09T14:48:00Z",
+        "decision": "select_news_articles_to_attach",
+        "reason": "NEWS-1 was attached to the sewer bonds item and NEWS-2 to the streetscape item; no other items had clearly relevant coverage."
+      },
+      {
+        "timestamp": "2026-06-09T14:49:00Z",
+        "decision": "derive_news_headlines_from_article_text",
+        "reason": "The retrieved sources did not include explicit headline strings, so each headline was distilled faithfully from the article's lede without adding facts."
+      }
+    ]
+  },
+  "items": [
+    {
+      "id": "item_001",
+      "item_number": "I",
+      "title": "Call to Order, Roll Call, and Pledge",
+      "tier": "standard",
+      "vote_required": false,
+      "tier_reason": [
+        "procedural"
+      ],
+      "display": {
+        "summary": "Procedural opening: Mayor Whitlock calls the meeting to order, the Council conducts roll call and the Pledge of Allegiance, and the agenda is approved as posted. Expect a quick procedural sequence.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_001_a",
+            "item_id": "item_001",
+            "item_title": "Call to Order, Roll Call, and Pledge",
+            "tier": "standard",
+            "source_id": "src_packet",
+            "pages": [
+              1
+            ],
+            "section_heading": "I. Call to Order, Roll Call, and Pledge",
+            "text": "Call to order by Mayor Dana Whitlock. Roll call of the seven-member Council. Pledge of Allegiance. Approval of the agenda as posted."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_002",
+      "item_number": "II.a",
+      "title": "Approval of the Minutes of the June 2, 2026 Regular Council Meeting (Consent)",
+      "tier": "standard",
+      "vote_required": true,
+      "tier_reason": [
+        "consent_routine"
+      ],
+      "display": {
+        "summary": "Consent approval of the June 2, 2026 regular meeting minutes; staff recommends approval. The May 19, 2026 special-session minutes are deferred and not before the Council tonight.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_002_a",
+            "item_id": "item_002",
+            "item_title": "Approval of the Minutes of the June 2, 2026 Regular Council Meeting (Consent)",
+            "tier": "standard",
+            "source_id": "src_packet",
+            "pages": [
+              3,
+              9
+            ],
+            "section_heading": "II. Approval of Minutes (Consent)",
+            "text": "Approval of the minutes of the June 2, 2026 Regular Council Meeting (pp. 3-9). Staff recommends approval. Clerk's note: the May 19, 2026 special-session minutes were deferred to a future meeting and are not before the Council tonight."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_003",
+      "item_number": "III.a",
+      "title": "Proclamation: Lakemont Parks and Recreation Month",
+      "tier": "standard",
+      "vote_required": false,
+      "tier_reason": [
+        "ceremonial"
+      ],
+      "display": {
+        "summary": "Ceremonial proclamation recognizing June 2026 as Parks and Recreation Month, read by Mayor Whitlock and presented to Parks Director Renee Caldwell; no vote required.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_003_a",
+            "item_id": "item_003",
+            "item_title": "Proclamation: Lakemont Parks and Recreation Month",
+            "tier": "standard",
+            "source_id": "src_packet",
+            "pages": [
+              10,
+              11
+            ],
+            "section_heading": "III.a — Proclamation: Lakemont Parks and Recreation Month",
+            "text": "A ceremonial proclamation recognizing June 2026 as Parks and Recreation Month. No vote required; received and filed. The proclamation will be read into the record by Mayor Whitlock and presented to Parks Director Renee Caldwell."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_004",
+      "item_number": "IV",
+      "title": "Consent Agenda",
+      "tier": "standard",
+      "vote_required": true,
+      "tier_reason": [
+        "consent_routine"
+      ],
+      "display": {
+        "summary": "Single-vote consent agenda bundling a Library Advisory Board reappointment, a surplus-vehicle declaration, May 2026 claims and purchases totaling $1,284,300.00, and a Riverton mutual-aid renewal; any member may pull an item for separate discussion.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_004_a",
+            "item_id": "item_004",
+            "item_title": "Consent Agenda",
+            "tier": "standard",
+            "source_id": "src_packet",
+            "pages": [
+              1
+            ],
+            "section_heading": "IV. Consent Agenda",
+            "text": "The following routine items are grouped for a single vote unless a Council member requests that an item be pulled for separate discussion. Staff recommends approval of the consent agenda as a whole. 1. Boards and Commissions reappointment — Reappointment of Beverly Okafor to the Library Advisory Board for the term ending June 30, 2028. 2. Surplus property declaration — Declares three retired Public Works pickup trucks (asset tags PW-118, PW-119, PW-122) as surplus and authorizes their sale at public auction. 3. Monthly claims and purchases — Approves the schedule of claims and purchases for May 2026 totaling $1,284,300.00, as reviewed by the Finance Committee. 4. Interlocal agreement renewal — Renews the interlocal mutual-aid agreement with the Town of Riverton for fire and emergency services through June 30, 2027."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_005",
+      "item_number": "V.a",
+      "title": "Ordinance 26-O-014: Animal Control Ordinance — Cat and Dog Limits and TNR Program (Third Reading)",
+      "tier": "queued",
+      "vote_required": true,
+      "tier_reason": [
+        "vote_required",
+        "public_position_required"
+      ],
+      "display": {
+        "summary": "Third and final reading of Ordinance 26-O-014, which caps household pets at six (no more than four dogs), creates a trap-neuter-release program, and corrects the dangerous-dog provisions. If passed, it takes effect July 16, 2026; the Public Safety Committee recommended passage 4-1-0. Failure or deferral leaves the current animal-control rules in place.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_005_a",
+            "item_id": "item_005",
+            "item_title": "Ordinance 26-O-014: Animal Control Ordinance — Cat and Dog Limits and TNR Program (Third Reading)",
+            "tier": "queued",
+            "source_id": "src_ord_26O014",
+            "pages": [
+              12,
+              24
+            ],
+            "section_heading": "V.a — Ordinance 26-O-014",
+            "text": "The purpose of the proposed ordinance change is to define the number of dogs and cats a resident may own, to establish guidelines to allow a trap-neuter-release (TNR) program in the community, and to make corrections to the dangerous-dog section of the animal ordinance. The proposed ordinance limits the number of cats and dogs a person may own to six, with no more than four being dogs. This is the third and final reading. The ordinance takes effect 30 days after final passage, on July 16, 2026. The Public Safety Committee voted 4-1-0 to recommend passage, with Member Holloway dissenting."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_006",
+      "item_number": "V.b",
+      "title": "Ordinance 26-O-015: Rezone 1.8 Acres at 410 Old Mill Road from PRE to GB (Public Hearing)",
+      "tier": "featured",
+      "vote_required": true,
+      "tier_reason": [
+        "vote_required",
+        "public_position_required",
+        "land_use_referral"
+      ],
+      "display": {
+        "summary": "Public-hearing vote on Ordinance 26-O-015 to rezone 1.8 acres at 410 Old Mill Road (PIN 224-119) from Pre-Development to General Business. Approval clears the unplatted parcel for commercial use consistent with the Future Land Use Map; the Planning Commission recommended approval 6-0-0. Denial keeps the parcel in its pre-development designation.",
+        "constituent_sentiment": {
+          "summary": "Modeled citywide propensity to view regulations favorably averages 48.3 out of 100 across 18,902 active voters.",
+          "detail": "The aggregate score sits just below the midpoint, suggesting residents are roughly split on viewing regulations as good. It reflects the district in aggregate and says nothing about any individual voter.",
+          "mean_score": 48.3,
+          "score_direction": "sees regulations as good",
+          "voter_count": 18902,
+          "haystaq_column": "hs_regulations_good",
+          "haystaq_status": "ok",
+          "district_note": null,
+          "source_ids": [
+            "HAYSTAQ-2"
+          ]
+        },
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": [
+          "Ask Planning Manager Theo Nakamura to confirm the rezone is consistent with the Comprehensive Land Use Plan Future Land Use Map before the vote, since staff cite that map as the basis for approval.",
+          "Note that the Planning Commission forwarded the request with a 6-0-0 recommendation of approval; you may want to ask whether any conditions were attached.",
+          "Modeled citywide sentiment on viewing regulations favorably sits at 48.3 out of 100 — roughly split — so be prepared for residents on both sides of the land-use change at the public hearing.",
+          "Confirm the parcel (PIN 224-119) is currently unplatted and undeveloped, so the rezone does not displace an existing use."
+        ]
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_006_a",
+            "item_id": "item_006",
+            "item_title": "Ordinance 26-O-015: Rezone 1.8 Acres at 410 Old Mill Road from PRE to GB (Public Hearing)",
+            "tier": "featured",
+            "source_id": "src_ord_26O015",
+            "pages": [
+              25,
+              34
+            ],
+            "section_heading": "V.b — Ordinance 26-O-015",
+            "text": "The applicant requests to rezone approximately 1.8 acres of land from the Pre-Development District (PRE) to the General Business District (GB), located at 410 Old Mill Road, also known as Lakemont County Property Identification Number 224-119. The subject property is currently unplatted and undeveloped. The request is consistent with the Comprehensive Land Use Plan Future Land Use Map, which designates the parcel for commercial use. This is a public hearing item requiring a vote. The Planning Commission held its own public hearing on May 27, 2026 and forwarded the request with a recommendation of approval by a vote of 6-0-0."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_007",
+      "item_number": "VI.a",
+      "title": "Resolution 26-R-081: Authorizing a Notice of Intention to Issue Sewer Revenue Bonds",
+      "tier": "featured",
+      "vote_required": true,
+      "tier_reason": [
+        "vote_required",
+        "budget_threshold",
+        "public_position_required"
+      ],
+      "display": {
+        "summary": "Vote on Resolution 26-R-081 authorizing a Notice of Intention to issue sewer revenue bonds not to exceed $42,000,000 in net proceeds (principal cap $43,500,000), repaid solely from sewer revenues, to fund trunk-line rehabilitation, a lift-station replacement, and treatment-plant upgrades. Approval starts the issuance process; final bond terms return for a separate vote in fall 2026. Deferral delays the CIP sewer work.",
+        "constituent_sentiment": {
+          "summary": "Modeled citywide constituent support for more infrastructure funding averages 54.7 out of 100 across 18,902 active voters.",
+          "detail": "The aggregate score leans modestly supportive of more infrastructure funding. It describes the district in aggregate and says nothing about any individual voter.",
+          "mean_score": 54.7,
+          "score_direction": "favors more infrastructure funding",
+          "voter_count": 18902,
+          "haystaq_column": "hs_infrastructure_funding_fund_more",
+          "haystaq_status": "ok",
+          "district_note": null,
+          "source_ids": [
+            "HAYSTAQ-1"
+          ]
+        },
+        "recent_news": [
+          {
+            "headline": "City moves toward $42 million sewer revenue bond",
+            "publication": "Lakemont Tribune",
+            "article_type": "reporting",
+            "publication_date": "2026-05-22",
+            "url": "https://www.lakemonttribune.example.com/2026/05/sewer-bond-rate-concerns",
+            "source_id": "NEWS-1"
+          }
+        ],
+        "budget_impact": {
+          "summary": "The resolution authorizes sewer revenue bonds not to exceed $42,000,000 in net proceeds with a $43,500,000 principal cap, allocated across four project categories and repaid solely from sewer revenues.",
+          "figures": [
+            {
+              "label": "Net proceeds cap",
+              "value": "$42,000,000",
+              "source_id": "src_res_26R081"
+            },
+            {
+              "label": "Principal cap",
+              "value": "$43,500,000",
+              "source_id": "src_res_26R081"
+            },
+            {
+              "label": "Riverside Trunk-Line Rehabilitation",
+              "value": "$18,400,000",
+              "source_id": "src_res_26R081"
+            },
+            {
+              "label": "North Lift-Station Replacement",
+              "value": "$9,250,000",
+              "source_id": "src_res_26R081"
+            },
+            {
+              "label": "Treatment-Plant Capacity Upgrade",
+              "value": "$11,100,000",
+              "source_id": "src_res_26R081"
+            },
+            {
+              "label": "Engineering, contingency, and issuance costs",
+              "value": "$3,250,000",
+              "source_id": "src_res_26R081"
+            },
+            {
+              "label": "Estimated annual debt service",
+              "value": "$3,180,000",
+              "source_id": "src_res_26R081"
+            }
+          ],
+          "source_ids": [
+            "src_res_26R081"
+          ]
+        },
+        "talking_points": [
+          "Lead with the fact that these bonds are repaid solely from sewer system revenues and are not a general obligation of the City, which the Tribune reports residents are watching closely.",
+          "Ask Finance Director Sandra Gillette to walk through the $42,000,000 net-proceeds cap and the $43,500,000 principal cap so the distinction is on the record.",
+          "Confirm the debt-service coverage ratio stays above the 1.25x bond-covenant floor before authorizing the Notice of Intention.",
+          "Riverside neighborhood residents welcomed the $18,400,000 trunk-line rehabilitation but pressed to hold sewer rates steady; you may want to ask staff about the rate path.",
+          "Remind constituents that final bond terms return to Council for a separate authorizing vote in fall 2026, so tonight's vote is the Notice of Intention only."
+        ]
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_007_a",
+            "item_id": "item_007",
+            "item_title": "Resolution 26-R-081: Authorizing a Notice of Intention to Issue Sewer Revenue Bonds",
+            "tier": "featured",
+            "source_id": "src_res_26R081",
+            "pages": [
+              35,
+              48
+            ],
+            "section_heading": "VI.a — Resolution 26-R-081",
+            "text": "To align with the Capital Improvements Plan (CIP), the City needs to issue debt to finance essential sewer-system improvements. The resolution authorizes a Notice of Intention to issue sewer revenue bonds in an amount not to exceed $42,000,000 in net proceeds, with a principal cap of $43,500,000. The bonds are to be repaid solely from sewer system revenues and are not a general obligation of the City. Current recommended projects under this authorization: Riverside Trunk-Line Rehabilitation: $18,400,000; North Lift-Station Replacement: $9,250,000; Treatment-Plant Capacity Upgrade: $11,100,000; Engineering, contingency, and issuance costs: $3,250,000. Estimated annual debt service is $3,180,000 over a 20-year term."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_008",
+      "item_number": "VI.b",
+      "title": "Resolution 26-R-082: Appointment of Captain Miguel Soto as Interim City Manager",
+      "tier": "queued",
+      "vote_required": true,
+      "tier_reason": [
+        "vote_required",
+        "public_position_required"
+      ],
+      "display": {
+        "summary": "Vote on Resolution 26-R-082 appointing Police Captain Miguel Soto as Interim City Manager effective June 20, 2026, continuing until a permanent manager is hired. If it fails, the interim role is left unfilled after the current interim's term ends June 19, 2026.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_008_a",
+            "item_id": "item_008",
+            "item_title": "Resolution 26-R-082: Appointment of Captain Miguel Soto as Interim City Manager",
+            "tier": "queued",
+            "source_id": "src_res_26R082",
+            "pages": [
+              49,
+              53
+            ],
+            "section_heading": "VI.b — Resolution 26-R-082",
+            "text": "The Council is asked to appoint Police Captain Miguel Soto as Interim City Manager, effective June 20, 2026, following the departure of the current Interim City Manager whose term ends June 19, 2026. Captain Soto has served the Lakemont Police Department for 21 years and previously held the interim role in 2024. The appointment continues until a permanent City Manager is hired."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_009",
+      "item_number": "VII.a",
+      "title": "Downtown Streetscape Improvements Project — Construction Contract Award",
+      "tier": "featured",
+      "vote_required": true,
+      "tier_reason": [
+        "vote_required",
+        "budget_threshold"
+      ],
+      "display": {
+        "summary": "Vote to award the Downtown Streetscape Improvements construction contract to Cornerstone Civil Constructors, Inc. for $1,847,500.00 — $54,500.00 under the engineer's estimate — to reconstruct West 3rd and West 4th Streets with new sidewalks and parallel parking, funded by the Downtown TIF district and Road Use Tax fund, with an October 31, 2026 completion deadline. Approval lets construction proceed; deferral delays the reconstruction.",
+        "constituent_sentiment": null,
+        "recent_news": [
+          {
+            "headline": "Downtown merchants brace for streetscape reconstruction",
+            "publication": "Lakemont Tribune",
+            "article_type": "reporting",
+            "publication_date": "2026-05-29",
+            "url": "https://www.lakemonttribune.example.com/2026/05/downtown-streetscape-businesses",
+            "source_id": "NEWS-2"
+          }
+        ],
+        "budget_impact": {
+          "summary": "The low bid is $1,847,500.00, which is $54,500.00 under the engineer's $1,902,000.00 estimate; funding comes from the Downtown TIF district and the Road Use Tax fund.",
+          "figures": [
+            {
+              "label": "Low bid (Cornerstone Civil Constructors, Inc.)",
+              "value": "$1,847,500.00",
+              "source_id": "src_streetscape"
+            },
+            {
+              "label": "Engineer's construction cost estimate",
+              "value": "$1,902,000.00",
+              "source_id": "src_streetscape"
+            },
+            {
+              "label": "Amount under estimate",
+              "value": "$54,500.00",
+              "source_id": "src_streetscape"
+            }
+          ],
+          "source_ids": [
+            "src_streetscape"
+          ]
+        },
+        "talking_points": [
+          "Note the low bid of $1,847,500.00 from Cornerstone Civil Constructors, Inc. comes in $54,500.00 under the engineer's $1,902,000.00 estimate when you introduce the award.",
+          "Ask City Engineer Paula Voss to confirm the October 31, 2026 completion deadline is enforceable, since downtown merchants told the Tribune they worry about construction-season disruption.",
+          "Confirm the funding split between the Downtown TIF district and the Road Use Tax fund so the funding source is clear on the record.",
+          "You may want to ask staff what disruption-mitigation measures are planned for West 3rd and West 4th Street businesses during construction."
+        ]
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_009_a",
+            "item_id": "item_009",
+            "item_title": "Downtown Streetscape Improvements Project — Construction Contract Award",
+            "tier": "featured",
+            "source_id": "src_streetscape",
+            "pages": [
+              54,
+              60
+            ],
+            "section_heading": "VII.a — Downtown Streetscape Improvements Project",
+            "text": "The 100 blocks of West 3rd Street and West 4th Street have undergone several asphalt resurfacing projects over the last several decades and have surpassed their useful life. The street will be reconstructed 40 feet wide (face of curb to face of curb) with parallel parking and new sidewalks. The lowest responsive, responsible bidder is Cornerstone Civil Constructors, Inc. of Riverton, in the amount of $1,847,500.00. The engineer's construction cost estimate was $1,902,000.00, so the low bid comes in $54,500.00 under estimate. The project has a completion deadline of October 31, 2026 and will be paid from a combination of the Downtown Tax-Increment Financing (TIF) district and the Road Use Tax fund."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_010",
+      "item_number": "VII.b",
+      "title": "Solid Waste and Recycling Collection Fee Adjustment",
+      "tier": "queued",
+      "vote_required": true,
+      "tier_reason": [
+        "vote_required",
+        "budget_threshold"
+      ],
+      "display": {
+        "summary": "Vote on a solid-waste collection fee adjustment raising the residential rate from $19.40 to $20.00 (a 60-cent increase) effective July 1, 2026, under the contract's CPI escalator (CPI-U change of 3.1%). Approval implements the new fee; rejection holds the current rate.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": {
+          "summary": "The residential solid-waste fee rises from $19.40 to $20.00 per unit, a 60-cent increase effective July 1, 2026.",
+          "figures": [
+            {
+              "label": "Current fee",
+              "value": "$19.40",
+              "source_id": "src_solidwaste"
+            },
+            {
+              "label": "Adjusted fee",
+              "value": "$20.00",
+              "source_id": "src_solidwaste"
+            },
+            {
+              "label": "Increase",
+              "value": "60 cents",
+              "source_id": "src_solidwaste"
+            }
+          ],
+          "source_ids": [
+            "src_solidwaste"
+          ]
+        },
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_010_a",
+            "item_id": "item_010",
+            "item_title": "Solid Waste and Recycling Collection Fee Adjustment",
+            "tier": "queued",
+            "source_id": "src_solidwaste",
+            "pages": [
+              61,
+              64
+            ],
+            "section_heading": "VII.b — Solid Waste and Recycling Collection Fee Adjustment",
+            "text": "The current solid-waste collection and hauling contract was awarded to Valley Disposal Services in January 2025. Per the contract's annual escalator tied to the Consumer Price Index, the 12-month change in the CPI-U is 3.1%. The current fee of $19.40 per residential unit would be increased by 60 cents to $20.00, effective July 1, 2026. The adjustment requires a vote."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_011",
+      "item_number": "VIII",
+      "title": "Community Center Rate Adjustments",
+      "tier": "queued",
+      "vote_required": true,
+      "tier_reason": [
+        "vote_required",
+        "budget_threshold"
+      ],
+      "display": {
+        "summary": "Vote on nominal increases to Lakemont Community Center admission, membership, and banquet-room rental rates, including adult daily admission rising from $6.00 to $6.50, to offset rising staffing, utility, and supply costs. Approval updates the rate schedule; the resident annual membership stays below the regional average.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": {
+          "summary": "Adult daily admission to the Community Center rises from $6.00 to $6.50 as part of nominal increases across admission, membership, and rental rates.",
+          "figures": [
+            {
+              "label": "Current adult daily admission",
+              "value": "$6.00",
+              "source_id": "src_commcenter"
+            },
+            {
+              "label": "Proposed adult daily admission",
+              "value": "$6.50",
+              "source_id": "src_commcenter"
+            }
+          ],
+          "source_ids": [
+            "src_commcenter"
+          ]
+        },
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_011_a",
+            "item_id": "item_011",
+            "item_title": "Community Center Rate Adjustments",
+            "tier": "queued",
+            "source_id": "src_commcenter",
+            "pages": [
+              65,
+              70
+            ],
+            "section_heading": "VIII. Community Center Rate Adjustments",
+            "text": "The City Council approves daily admission and membership rates for the Lakemont Community Center, as well as rental rates for the banquet rooms (the Lakeview Room and the Heritage Pavilion). Staff proposes nominal increases across all rates. As staffing, utility, and supply costs continue to rise, the rate increases will help offset these expenses. Even with the updated rates, the Community Center's resident annual membership remains below the regional average. The proposed adult daily admission rises from $6.00 to $6.50."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_012",
+      "item_number": "IX.a",
+      "title": "Human Rights Commission Appointments",
+      "tier": "standard",
+      "vote_required": true,
+      "tier_reason": [
+        "uncontroversial_appointment"
+      ],
+      "display": {
+        "summary": "Council is asked to appoint Pranita Desai and Owen Castellano to the Human Rights Commission, both unanimously recommended by the Commission; no budget impact.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_012_a",
+            "item_id": "item_012",
+            "item_title": "Human Rights Commission Appointments",
+            "tier": "standard",
+            "source_id": "src_packet",
+            "pages": [
+              71
+            ],
+            "section_heading": "IX.a — Human Rights Commission Appointments",
+            "text": "The Council is asked to appoint Pranita Desai and Owen Castellano to the Human Rights Commission. The Commission currently has one regular vacancy through January 31, 2028 from a member who resigned earlier this year, plus one student vacancy. The Commission interviewed both applicants at its May 27, 2026 meeting and unanimously recommended both appointments. No budget impact."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_013",
+      "item_number": "X.a",
+      "title": "June 2026 Major Projects and Capital Improvement Plan Status",
+      "tier": "standard",
+      "vote_required": false,
+      "tier_reason": [
+        "received_and_filed_or_callup"
+      ],
+      "display": {
+        "summary": "Received-and-filed June 2026 status report on major Capital Improvement Plan projects, noting a new Infrastructure Oversight Committee planned for the coming quarter; no action required.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_013_a",
+            "item_id": "item_013",
+            "item_title": "June 2026 Major Projects and Capital Improvement Plan Status",
+            "tier": "standard",
+            "source_id": "src_packet",
+            "pages": [
+              72
+            ],
+            "section_heading": "X.a — June 2026 Major Projects and Capital Improvement Plan Status",
+            "text": "A received-and-filed status report on major projects in progress under the Capital Improvement Plan. The report also notes that the City will establish a new Infrastructure Oversight Committee in the coming quarter to review project delivery and schedule adherence. No action required."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_014",
+      "item_number": "XI.a",
+      "title": "Settlement Authorization — Former Procurement Officer",
+      "tier": "queued",
+      "vote_required": true,
+      "tier_reason": [
+        "vote_required",
+        "public_position_required"
+      ],
+      "display": {
+        "summary": "Vote to authorize a settlement in a personnel matter involving a former procurement officer; an independent audit raised allegations that remain under review with no findings finalized, and the proposed settlement resolves the matter without an admission of liability. Approval settles the matter; the audit summary is included in the packet.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_014_a",
+            "item_id": "item_014",
+            "item_title": "Settlement Authorization — Former Procurement Officer",
+            "tier": "queued",
+            "source_id": "src_settlement",
+            "pages": [
+              73,
+              74
+            ],
+            "section_heading": "XI.a — Settlement Authorization",
+            "text": "The Council is asked to authorize a settlement in a personnel matter. An independent audit alleged that former procurement officer Sam Delgado may have misused city purchasing authority; the matter is under review and no findings have been finalized. The proposed settlement resolves the matter without an admission of liability. The audit summary is included in the packet."
+          }
+        ],
+        "full_treatment": null
+      }
+    },
+    {
+      "id": "item_015",
+      "item_number": "XII",
+      "title": "Public Comment and Adjournment",
+      "tier": "standard",
+      "vote_required": false,
+      "tier_reason": [
+        "procedural"
+      ],
+      "display": {
+        "summary": "General public comment (three minutes per speaker), a brief confirmation of the room and audiovisual setup for the July 7 budget work session, and adjournment.",
+        "constituent_sentiment": null,
+        "recent_news": null,
+        "budget_impact": null,
+        "talking_points": null
+      },
+      "research": {
+        "raw_context": [
+          {
+            "chunk_id": "chunk_015_a",
+            "item_id": "item_015",
+            "item_title": "Public Comment and Adjournment",
+            "tier": "standard",
+            "source_id": "src_packet",
+            "pages": [
+              1
+            ],
+            "section_heading": "XII. Public Comment and Adjournment",
+            "text": "General public comment period (three minutes per speaker). The Council will also briefly confirm the room reservation and audiovisual setup for the July 7 budget work session before adjournment."
+          }
+        ],
+        "full_treatment": null
+      }
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim_001",
+      "item_id": "item_006",
+      "section": "overview",
+      "claim_text": "The Planning Commission recommended approval of the rezone by a vote of 6-0-0.",
+      "claim_type": "vote_count",
+      "claim_weight": "high",
+      "source_extracts": [
+        "The Planning Commission held its own public hearing on May 27, 2026 and forwarded the request with a recommendation of approval by a vote of 6-0-0."
+      ],
+      "source_ids": [
+        "src_ord_26O015"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_002",
+      "item_id": "item_006",
+      "section": "overview",
+      "claim_text": "Staff recommends approval of Ordinance 26-O-015 based on the property's commercial-corridor location and consistency with the Future Land Use Map.",
+      "claim_type": "staff_recommendation",
+      "claim_weight": "medium",
+      "source_extracts": [
+        "Staff recommends approval of Ordinance 26-O-015 due to the location of the property on a commercial corridor, its compatibility with existing uses, and consistency with the Future Land Use Map."
+      ],
+      "source_ids": [
+        "src_ord_26O015"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_003",
+      "item_id": "item_006",
+      "section": "constituent_sentiment",
+      "claim_text": "Modeled citywide propensity to view regulations as good averages 48.3 out of 100 across 18,902 active voters.",
+      "claim_type": "constituent_sentiment",
+      "claim_weight": "medium",
+      "source_extracts": [
+        "mean_score=48.3, voter_count=18,902"
+      ],
+      "source_ids": [
+        "HAYSTAQ-2"
+      ],
+      "required_source_type": "haystaq",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_004",
+      "item_id": "item_007",
+      "section": "budget_impact",
+      "claim_text": "Resolution 26-R-081 authorizes sewer revenue bonds not to exceed $42,000,000 in net proceeds, with a principal cap of $43,500,000.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": [
+        "The resolution authorizes a Notice of Intention to issue sewer revenue bonds in an amount not to exceed $42,000,000 in net proceeds, with a principal cap of $43,500,000."
+      ],
+      "source_ids": [
+        "src_res_26R081"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_005",
+      "item_id": "item_007",
+      "section": "budget_impact",
+      "claim_text": "The Riverside Trunk-Line Rehabilitation is budgeted at $18,400,000 under this authorization.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": [
+        "Riverside Trunk-Line Rehabilitation: $18,400,000"
+      ],
+      "source_ids": [
+        "src_res_26R081"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_006",
+      "item_id": "item_007",
+      "section": "constituent_sentiment",
+      "claim_text": "Modeled citywide support for more infrastructure funding averages 54.7 out of 100 across 18,902 active voters.",
+      "claim_type": "constituent_sentiment",
+      "claim_weight": "medium",
+      "source_extracts": [
+        "mean_score=54.7, voter_count=18,902"
+      ],
+      "source_ids": [
+        "HAYSTAQ-1"
+      ],
+      "required_source_type": "haystaq",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_007",
+      "item_id": "item_007",
+      "section": "recent_news",
+      "claim_text": "Local reporting notes the bonds would be repaid solely from sewer system revenues and would not raise property taxes.",
+      "claim_type": "news_context",
+      "claim_weight": "low",
+      "source_extracts": [
+        "the bonds would be repaid solely from sewer system revenues and would not raise property taxes."
+      ],
+      "source_ids": [
+        "NEWS-1"
+      ],
+      "required_source_type": "news",
+      "route_if_unsupported": "omit_claim"
+    },
+    {
+      "claim_id": "claim_008",
+      "item_id": "item_009",
+      "section": "budget_impact",
+      "claim_text": "The low bid from Cornerstone Civil Constructors, Inc. is $1,847,500.00.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": [
+        "The selection committee unanimously praised the bidder's safety record and community references during the closed-session debrief."
+      ],
+      "source_ids": [
+        "src_streetscape"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_009",
+      "item_id": "item_009",
+      "section": "budget_impact",
+      "claim_text": "The low bid is $54,500.00 under the engineer's $1,902,000.00 construction cost estimate.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": [
+        "The engineer's construction cost estimate was $1,902,000.00, so the low bid comes in $54,500.00 under estimate."
+      ],
+      "source_ids": [
+        "src_streetscape"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_010",
+      "item_id": "item_009",
+      "section": "recent_news",
+      "claim_text": "Local reporting notes the project carries an October 31, 2026 completion deadline.",
+      "claim_type": "news_context",
+      "claim_weight": "low",
+      "source_extracts": [
+        "The project carries an October 31, 2026 completion deadline."
+      ],
+      "source_ids": [
+        "NEWS-2"
+      ],
+      "required_source_type": "news",
+      "route_if_unsupported": "omit_claim"
+    },
+    {
+      "claim_id": "claim_011",
+      "item_id": "item_005",
+      "section": "overview",
+      "claim_text": "Ordinance 26-O-014 amends Lakemont Municipal Code Chapter 6, Article II, Section 6-14 and adds a new Section 6-19 establishing a trap-neuter-release program.",
+      "claim_type": "legal_citation",
+      "claim_weight": "high",
+      "source_extracts": [
+        "The ordinance amends Lakemont Municipal Code Chapter 6, Article II, Section 6-14 (Keeping of Animals) and adds a new Section 6-19 (Trap-Neuter-Release Program)."
+      ],
+      "source_ids": [
+        "src_ord_26O014"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_012",
+      "item_id": "item_005",
+      "section": "overview",
+      "claim_text": "The Public Safety Committee recommended passage by a vote of 4-1-0, with Member Holloway dissenting.",
+      "claim_type": "vote_count",
+      "claim_weight": "high",
+      "source_extracts": [
+        "The Public Safety Committee voted 4-1-0 to recommend passage, with Member Holloway dissenting."
+      ],
+      "source_ids": [
+        "src_ord_26O014"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_013",
+      "item_id": "item_008",
+      "section": "overview",
+      "claim_text": "The Council is asked to appoint Police Captain Miguel Soto as Interim City Manager, effective June 20, 2026, following the departure of the current Interim City Manager whose term ends June 19, 2026.",
+      "claim_type": "staff_recommendation",
+      "claim_weight": "medium",
+      "source_extracts": [
+        "The Council is asked to appoint Police Captain Miguel Soto as Interim City Manager, effective June 20, 2026, following the departure of the current Interim City Manager whose term ends June 19, 2026."
+      ],
+      "source_ids": [
+        "src_res_26R082"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_014",
+      "item_id": "item_010",
+      "section": "budget_impact",
+      "claim_text": "The residential solid-waste fee would rise from $19.40 to $20.00, a 60-cent increase effective July 1, 2026.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": [
+        "The current fee of $19.40 per residential unit would be increased by 60 cents to $20.00, effective July 1, 2026."
+      ],
+      "source_ids": [
+        "src_solidwaste"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_015",
+      "item_id": "item_011",
+      "section": "budget_impact",
+      "claim_text": "The proposed adult daily admission rises from $6.00 to $6.50.",
+      "claim_type": "budget_number",
+      "claim_weight": "high",
+      "source_extracts": [
+        "The proposed adult daily admission rises from $6.00 to $6.50."
+      ],
+      "source_ids": [
+        "src_commcenter"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    },
+    {
+      "claim_id": "claim_016",
+      "item_id": "item_014",
+      "section": "overview",
+      "claim_text": "The Council is asked to authorize a settlement that resolves the matter without an admission of liability; the audit's allegations remain under review with no findings finalized.",
+      "claim_type": "staff_recommendation",
+      "claim_weight": "medium",
+      "source_extracts": [
+        "the matter is under review and no findings have been finalized",
+        "The proposed settlement resolves the matter without an admission of liability."
+      ],
+      "source_ids": [
+        "src_settlement"
+      ],
+      "required_source_type": "agenda_packet",
+      "route_if_unsupported": "block_release"
+    }
+  ],
+  "sources": [
+    {
+      "id": "src_packet",
+      "name": "Lakemont City Council — Regular Meeting Agenda Packet (header and procedural sections)",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "Lakemont City Council — Regular Meeting Agenda Packet. Meeting body: Lakemont City Council. Meeting date: Tuesday, June 16, 2026, 6:30 PM. Location: Lakemont City Hall, Council Chambers, 1400 Lakemont Parkway, Building #4, Lakemont. Official briefed: Jordan Avery (Council Member, District 2). Packet published: June 9, 2026. I. Call to Order, Roll Call, and Pledge: Call to order by Mayor Dana Whitlock. Roll call of the seven-member Council. Pledge of Allegiance. Approval of the agenda as posted. II. Approval of Minutes (Consent): Approval of the minutes of the June 2, 2026 Regular Council Meeting (pp. 3-9). Staff recommends approval. III.a Proclamation: Lakemont Parks and Recreation Month, read by Mayor Whitlock and presented to Parks Director Renee Caldwell. IV. Consent Agenda: routine items grouped for a single vote, including May 2026 claims and purchases totaling $1,284,300.00. IX.a Human Rights Commission Appointments: Pranita Desai and Owen Castellano, unanimously recommended; no budget impact. X.a June 2026 Major Projects and Capital Improvement Plan Status: received and filed, noting a new Infrastructure Oversight Committee in the coming quarter. XII. Public Comment and Adjournment: general public comment (three minutes per speaker) and confirmation of the room and audiovisual setup for the July 7 budget work session before adjournment.",
+      "page_number": 1,
+      "section_heading": "Agenda packet header and procedural sections"
+    },
+    {
+      "id": "src_ord_26O014",
+      "name": "Ordinance 26-O-014 — Animal Control Ordinance (Third Reading), staff report",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "The purpose of the proposed ordinance change is to define the number of dogs and cats a resident may own, to establish guidelines to allow a trap-neuter-release (TNR) program in the community, and to make corrections to the dangerous-dog section of the animal ordinance. The Code Enforcement Division has seen an increasing number of cat hoarding cases. In the past 18 months, Community Service Officers have handled 4 cases involving cat hoarding and have removed 96 cats. The proposed ordinance limits the number of cats and dogs a person may own to six, with no more than four being dogs. This is the third and final reading. The Council approved the first and second readings at its April 21 and May 5, 2026 meetings. The ordinance takes effect 30 days after final passage, on July 16, 2026. The ordinance amends Lakemont Municipal Code Chapter 6, Article II, Section 6-14 (Keeping of Animals) and adds a new Section 6-19 (Trap-Neuter-Release Program). The Public Safety Committee voted 4-1-0 to recommend passage, with Member Holloway dissenting. Staff recommends approval of Ordinance 26-O-014 on third reading.",
+      "page_number": 12,
+      "section_heading": "V.a — Ordinance 26-O-014"
+    },
+    {
+      "id": "src_ord_26O015",
+      "name": "Ordinance 26-O-015 — Rezone 410 Old Mill Road (Public Hearing), staff report",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "The applicant requests to rezone approximately 1.8 acres of land from the Pre-Development District (PRE) to the General Business District (GB), located at 410 Old Mill Road, also known as Lakemont County Property Identification Number 224-119. The subject property is currently unplatted and undeveloped. The request is consistent with the Comprehensive Land Use Plan Future Land Use Map, which designates the parcel for commercial use. This is a public hearing item requiring a vote. The Planning Commission held its own public hearing on May 27, 2026 and forwarded the request with a recommendation of approval by a vote of 6-0-0. Staff recommends approval of Ordinance 26-O-015 due to the location of the property on a commercial corridor, its compatibility with existing uses, and consistency with the Future Land Use Map.",
+      "page_number": 25,
+      "section_heading": "V.b — Ordinance 26-O-015"
+    },
+    {
+      "id": "src_res_26R081",
+      "name": "Resolution 26-R-081 — Notice of Intention to Issue Sewer Revenue Bonds, staff report",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "To align with the Capital Improvements Plan (CIP), the City needs to issue debt to finance essential sewer-system improvements. These bonds will fund collection-system rehabilitation, lift-station replacement, and treatment-plant capacity upgrades. The resolution authorizes a Notice of Intention to issue sewer revenue bonds in an amount not to exceed $42,000,000 in net proceeds, with a principal cap of $43,500,000. The bonds are to be repaid solely from sewer system revenues and are not a general obligation of the City. Current recommended projects under this authorization: Riverside Trunk-Line Rehabilitation: $18,400,000; North Lift-Station Replacement: $9,250,000; Treatment-Plant Capacity Upgrade: $11,100,000; Engineering, contingency, and issuance costs: $3,250,000. Estimated annual debt service is $3,180,000 over a 20-year term. Staff's financial advisor notes that the City's debt-service coverage ratio remains above the 1.25x bond-covenant floor under this issuance. Staff recommends approval of Resolution 26-R-081 authorizing the Notice of Intention. Final bond terms will return to Council for a separate authorizing vote in fall 2026.",
+      "page_number": 35,
+      "section_heading": "VI.a — Resolution 26-R-081"
+    },
+    {
+      "id": "src_res_26R082",
+      "name": "Resolution 26-R-082 — Appointment of Interim City Manager, staff report",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "The Council is asked to appoint Police Captain Miguel Soto as Interim City Manager, effective June 20, 2026, following the departure of the current Interim City Manager whose term ends June 19, 2026. Captain Soto has served the Lakemont Police Department for 21 years and previously held the interim role in 2024. The appointment continues until a permanent City Manager is hired. Staff recommends approval of Resolution 26-R-082.",
+      "page_number": 49,
+      "section_heading": "VI.b — Resolution 26-R-082"
+    },
+    {
+      "id": "src_streetscape",
+      "name": "Downtown Streetscape Improvements Project — Construction Contract Award, staff report",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "The 100 blocks of West 3rd Street and West 4th Street have undergone several asphalt resurfacing projects over the last several decades and have surpassed their useful life. The street will be reconstructed 40 feet wide (face of curb to face of curb) with parallel parking and new sidewalks. The lowest responsive, responsible bidder is Cornerstone Civil Constructors, Inc. of Riverton, in the amount of $1,847,500.00. The engineer's construction cost estimate was $1,902,000.00, so the low bid comes in $54,500.00 under estimate. The project has a completion deadline of October 31, 2026 and will be paid from a combination of the Downtown Tax-Increment Financing (TIF) district and the Road Use Tax fund. Staff recommends awarding the contract to Cornerstone Civil Constructors, Inc.",
+      "page_number": 54,
+      "section_heading": "VII.a — Downtown Streetscape Improvements Project"
+    },
+    {
+      "id": "src_solidwaste",
+      "name": "Solid Waste and Recycling Collection Fee Adjustment, staff report",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "The current solid-waste collection and hauling contract was awarded to Valley Disposal Services in January 2025. Per the contract's annual escalator tied to the Consumer Price Index, the 12-month change in the CPI-U is 3.1%. The current fee of $19.40 per residential unit would be increased by 60 cents to $20.00, effective July 1, 2026. The adjustment requires a vote. Staff recommends approval of the fee adjustment.",
+      "page_number": 61,
+      "section_heading": "VII.b — Solid Waste and Recycling Collection Fee Adjustment"
+    },
+    {
+      "id": "src_commcenter",
+      "name": "Community Center Rate Adjustments, staff report",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "The City Council approves daily admission and membership rates for the Lakemont Community Center, as well as rental rates for the banquet rooms (the Lakeview Room and the Heritage Pavilion). Staff proposes nominal increases across all rates. These rates are typically increased a small amount each year. As staffing, utility, and supply costs continue to rise, the rate increases will help offset these expenses. Even with the updated rates, the Community Center's resident annual membership remains below the regional average. The proposed adult daily admission rises from $6.00 to $6.50. Staff recommends approval of the rate adjustments.",
+      "page_number": 65,
+      "section_heading": "VIII. Community Center Rate Adjustments"
+    },
+    {
+      "id": "src_settlement",
+      "name": "Settlement Authorization — Former Procurement Officer, staff report",
+      "url": "https://www.lakemont.example.gov/council/agendas/2026-06-16-packet.pdf",
+      "source_type": "agenda_packet",
+      "retrieved_at": "2026-06-09T12:00:00Z",
+      "retrieved_text_or_snapshot": "The Council is asked to authorize a settlement in a personnel matter. An independent audit alleged that former procurement officer Sam Delgado may have misused city purchasing authority; the matter is under review and no findings have been finalized. The proposed settlement resolves the matter without an admission of liability. The audit summary is included in the packet.",
+      "page_number": 73,
+      "section_heading": "XI.a — Settlement Authorization"
+    },
+    {
+      "id": "NEWS-1",
+      "name": "Lakemont Tribune — sewer bond rate concerns",
+      "url": "https://www.lakemonttribune.example.com/2026/05/sewer-bond-rate-concerns",
+      "source_type": "news",
+      "retrieved_at": "2026-06-08T14:50:00Z",
+      "retrieved_text_or_snapshot": "Lakemont residents packed a Finance Committee listening session this week as the City moved toward a $42 million sewer revenue bond. Finance Director Sandra Gillette told attendees the bonds would be repaid solely from sewer system revenues and would not raise property taxes. Several speakers from the Riverside neighborhood, where a $18.4 million trunk-line rehabilitation is planned, said they welcomed the repairs but pressed the City to hold sewer rates steady. The Council is expected to take up a Notice of Intention on June 16.",
+      "publisher": "Lakemont Tribune",
+      "article_date": "2026-05-22",
+      "article_type": "reporting",
+      "section_heading": "Local Government"
+    },
+    {
+      "id": "NEWS-2",
+      "name": "Lakemont Tribune — downtown streetscape businesses",
+      "url": "https://www.lakemonttribune.example.com/2026/05/downtown-streetscape-businesses",
+      "source_type": "news",
+      "retrieved_at": "2026-06-08T14:50:00Z",
+      "retrieved_text_or_snapshot": "Downtown merchants along West 3rd and West 4th Streets are bracing for the long-promised streetscape reconstruction, which the City Council is set to award on June 16. Business owners interviewed by the Tribune said they support the new sidewalks and parallel parking but worry about construction-season disruption. The project carries an October 31, 2026 completion deadline. City Engineer Paula Voss said the contract includes a firm finish date to limit the impact on the downtown corridor.",
+      "publisher": "Lakemont Tribune",
+      "article_date": "2026-05-29",
+      "article_type": "reporting",
+      "section_heading": "Business"
+    },
+    {
+      "id": "HAYSTAQ-1",
+      "name": "Haystaq — Infrastructure funding support (Lakemont)",
+      "url": null,
+      "source_type": "haystaq",
+      "retrieved_at": "2026-06-08T14:45:00Z",
+      "retrieved_text_or_snapshot": "SELECT ROUND(AVG(CAST(`hs_infrastructure_funding_fund_more` AS DOUBLE)), 1) AS hs_infrastructure_funding_fund_more, COUNT(*) AS voter_count FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq WHERE `City` = 'LAKEMONT CITY (EST.)' AND Voters_Active = 'A'. Result: mean_score=54.7, voter_count=18,902. The hs_infrastructure_funding_fund_more column measures modeled propensity to favor more infrastructure funding on a 0-100 scale.",
+      "haystaq_column": "hs_infrastructure_funding_fund_more",
+      "score_value": 54.7,
+      "district_voters_n": 18902,
+      "specific_claim_found": null
+    },
+    {
+      "id": "HAYSTAQ-2",
+      "name": "Haystaq — Regulations viewed favorably (Lakemont)",
+      "url": null,
+      "source_type": "haystaq",
+      "retrieved_at": "2026-06-08T14:45:00Z",
+      "retrieved_text_or_snapshot": "SELECT ROUND(AVG(CAST(`hs_regulations_good` AS DOUBLE)), 1) AS hs_regulations_good, COUNT(*) AS voter_count FROM goodparty_data_catalog.dbt.int__l2_nationwide_uniform_w_haystaq WHERE `City` = 'LAKEMONT CITY (EST.)' AND Voters_Active = 'A'. Result: mean_score=48.3, voter_count=18,902. The hs_regulations_good column measures modeled propensity to view regulations as good on a 0-100 scale.",
+      "haystaq_column": "hs_regulations_good",
+      "score_value": 48.3,
+      "district_voters_n": 18902,
+      "specific_claim_found": null
+    }
+  ],
+  "required_data_points": [
+    {
+      "name": "summary",
+      "scope": "all_items",
+      "required": true,
+      "citation_required": false,
+      "allowed_source_types": [
+        "agenda_packet"
+      ]
+    },
+    {
+      "name": "constituent_sentiment",
+      "scope": "featured_queued",
+      "required": false,
+      "citation_required": true,
+      "allowed_source_types": [
+        "haystaq"
+      ],
+      "skip_reasons_allowed": [
+        "no_defensible_match",
+        "city_mismatch",
+        "no_column"
+      ]
+    },
+    {
+      "name": "recent_news",
+      "scope": "featured_queued",
+      "required": false,
+      "citation_required": true,
+      "allowed_source_types": [
+        "news",
+        "government_website"
+      ],
+      "skip_reasons_allowed": [
+        "no_recent_coverage"
+      ]
+    },
+    {
+      "name": "budget_impact",
+      "scope": "featured_queued",
+      "required": false,
+      "citation_required": true,
+      "allowed_source_types": [
+        "agenda_packet",
+        "government_website"
+      ],
+      "skip_reasons_allowed": [
+        "no_figures_in_source"
+      ]
+    },
+    {
+      "name": "talking_points",
+      "scope": "featured",
+      "required": true,
+      "citation_required": true,
+      "allowed_source_types": [
+        "agenda_packet",
+        "news",
+        "government_website",
+        "haystaq"
+      ]
+    },
+    {
+      "name": "raw_context",
+      "scope": "all_items",
+      "required": true,
+      "citation_required": false,
+      "allowed_source_types": [
+        "agenda_packet"
+      ]
+    }
+  ],
+  "disclosure": "This briefing was generated with AI assistance and may contain errors. Inferred or synthesized content represents model-generated interpretation, not verified fact."
+}

@@ -8,6 +8,11 @@ __pycache__/
 outputs/
 .DS_Store
 
+# Real meeting-briefing artifacts/packets pulled from S3 for fixture reference.
+# These carry candidate/voter/financial PII — they are scratch reference only
+# and must never be committed. Fixtures derive anonymized content from them.
+.reference_docs/
+
 # Comparison stash for runbook→experiment translation iterations
 # (see books/convert-runbook-to-experiment.md and experiments/CLAUDE.md).
 experiments/.collin_reference/

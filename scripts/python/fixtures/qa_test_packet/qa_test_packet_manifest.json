@@ -1,0 +1,543 @@
+{
+  "_about": "Ground-truth manifest for the meeting-briefings QA test packet. Each case maps a seeded condition in an artifact to the QA module it exercises, the bucket it belongs to, the rubric dimension it covers, and what the QA spine should conclude. A check author can target any case directly. See README.md for how to run and read this.",
+  "packet_version": "3.1",
+  "_layers_about": "packet_version 3.0 refactored the defect suite into two layers; 3.1 dropped the orphaned packet-1.0 layer (universal_artifact + variant_operational_*) that no meta-test exercised. LAYER 1 (unit) is a SINGLE unit packet, unit_check_packet.json, that folds the per-claim/per-item defects into one file; each case is asserted PER-CHECK on its target (check_id + offending), IGNORING the packet's overall release_verdict. This is the primary ask: verify each individual check catches what it should. LAYER 2 (integration) is a small set of thin whole-artifact fixtures where release_verdict matters (one block-routed defect, one annotate-routed defect, a whole-doc identity case, a whole-doc schema case), plus the clean baseline as the ok control. Each case below carries a 'layer' field (unit | integration | roadmap_gap). The unit meta-test is scripts/python/test_qa_spine_unit_checks.py; the integration meta-test is scripts/python/test_qa_spine_integration_verdict.py.",
+  "_rubric_about": "Rubric-driven coverage sits on top of the agent-assembled clean baseline. The Meeting Briefing QA Rubric has 5 scored dimensions (Accuracy, Grounding & Traceability, Prioritization, Coverage, Actionability) and 4 gating checks (no political advocacy, no toxic/discriminatory, no inappropriate PII, professional register). Each defect case carries a rubric_dimension; the top-level rubric_coverage object summarizes which dimensions are covered by a deterministic check today vs. a roadmap gap.",
+  "generated_for_spine": {
+    "repo": "runbooks",
+    "branch": "develop",
+    "product_spec": "scripts/python/meeting_briefing_product_spec.json",
+    "spec_version": "1.3-ws2",
+    "artifact_schema": "experiments/meeting_briefing/manifest.json#output_schema (MeetingBriefingFull)"
+  },
+  "provenance": "Structure and source prose adapted from the example briefings in .reference_docs/mb_runs/ (notably develop_baseline_artifact.json). Jurisdiction, official, and all seeded defects are fictional and synthetic — no real council or person is the subject of a planted defect. No real voter, personnel, or financial records are used.",
+  "calibration": "All deterministic expectations below were calibrated by running `uv run python qa_validate.py <artifact> --no-llm --no-check-urls` (equivalently qa_validate.run_deterministic) on develop. The agent_assembled_baseline cases, the unit_check_packet cases, and the thin integration variants were calibrated 2026-06-08 during the unit-vs-integration refactor. expected_llm entries are human-asserted and require the Phase 1/2 LLM layer to confirm (run without --no-llm). The automated meta-tests are scripts/python/test_qa_spine_unit_checks.py (layer 1) and scripts/python/test_qa_spine_integration_verdict.py (layer 2).",
+  "buckets": {
+    "passes_today": "The condition is correct/healthy and the spine treats it as acceptable.",
+    "fails_caught": "The condition is a defect and today's spine surfaces it (block, annotate, or diagnostic).",
+    "fails_not_yet_caught": "The condition is a defect but no current check surfaces it — the roadmap. proposed_check names the check that should exist."
+  },
+  "modules": [
+    "evidence",
+    "source_policy",
+    "relevance",
+    "presentation_safety",
+    "operational"
+  ],
+  "artifacts": {
+    "agent_assembled_baseline.json": {
+      "layer": "integration",
+      "expected_release_verdict": "ok",
+      "note": "Realistic clean baseline assembled by a clean-context sub-agent following the offline meeting_briefing instruction over a synthetic hybrid agenda packet (15 items, 16 claims, 13 sources spanning agenda_packet / news / haystaq). The integration ok-control AND the base every other packet-3.0 fixture derives from. Verdict ok. Two diagnostic warnings are benign and do NOT drive the verdict: (1) source_hierarchy_policy reports a policy gap for the claim_types with no hierarchy entry [constituent_sentiment, news_context, staff_recommendation]; (2) summary_source_coherence flags item_005 and item_010 as faithful-paraphrase false positives."
+    },
+    "unit_check_packet.json": {
+      "layer": "unit",
+      "expected_release_verdict": "block",
+      "note": "LAYER 1 unit packet. The clean baseline with several targeted per-claim/per-item defects folded into ONE file, each isolated so only its intended check reacts on its target. The overall release_verdict (block) is IRRELEVANT to the unit assertions and is recorded only for completeness — the unit meta-test asserts each check individually by check_id + offending, never the verdict. Caught targets: extracts_appear_in_cited_source (claim_008), high_stakes_structured_match (claim_004), source_hierarchy_policy (claim_005), prohibited_phrases (item_001). Should-not-fire targets: truncated extract (claim_009), advocacy inside quoted source (NEWS-2/claim_010), faithful-paraphrase coherence (item_005/item_010, inherited from baseline)."
+    },
+    "variants/variant_single_blocking_defect.json": {
+      "layer": "integration",
+      "expected_release_verdict": "block",
+      "note": "LAYER 2. Exactly one block-routed defect: claim_008's extract is absent from its cited source, so extracts_appear_in_cited_source blocks. The only hard-block family observed in the 488-briefing replay."
+    },
+    "variants/variant_single_annotate_defect.json": {
+      "layer": "integration",
+      "expected_release_verdict": "warn",
+      "note": "LAYER 2. Exactly one annotate-routed defect: advocacy 'Push for' in an authored display.summary makes prohibited_phrases annotate (never block) -> warn."
+    },
+    "variants/variant_identity_missing.json": {
+      "layer": "integration",
+      "expected_release_verdict": "block",
+      "note": "LAYER 2. Whole-doc identity check: official_name blanked, so identity_fields_present blocks (route=block). schema_validation also flags the minLength violation as an annotate, but identity_fields_present drives the block."
+    },
+    "variants/variant_schema_drift.json": {
+      "layer": "integration",
+      "expected_release_verdict": "warn",
+      "note": "LAYER 2. Whole-doc schema check: an extra top-level property (draft_notes) violates additionalProperties:false. schema_validation is staged as annotate during the trial window, so it warns rather than blocks -> warn."
+    }
+  },
+  "cases": [
+    {
+      "case_id": "baseline_clean_passes_full_pipeline",
+      "layer": "integration",
+      "rubric_dimension": "all (clean control)",
+      "module": "operational",
+      "bucket": "passes_today",
+      "artifact": "agent_assembled_baseline.json",
+      "target": {
+        "scope": "whole_artifact"
+      },
+      "expected_release_verdict": "ok",
+      "expected_deterministic": [
+        {
+          "check_id": "identity_fields_present",
+          "status": "pass"
+        },
+        {
+          "check_id": "high_stakes_structured_match",
+          "status": "pass"
+        },
+        {
+          "check_id": "extracts_appear_in_cited_source",
+          "status": "pass"
+        },
+        {
+          "check_id": "prohibited_phrases",
+          "status": "pass"
+        },
+        {
+          "check_id": "source_hierarchy_policy",
+          "status": "warning",
+          "route": "diagnostic",
+          "offending": "constituent_sentiment, news_context, staff_recommendation",
+          "note": "policy-gap diagnostic — does not drive verdict"
+        },
+        {
+          "check_id": "summary_source_coherence",
+          "status": "warning",
+          "route": "diagnostic",
+          "offending": "item_005",
+          "note": "faithful-paraphrase false positives on item_005 and item_010 — diagnostic, does not drive verdict"
+        }
+      ],
+      "tested_by": "test_qa_spine_integration_verdict.py::test_clean_baseline_routes_ok",
+      "rationale": "The agent-assembled clean baseline runs end-to-end with verdict ok. Two diagnostic warnings (source_hierarchy_policy gap; summary_source_coherence on item_005/item_010) are expected and benign — route=diagnostic never drives the verdict. The integration ok-control and the base every other packet-3.0 fixture derives from."
+    },
+    {
+      "case_id": "integration_single_blocking_defect_routes_block",
+      "layer": "integration",
+      "rubric_dimension": "Grounding & Traceability",
+      "module": "evidence",
+      "bucket": "fails_caught",
+      "artifact": "variants/variant_single_blocking_defect.json",
+      "target": {
+        "scope": "whole_artifact",
+        "claim_id": "claim_008"
+      },
+      "expected_release_verdict": "block",
+      "tested_by": "test_qa_spine_integration_verdict.py::test_single_blocking_defect_routes_block",
+      "rationale": "Exactly one block-routed defect: claim_008's source_extract is absent from its cited src_streetscape snapshot, so extracts_appear_in_cited_source (route=block) fails and the verdict resolves to block. The only hard-block family observed in the 488-briefing replay."
+    },
+    {
+      "case_id": "integration_single_annotate_defect_routes_warn",
+      "layer": "integration",
+      "rubric_dimension": "Gating: no political advocacy",
+      "module": "presentation_safety",
+      "bucket": "fails_caught",
+      "artifact": "variants/variant_single_annotate_defect.json",
+      "target": {
+        "scope": "whole_artifact",
+        "item_id": "item_001"
+      },
+      "expected_release_verdict": "warn",
+      "tested_by": "test_qa_spine_integration_verdict.py::test_single_annotate_defect_routes_warn",
+      "rationale": "Exactly one annotate-routed defect: the advocacy phrase 'Push for' in item_001's authored display.summary makes prohibited_phrases (route=annotate) warn, so the verdict resolves to warn (never block)."
+    },
+    {
+      "case_id": "integration_identity_missing_routes_block",
+      "layer": "integration",
+      "rubric_dimension": "operational (non-rubric: QA-spine self-health)",
+      "module": "operational",
+      "bucket": "fails_caught",
+      "artifact": "variants/variant_identity_missing.json",
+      "target": {
+        "scope": "whole_artifact",
+        "field": "official_name"
+      },
+      "expected_release_verdict": "block",
+      "expected_deterministic": [
+        {
+          "check_id": "identity_fields_present",
+          "status": "fail",
+          "route": "block",
+          "offending": "official_name"
+        },
+        {
+          "check_id": "schema_validation",
+          "status": "fail",
+          "route": "annotate",
+          "note": "minLength violation on official_name; annotate, does not drive the block"
+        }
+      ],
+      "tested_by": "test_qa_spine_integration_verdict.py::test_identity_missing_routes_block",
+      "rationale": "Whole-doc identity check: official_name is blanked, so identity_fields_present (route=block) fails and the verdict resolves to block. Layer-1 schema_validation also flags the minLength violation as an annotate, but identity_fields_present drives the block. Derived from the realistic baseline by blanking official_name on a full briefing."
+    },
+    {
+      "case_id": "integration_schema_drift_routes_warn",
+      "layer": "integration",
+      "rubric_dimension": "operational (non-rubric: QA-spine self-health)",
+      "module": "operational",
+      "bucket": "fails_not_yet_caught",
+      "artifact": "variants/variant_schema_drift.json",
+      "target": {
+        "scope": "whole_artifact",
+        "field": "draft_notes (extra top-level property)"
+      },
+      "expected_release_verdict": "warn",
+      "expected_deterministic": [
+        {
+          "check_id": "schema_validation",
+          "status": "fail",
+          "route": "annotate",
+          "note": "additionalProperties violation; staged as annotate, not block"
+        }
+      ],
+      "proposed_check": "Promote schema_validation from annotate to block once production briefings are confirmed to conform to the strict output_schema (per qa-spine-backlog).",
+      "tested_by": "test_qa_spine_integration_verdict.py::test_schema_drift_routes_warn",
+      "rationale": "Whole-doc schema check: an extra top-level property (draft_notes) violates additionalProperties:false. schema_validation is staged as annotate during the trial window, so it warns rather than blocks and the verdict resolves to warn. Derived from the realistic baseline by adding an extra top-level property to a full briefing."
+    },
+    {
+      "case_id": "grounding_extract_not_in_source_blocks",
+      "layer": "unit",
+      "rubric_dimension": "Grounding & Traceability",
+      "module": "evidence",
+      "bucket": "fails_caught",
+      "artifact": "unit_check_packet.json",
+      "target": {
+        "claim_id": "claim_008",
+        "check": "extracts_appear_in_cited_source",
+        "result": "caught"
+      },
+      "expected_deterministic": [
+        {
+          "check_id": "extracts_appear_in_cited_source",
+          "status": "fail",
+          "route": "block",
+          "offending": "claim_008: 'The selection committee unanimously praised the bidder's saf…' (best_fuzzy=44)"
+        }
+      ],
+      "tested_by": "test_qa_spine_unit_checks.py::test_extract_not_in_source_is_caught",
+      "rationale": "claim_008's source_extract is invented text absent from the cited src_streetscape snapshot (best fuzzy 44 < 90), so extracts_appear_in_cited_source fails (route=block) for a high-weight claim. claim_text is unchanged so its money literals stay in the source and high_stakes_structured_match passes on claim_008 — isolating the failure to grounding. Asserted PER-CHECK on claim_008, not by the unit packet's overall verdict. Real precedent: the only hard block in the 488-briefing replay was this family."
+    },
+    {
+      "case_id": "accuracy_money_mismatch_blocks_on_structured_match",
+      "layer": "unit",
+      "rubric_dimension": "Accuracy",
+      "module": "evidence",
+      "bucket": "fails_caught",
+      "artifact": "unit_check_packet.json",
+      "target": {
+        "claim_id": "claim_004",
+        "check": "high_stakes_structured_match",
+        "result": "caught"
+      },
+      "expected_deterministic": [
+        {
+          "check_id": "high_stakes_structured_match",
+          "status": "fail",
+          "route": "block",
+          "offending": "claim_004(money): missing ['45000000']"
+        }
+      ],
+      "tested_by": "test_qa_spine_unit_checks.py::test_money_mismatch_is_caught_by_structured_match",
+      "rationale": "claim_004 collapses the $42,000,000 net-proceeds cap and the $43,500,000 principal cap into a single invented $45,000,000 figure absent from the cited source. high_stakes_structured_match (money) extracts 45000000 from claim_text, finds it missing from the cited snapshot, and fails (route=block). The source_extract is left a verbatim substring so extracts_appear_in_cited_source still passes on claim_004 — isolating the failure to the money literal. Asserted per-check on claim_004."
+    },
+    {
+      "case_id": "sourcepolicy_budget_cited_to_news_blocks_on_hierarchy",
+      "layer": "unit",
+      "rubric_dimension": "Grounding & Traceability",
+      "module": "source_policy",
+      "bucket": "fails_caught",
+      "artifact": "unit_check_packet.json",
+      "target": {
+        "claim_id": "claim_005",
+        "check": "source_hierarchy_policy",
+        "result": "caught"
+      },
+      "expected_deterministic": [
+        {
+          "check_id": "source_hierarchy_policy",
+          "status": "fail",
+          "route": "block",
+          "offending": "claim_005(budget_number): ['NEWS-1=news'] not in ['agenda_packet', 'government_website']"
+        }
+      ],
+      "tested_by": "test_qa_spine_unit_checks.py::test_budget_cited_to_news_is_caught_by_source_hierarchy",
+      "rationale": "claim_005 (budget_number, high-weight, the $18,400,000 trunk-line figure) is re-cited only to news source NEWS-1, outside its allowed [agenda_packet, government_website]. The $18,400,000 literal is planted in NEWS-1's snapshot and a matching extract is provided, so high_stakes_structured_match and extracts_appear_in_cited_source both pass on claim_005 — only source_hierarchy_policy fails (route=block). Uses claim_005 (not claim_008) so it does not collide with the extract-not-in-source defect on claim_008 in the same unit packet. Asserted per-check on claim_005."
+    },
+    {
+      "case_id": "advocacy_in_authored_prose_annotates",
+      "layer": "unit",
+      "rubric_dimension": "Gating: no political advocacy",
+      "module": "presentation_safety",
+      "bucket": "fails_caught",
+      "artifact": "unit_check_packet.json",
+      "target": {
+        "item_id": "item_001",
+        "field": "items[].display.summary",
+        "check": "prohibited_phrases",
+        "result": "caught"
+      },
+      "expected_deterministic": [
+        {
+          "check_id": "prohibited_phrases",
+          "status": "warning",
+          "route": "annotate",
+          "offending": "push_for"
+        }
+      ],
+      "tested_by": "test_qa_spine_unit_checks.py::test_advocacy_in_authored_prose_is_flagged",
+      "rationale": "The advocacy phrase 'Push for' is injected into item_001's authored display.summary, a policed prohibited_phrase_path. prohibited_phrases warns (route=annotate, never blocks). Asserted per-check on the prohibited_phrases finding."
+    },
+    {
+      "case_id": "falsepos_truncated_extract_does_not_block",
+      "layer": "unit",
+      "rubric_dimension": "Accuracy",
+      "module": "evidence",
+      "bucket": "passes_today",
+      "artifact": "unit_check_packet.json",
+      "target": {
+        "claim_id": "claim_009",
+        "check": "extracts_appear_in_cited_source / high_stakes_structured_match",
+        "result": "should_not_fire"
+      },
+      "expected_deterministic": [
+        {
+          "check_id": "extracts_appear_in_cited_source",
+          "status": "pass",
+          "note": "must not fail on claim_009"
+        },
+        {
+          "check_id": "high_stakes_structured_match",
+          "status": "pass",
+          "note": "must not fail on claim_009"
+        }
+      ],
+      "expected_llm": {
+        "phase": "phase1",
+        "tendency": "over_flag",
+        "phase2_overturns": true
+      },
+      "requires_llm": false,
+      "tested_by": "test_qa_spine_unit_checks.py::test_truncated_extract_is_not_flagged",
+      "rationale": "FALSE-positive target. claim_009 is fully supported by src_streetscape but its extract is shortened to a true snippet ('$54,500.00 under estimate'). It is still a verbatim substring and the money literals stay in the cited source, so neither extracts_appear_in_cited_source nor high_stakes_structured_match may fail on claim_009. The deterministic assertion is auto-checked per-check; the Phase-1-over-flag / Phase-2-overturn LLM tendency (45/60 overturned in the 488-run) is documented, not auto-asserted."
+    },
+    {
+      "case_id": "advocacy_inside_quoted_source_does_not_fire",
+      "layer": "unit",
+      "rubric_dimension": "Gating: no political advocacy",
+      "module": "presentation_safety",
+      "bucket": "passes_today",
+      "artifact": "unit_check_packet.json",
+      "target": {
+        "claim_id": "claim_010",
+        "source_id": "NEWS-2",
+        "check": "prohibited_phrases",
+        "result": "should_not_fire"
+      },
+      "expected_deterministic": [
+        {
+          "check_id": "prohibited_phrases",
+          "status": "should_not_contain",
+          "offending_must_not_contain": "demand"
+        }
+      ],
+      "tested_by": "test_qa_spine_unit_checks.py::test_advocacy_inside_quoted_source_is_not_flagged",
+      "rationale": "FALSE-positive target. The advocacy phrase 'demand' appears only inside NEWS-2's source snapshot and claim_010's source_extract — never in an authored prose path. prohibited_phrases scans authored prose only, so 'demand' must NOT appear in any prohibited_phrases finding (the only thing it flags in the unit packet is the authored 'Push for' on item_001). Uses NEWS-2/claim_010 so it does not collide with the budget_cited_to_news defect on NEWS-1/claim_005. Asserted per-check."
+    },
+    {
+      "case_id": "relevance_falsepos_paraphrase_diagnostic_only",
+      "layer": "unit",
+      "rubric_dimension": "Grounding & Traceability",
+      "module": "relevance",
+      "bucket": "passes_today",
+      "artifact": "unit_check_packet.json",
+      "target": {
+        "item_id": "item_005 + item_010",
+        "check": "summary_source_coherence",
+        "result": "diagnostic_only"
+      },
+      "expected_deterministic": [
+        {
+          "check_id": "summary_source_coherence",
+          "status": "warning",
+          "route": "diagnostic",
+          "offending": "item_005",
+          "note": "faithful-paraphrase false positive; route=diagnostic never drives the verdict"
+        }
+      ],
+      "tested_by": "test_qa_spine_unit_checks.py::test_paraphrased_summary_is_diagnostic_only",
+      "rationale": "FALSE-positive target. The accurate-but-paraphrased-summary coherence false positive is inherited untouched from the clean baseline at item_005 and item_010. summary_source_coherence flags them but only as a diagnostic (route=diagnostic), which never drives the verdict — so this is a should-not-block, not a should-not-fire. Asserted per-check: every coherence warning routes diagnostic, and item_005/item_010 are named."
+    },
+    {
+      "case_id": "grounding_true_but_wrong_citation_annotates_only",
+      "layer": "roadmap_gap",
+      "rubric_dimension": "Grounding & Traceability",
+      "module": "evidence",
+      "bucket": "fails_not_yet_caught",
+      "artifact": null,
+      "target": {
+        "claim_id": "claim_010"
+      },
+      "expected_deterministic": [],
+      "expected_llm": {
+        "phase": "phase1",
+        "accuracy_category": "Not in Source — Verified Elsewhere"
+      },
+      "requires_llm": true,
+      "proposed_check": "Citation-discipline policy: when a claim's extract is not in its cited source but IS present in a different uncited source in the packet, flag the mis-citation (true-but-wrong-citation) rather than treating it as a generic low-weight extract miss. Conditional on the product adopting a citation-discipline policy.",
+      "rationale": "ROADMAP GAP, documentation-only (no runnable fixture; the standalone variant was removed in the packet-3.0 refactor). A true-but-wrong-citation defect — a low-weight news_context claim re-cited to a source that does not contain the (true) fact — is only annotated as a generic low-weight extract miss; no deterministic check enforces citation discipline. An LLM reading all snapshots would mark it 'Not in Source — Verified Elsewhere'. There is no check function to unit-test, so this is kept as a proposed_check only."
+    },
+    {
+      "case_id": "prioritization_high_salience_omitted_not_yet_caught",
+      "layer": "roadmap_gap",
+      "rubric_dimension": "Prioritization",
+      "module": "relevance",
+      "bucket": "fails_not_yet_caught",
+      "artifact": null,
+      "target": {
+        "item_id": "item_007"
+      },
+      "expected_deterministic": [],
+      "proposed_check": "Prioritization / salience check: detect a genuinely high-salience agenda item (e.g. a multi-million-dollar bond vote) demoted out of featured, or procedural trivia overemphasized as featured. No check scores attention allocation today.",
+      "rationale": "ROADMAP GAP, documentation-only (no runnable fixture). A genuinely high-salience item (a $42M+ sewer-bond vote) demoted out of featured leaves every claim/extract unchanged, so all grounding/accuracy checks pass and the verdict stays ok. No check evaluates whether the RIGHT items are featured. No check function exists to unit-test; kept as a proposed_check only."
+    },
+    {
+      "case_id": "actionability_restates_agenda_not_yet_caught",
+      "layer": "roadmap_gap",
+      "rubric_dimension": "Actionability",
+      "module": "relevance",
+      "bucket": "fails_not_yet_caught",
+      "artifact": null,
+      "target": {
+        "item_id": "item_006"
+      },
+      "expected_deterministic": [],
+      "proposed_check": "Actionability / preparation-value check: detect featured prose that only restates the agenda line without giving the official anything to prepare, decide, or ask. No check scores preparation usefulness today.",
+      "rationale": "ROADMAP GAP, documentation-only (no runnable fixture). Featured prose that merely restates the agenda with no preparation value stays grounded (the facts are in the source), so coherence/grounding pass and the verdict stays ok. No check scores actionability. No check function exists to unit-test; kept as a proposed_check only."
+    },
+    {
+      "case_id": "gating_toxic_language_not_yet_caught",
+      "layer": "roadmap_gap",
+      "rubric_dimension": "Gating: no toxic/discriminatory",
+      "module": "presentation_safety",
+      "bucket": "fails_not_yet_caught",
+      "artifact": null,
+      "target": {
+        "item_id": "item_012"
+      },
+      "expected_deterministic": [],
+      "proposed_check": "Toxicity / discrimination gate: detect demeaning, abusive, or discriminatory language in EO-facing prose. prohibited_phrases only matches advocacy verbs; there is no toxicity classifier today.",
+      "rationale": "ROADMAP GAP, documentation-only (no runnable fixture). Demeaning language in an authored summary is not matched by prohibited_phrases (advocacy verbs only) and no toxicity check exists, so nothing fires and the verdict stays ok. No check function exists to unit-test; kept as a proposed_check only. (Any such defect would be fully synthetic; targets no real person or group.)"
+    },
+    {
+      "case_id": "gating_individual_pii_not_yet_caught",
+      "layer": "roadmap_gap",
+      "rubric_dimension": "Gating: no inappropriate PII",
+      "module": "presentation_safety",
+      "bucket": "fails_not_yet_caught",
+      "artifact": null,
+      "target": {
+        "item_id": "item_006",
+        "field": "display.constituent_sentiment.detail"
+      },
+      "expected_deterministic": [],
+      "proposed_check": "Inappropriate-PII gate: detect individual-level voter data (named voter with address/phone/score) in EO-facing prose, distinct from the allowed aggregate haystaq sentiment. No PII check exists today.",
+      "rationale": "ROADMAP GAP, documentation-only (no runnable fixture). An individual-level voter datum in EO-facing prose — exactly what the aggregate haystaq sources avoid — is caught by no check today, so nothing fires and the verdict stays ok. No check function exists to unit-test; kept as a proposed_check only. (Any such named voter would be fictional; contrast the aggregate HAYSTAQ-1/2 sources, which are appropriate.)"
+    },
+    {
+      "case_id": "register_chatbot_tone_not_yet_caught",
+      "layer": "roadmap_gap",
+      "rubric_dimension": "Gating: professional register",
+      "module": "presentation_safety",
+      "bucket": "fails_not_yet_caught",
+      "artifact": null,
+      "target": {
+        "item_id": "item_009"
+      },
+      "expected_deterministic": [],
+      "proposed_check": "Professional-register check: detect chatbot/campaign-memo tone ('Great question!', 'gonna', 'Let me know if...') in EO-facing prose. Only mechanical polish_grammar (typos, doubled words) exists, not register.",
+      "rationale": "ROADMAP GAP, documentation-only (no runnable fixture). Chatbot/campaign-memo register keeps money literals correct, so structured/grounding checks pass; polish_grammar is mechanical only and finds no typo, so nothing fires and the verdict stays ok. No check function exists to unit-test; kept as a proposed_check only."
+    }
+  ],
+  "rubric_coverage": {
+    "_about": "Maps each of the 5 scored rubric dimensions and 4 gating checks to whether a deterministic check covers it today. status 'covered' means at least one deterministic check fires on a planted defect of this dimension; 'gap' means no check exists and the defect lands in fails_not_yet_caught with a proposed_check. cases lists the manifest case_ids exercising the dimension; check_ids lists the deterministic checks that cover it (empty for gaps).",
+    "Accuracy": {
+      "status": "covered",
+      "check_ids": [
+        "high_stakes_structured_match"
+      ],
+      "cases": [
+        "accuracy_money_mismatch_blocks_on_structured_match",
+        "falsepos_truncated_extract_does_not_block"
+      ],
+      "note": "Deterministic coverage is the high-stakes literal match (money/date/vote/legal/name), exercised by accuracy_money_mismatch_blocks_on_structured_match (caught) and falsepos_truncated_extract_does_not_block (false positive). Subtler accuracy (negation inversion, stale-superseded figures, certainty inflation) is LLM-dependent or a gap not currently exercised by a fixture in this packet."
+    },
+    "Grounding & Traceability": {
+      "status": "covered",
+      "check_ids": [
+        "extracts_appear_in_cited_source",
+        "high_weight_claims_have_extracts",
+        "all_claims_have_provenance",
+        "citation_ids_resolve",
+        "source_hierarchy_policy"
+      ],
+      "cases": [
+        "grounding_extract_not_in_source_blocks",
+        "sourcepolicy_budget_cited_to_news_blocks_on_hierarchy",
+        "grounding_true_but_wrong_citation_annotates_only"
+      ],
+      "note": "Strong deterministic coverage for extract-in-source and source-type policy. The true-but-wrong-citation sub-case is only partially covered (annotates as a low-weight extract miss; no citation-discipline policy) — a gap."
+    },
+    "Prioritization": {
+      "status": "gap",
+      "check_ids": [],
+      "cases": [
+        "prioritization_high_salience_omitted_not_yet_caught"
+      ],
+      "note": "No check scores attention allocation (right items featured, trivia not overemphasized)."
+    },
+    "Coverage": {
+      "status": "covered_no_fixture",
+      "check_ids": [
+        "claim_coverage",
+        "completeness_floor"
+      ],
+      "cases": [],
+      "note": "claim_coverage and completeness_floor cover under-emission and skeleton output (diagnostic/annotate) in the spine, but no fixture in this packet exercises them: the coverage cases lived on the orphaned packet-1.0 layer and were dropped in 3.1. Omitted-topic coverage (a sub-topic the source raised but no claim addresses) remains a gap."
+    },
+    "Actionability": {
+      "status": "gap",
+      "check_ids": [],
+      "cases": [
+        "actionability_restates_agenda_not_yet_caught"
+      ],
+      "note": "No check scores preparation value of featured prose."
+    },
+    "Gating: no political advocacy": {
+      "status": "covered",
+      "check_ids": [
+        "prohibited_phrases"
+      ],
+      "cases": [
+        "advocacy_in_authored_prose_annotates",
+        "advocacy_inside_quoted_source_does_not_fire"
+      ],
+      "note": "prohibited_phrases annotates advocacy verbs on authored prose paths and correctly does NOT fire on the same phrase inside a quoted source extract."
+    },
+    "Gating: no toxic/discriminatory": {
+      "status": "gap",
+      "check_ids": [],
+      "cases": [
+        "gating_toxic_language_not_yet_caught"
+      ],
+      "note": "No toxicity/discrimination classifier; prohibited_phrases matches advocacy verbs only."
+    },
+    "Gating: no inappropriate PII": {
+      "status": "gap",
+      "check_ids": [],
+      "cases": [
+        "gating_individual_pii_not_yet_caught"
+      ],
+      "note": "No check distinguishes individual-level voter data (disallowed) from aggregate haystaq sentiment (allowed)."
+    },
+    "Gating: professional register": {
+      "status": "gap",
+      "check_ids": [],
+      "cases": [
+        "register_chatbot_tone_not_yet_caught"
+      ],
+      "note": "Only mechanical polish_grammar exists; nothing scores chatbot/campaign-memo register."
+    }
+  }
+}

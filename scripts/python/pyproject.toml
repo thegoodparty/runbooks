@@ -22,6 +22,11 @@ dev = [
     "pytest>=9.0.3",
 ]
 
+[tool.pytest.ini_options]
+# Pin `import qa_validate` (and the other top-level script modules) to resolve from
+# this directory regardless of pytest's invocation cwd / rootdir inference.
+pythonpath = ["."]
+
 [tool.pyright]
 # basedpyright/pyright don't yet auto-resolve PEP 735 dependency-groups; point them
 # at the uv-managed venv so dev-only imports (pytest) resolve in editors.
