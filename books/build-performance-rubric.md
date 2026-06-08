@@ -11,6 +11,17 @@ There is **no universal status field**. meeting_briefing uses `briefing_status`,
 
 Performance ceilings can be **absolute today** (turns/cost/errors are facts); the quality rubric cannot, since quality validity needs a human referent. That asymmetry is why this gate can block now.
 
+## Onboarding a new experiment
+The tooling is generic: `derive_perf_thresholds.py` and `perf_gate.py` take the experiment name and its config as arguments, with no per-experiment code or hardcoded roster, so a new experiment needs zero new code. What it needs is data, and that splits onboarding into two phases.
+
+**Phase 1: from run one, the universal gate already applies.** The `NO_ARTIFACT` hard FAIL is field-independent and valid for any experiment with zero config, so a brand-new experiment is protected against its worst failure (producing nothing) immediately. Run the gate with just `--exp` and no `--config` to apply it plus the loose `DEFAULT_THRESHOLDS` guardrails (cost $6 / 80 turns / 2 tool errors):
+```bash
+uv run scripts/python/perf_gate.py <traces_dir> --exp <new_exp> --bucket $ARTIFACTS_BUCKET-dev
+```
+What Phase 1 does NOT give you: status-based FAILs (e.g. an artifact whose status is `error`) and ceilings fit to this experiment's real cost profile. Both need data.
+
+**Phase 2: tune once it has ~50-60 dev runs.** Run Steps 1-3 below. `derive` discovers the status field, computes p95 cost/turns/error ceilings from the experiment's own distribution, infers `fail_values`, and records the no-artifact baseline; adopt the result to `experiment-evals/<new_exp>/perf.json`, after which `--config` replaces the day-one defaults. The only per-experiment judgment is confirming the auto-discovered status field is the right one. Treat ceilings from a thin sample as provisional (a p95 from 10 runs is noise), but trust the no-artifact rate from run one.
+
 ## Prerequisites
 **books/.env variables**: `$AWS_PROFILE`, `$AWS_REGION`, `$ARTIFACTS_BUCKET` (resolved per env as `$ARTIFACTS_BUCKET-<env>`).
 **Tools**: AWS CLI, `uv`. No agent/judge runtime needed — this is pure measurement.
