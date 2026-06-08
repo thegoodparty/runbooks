@@ -20,17 +20,18 @@ any extra fields on the next publish (the script only emits a fixed set:
 Usage:
     AWS_PROFILE=work uv run python publish_experiments.py --env=dev
 
-By DEFAULT the publisher publishes the FULL set of experiments under
-`experiments/<id>/` and replaces `index.json` wholesale. This is correct for
-prod, where CI publishes the canonical set atomically and the git branch is the
-curation surface (dev branch → dev S3, qa branch → qa S3, main branch → prod S3).
+Publish mode is **additive (merge) by default on dev**, full-replace on qa/prod:
+- **dev** → merge: overlays only the local experiments onto the LIVE `index.json`
+  (update/add by id, preserve every other entry). Shared dev has many developers
+  iterating at once, so a full-replace from one person's branch would silently
+  unpublish everyone else's experiments. Additive-by-default means you can't clobber
+  dev by forgetting a flag. Force a full replace with `--replace`.
+- **qa / prod** → full-replace: CI publishes the canonical set atomically and the git
+  branch is the curation surface (qa branch → qa S3, main → prod S3). `--merge` forces
+  merge on qa if ever needed; it is refused for prod.
 
-But shared dev/qa have many developers iterating at once, and a full-replace from
-one person's local branch silently unpublishes everyone else's experiments. For
-that case use `--merge`: it overlays only the local experiments onto the LIVE
-`index.json` (update/add by id, preserve every other entry), so a partial publish
-never clobbers others' work. `--merge` is refused for prod, which keeps the atomic
-full-replace model intact.
+So: developing = just `--env=dev` (additive). `--replace` is the deliberate "publish
+exactly my local set" escape hatch.
 
 In CI: GH Actions assumes role `agent-experiment-metadata-publish-{env}` via
 OIDC (no long-lived credentials).
@@ -376,6 +377,19 @@ def merge_index(local: dict, remote: dict | None) -> dict:
     return merged
 
 
+def should_merge(env: str, merge_flag: bool, replace_flag: bool) -> bool:
+    """Decide additive (merge) vs full-replace publish.
+
+    --replace always wins (full-replace). An explicit --merge forces merge. Otherwise the
+    default is env-based: shared **dev** is additive by default so iterating developers never
+    clobber each other; qa/prod default to full-replace (the CI/branch-as-curation model)."""
+    if replace_flag:
+        return False
+    if merge_flag:
+        return True
+    return env == "dev"
+
+
 def _fetch_remote_index(s3, bucket: str) -> dict | None:
     """Return the live index.json, or None if the bucket has none yet."""
     try:
@@ -415,7 +429,7 @@ def _upload(s3, bucket: str, key: str, body: bytes, content_type: str) -> None:
         raise
 
 
-def publish(env: str, dry_run: bool = False, merge: bool = False) -> int:
+def publish(env: str, dry_run: bool = False, merge: bool = False, replace: bool = False) -> int:
     if env not in VALID_ENVS:
         print(f"error: --env must be one of {sorted(VALID_ENVS)}", file=sys.stderr)
         return 1
@@ -424,6 +438,7 @@ def publish(env: str, dry_run: bool = False, merge: bool = False) -> int:
               "publish (the git branch is the curation surface). Merge is for shared dev/qa.",
               file=sys.stderr)
         return 1
+    effective_merge = should_merge(env, merge, replace)  # dev defaults to additive; --replace forces full
 
     bucket = f"agent-experiment-metadata-{env}"
     dirs = _experiment_dirs()
@@ -447,14 +462,15 @@ def publish(env: str, dry_run: bool = False, merge: bool = False) -> int:
     s3 = None
     final_index = index
     preserved = 0
-    if merge:
+    if effective_merge:
         s3 = boto3.client("s3")
         final_index = merge_index(index, _fetch_remote_index(s3, bucket))
         preserved = len(final_index["experiments"]) - len(index["experiments"])
 
-    print(f"\n== publish target: s3://{bucket}/  (env={env}, git={index['git_sha']}{', MERGE' if merge else ''}) ==")
+    mode = "MERGE (additive)" if effective_merge else "REPLACE (full)"
+    print(f"\n== publish target: s3://{bucket}/  (env={env}, git={index['git_sha']}, {mode}) ==")
     print(f"   {len(index['experiments'])} local experiment(s) to publish"
-          + (f"; preserving {preserved} other(s) already live" if merge else ""))
+          + (f"; preserving {preserved} other(s) already live" if effective_merge else ""))
 
     if dry_run:
         print("\n[DRY RUN] would upload (manifest.json + instruction.md + attachments per experiment):")
@@ -480,12 +496,12 @@ def publish(env: str, dry_run: bool = False, merge: bool = False) -> int:
                     f"     (attachments subtotal: {att_total:,} bytes of "
                     f"{ATTACHMENTS_TOTAL_SIZE_LIMIT_BYTES:,} cap)"
                 )
-        if merge:
+        if effective_merge:
             print(f"\n[DRY RUN] would write MERGED index.json LAST "
                   f"({len(final_index['experiments'])} total = {len(index['experiments'])} local "
                   f"+ {preserved} preserved)")
         else:
-            print("\n[DRY RUN] would write index.json LAST as atomic switch")
+            print("\n[DRY RUN] would write index.json LAST as atomic switch (full replace)")
         return 0
 
     if s3 is None:
@@ -528,12 +544,12 @@ def publish(env: str, dry_run: bool = False, merge: bool = False) -> int:
         att_summary = f" + {att_count} attachment(s)" if att_count else ""
         print(f"   ✓ {entry['id']} v{entry['version']}{att_summary}")
 
-    print(f"\n== writing {'MERGED ' if merge else ''}index.json (atomic switch) ==")
+    print(f"\n== writing {'MERGED ' if effective_merge else ''}index.json (atomic switch) ==")
     _upload(s3, bucket, "index.json",
             (json.dumps(final_index, indent=2) + "\n").encode(),
             "application/json")
     print(f"   ✓ s3://{bucket}/index.json ({len(final_index['experiments'])} experiments live"
-          + (f", {preserved} preserved via merge)" if merge else ")"))
+          + (f", {preserved} preserved via merge)" if effective_merge else ")"))
     return 0
 
 
@@ -543,11 +559,13 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true",
                         help="Validate + show what would publish, do not touch S3")
     parser.add_argument("--merge", action="store_true",
-                        help="Non-clobbering publish for shared dev/qa: merge these experiments "
-                             "into the live index instead of replacing it (preserves others' "
-                             "work). Not allowed for prod.")
+                        help="Force non-clobbering merge into the live index (preserves others' "
+                             "work). Default for dev. Not allowed for prod.")
+    parser.add_argument("--replace", action="store_true",
+                        help="Force a full-replace publish (overrides dev's additive default). "
+                             "qa/prod already full-replace by default.")
     args = parser.parse_args()
-    return publish(env=args.env, dry_run=args.dry_run, merge=args.merge)
+    return publish(env=args.env, dry_run=args.dry_run, merge=args.merge, replace=args.replace)
 
 
 if __name__ == "__main__":

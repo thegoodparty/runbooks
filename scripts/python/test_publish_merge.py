@@ -52,3 +52,28 @@ def test_merge_does_not_mutate_inputs():
     merge_index(local, remote)
     assert [e["id"] for e in local["experiments"]] == ["alpha"]
     assert [e["id"] for e in remote["experiments"]] == ["bravo"]
+
+
+# --- default publish mode: dev is additive (merge) by default so iterating devs don't clobber ---
+from publish_experiments import should_merge
+
+
+def test_dev_defaults_to_merge():
+    assert should_merge("dev", merge_flag=False, replace_flag=False) is True
+
+
+def test_qa_and_prod_default_to_full_replace():
+    assert should_merge("qa", merge_flag=False, replace_flag=False) is False
+    assert should_merge("prod", merge_flag=False, replace_flag=False) is False
+
+
+def test_replace_overrides_dev_default():
+    assert should_merge("dev", merge_flag=False, replace_flag=True) is False
+
+
+def test_explicit_merge_flag_forces_merge():
+    assert should_merge("qa", merge_flag=True, replace_flag=False) is True
+
+
+def test_replace_wins_over_merge():
+    assert should_merge("dev", merge_flag=True, replace_flag=True) is False
