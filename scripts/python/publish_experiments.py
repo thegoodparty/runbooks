@@ -79,7 +79,10 @@ SANDBOX_MARKER = "sandbox"
 # target and (b) carrying a live index entry forward, so a malformed id can't
 # become an S3 key path and drift/corruption in the live index can't propagate
 # into a freshly published index.
-_EXPERIMENT_ID_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+# Anchor with \Z, not $: in Python `$` also matches just before a trailing
+# newline, so `^...$` would accept "sandbox_x\n" and let a newline leak into an
+# S3 key / path. \Z anchors at the true end of string.
+_EXPERIMENT_ID_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}\Z")
 
 
 def _is_sandbox(experiment_id: str) -> bool:
@@ -96,9 +99,19 @@ def _valid_carryforward(entry: dict) -> bool:
     eid = entry.get("id")
     if not isinstance(eid, str) or not _EXPERIMENT_ID_RE.match(eid):
         return False
-    return (
-        entry.get("manifest_key") == f"{eid}/manifest.json"
-        and entry.get("instruction_key") == f"{eid}/instruction.md"
+    if entry.get("manifest_key") != f"{eid}/manifest.json":
+        return False
+    if entry.get("instruction_key") != f"{eid}/instruction.md":
+        return False
+    # attachment_keys must all be canonical `<id>/attachments/<basename>` so the
+    # guarantee is self-contained rather than relying on the broker to re-check
+    # prefixes at read time.
+    attachment_keys = entry.get("attachment_keys", [])
+    if not isinstance(attachment_keys, list):
+        return False
+    prefix = f"{eid}/attachments/"
+    return all(
+        isinstance(ak, str) and ak.startswith(prefix) for ak in attachment_keys
     )
 
 # Total bytes cap across all attachments for a single experiment. Bounds the
@@ -359,15 +372,18 @@ def _publishable_manifest_bytes(manifest_path: Path, defs: dict) -> bytes:
     return json.dumps(inlined, indent=2, sort_keys=True).encode() + b"\n"
 
 
-def _build_index(
-    env: str, dirs: list[Path], meta: dict
-) -> tuple[dict, dict[str, list[tuple[str, bytes]]]]:
-    """Build index.json — every experiment in `dirs` becomes an entry.
+def _build_entries(
+    dirs: list[Path], meta: dict
+) -> tuple[list[dict], dict[str, list[tuple[str, bytes]]]]:
+    """Build the index.json entries for every experiment in `dirs`.
 
-    Returns both the index dict AND a per-experiment attachments map. The
-    map lets `publish()` upload the EXACT bytes that fed the hash digest;
-    re-reading from disk at upload time created a TOCTOU window where a
-    concurrent edit could ship bytes that don't match the published digest.
+    Returns the entries list AND a per-experiment attachments map. The map lets
+    `publish()` upload the EXACT bytes that fed the hash digest; re-reading from
+    disk at upload time created a TOCTOU window where a concurrent edit could
+    ship bytes that don't match the published digest.
+
+    `publish()` wraps these entries in the index envelope (published_at /
+    git_sha) so that envelope is constructed in exactly one place.
 
     The hash field covers the *published* manifest bytes (post-$ref-inlining)
     + instruction + every attachment body. Attachments contribute to the hash
@@ -395,12 +411,7 @@ def _build_index(
             "attachment_keys": attachment_keys,
             "hash": _hash_pair(manifest_bytes, instruction_bytes, attachments),
         })
-    index = {
-        "published_at": datetime.now(timezone.utc).isoformat(),
-        "git_sha": _git_sha(),
-        "experiments": entries,
-    }
-    return index, attachments_by_id
+    return entries, attachments_by_id
 
 
 def _fetch_live_index(s3, bucket: str) -> dict | None:
@@ -444,6 +455,7 @@ def _compose_index_entries(
     *,
     only_id: str | None,
     env: str,
+    on_drop=None,
 ) -> list[dict]:
     """Decide the final `experiments` list to write to index.json.
 
@@ -456,27 +468,34 @@ def _compose_index_entries(
 
     Carried-forward live entries are filtered through `_valid_carryforward`, so
     a drifted/corrupt live entry is dropped rather than re-published. Freshly
-    built entries are always canonical and are never filtered.
+    built entries are always canonical and are never filtered. `on_drop`, if
+    given, is called with each candidate entry that is dropped, so the caller
+    can surface the drift instead of losing it silently.
 
-    Pure function — no I/O — so the policy is unit-testable without S3.
+    No I/O of its own (the only side effect is the `on_drop` callback), so the
+    policy is unit-testable without S3.
     """
+
+    def _carry(candidates: list[dict]) -> list[dict]:
+        kept: list[dict] = []
+        for e in candidates:
+            if _valid_carryforward(e):
+                kept.append(e)
+            elif on_drop is not None:
+                on_drop(e)
+        return kept
+
     if only_id is not None:
-        kept = [
-            e
-            for e in live_entries
-            if e.get("id") != only_id and _valid_carryforward(e)
-        ]
+        kept = _carry([e for e in live_entries if e.get("id") != only_id])
         merged = kept + new_entries
     elif env == "dev":
         canonical_ids = {e.get("id") for e in new_entries}
-        preserved = [
+        candidates = [
             e
             for e in live_entries
-            if _is_sandbox(str(e.get("id", "")))
-            and e.get("id") not in canonical_ids
-            and _valid_carryforward(e)
+            if _is_sandbox(str(e.get("id", ""))) and e.get("id") not in canonical_ids
         ]
-        merged = new_entries + preserved
+        merged = new_entries + _carry(candidates)
     else:
         merged = new_entries
     return sorted(merged, key=lambda e: str(e.get("id", "")))
@@ -561,8 +580,7 @@ def publish(env: str, dry_run: bool = False, only: str | None = None) -> int:
     meta = _load_meta_schema()
     _validate_all(meta, dirs)
 
-    built_index, attachments_by_id = _build_index(env, dirs, meta)
-    new_entries = built_index["experiments"]
+    new_entries, attachments_by_id = _build_entries(dirs, meta)
     defs = meta.get("$defs", {})
     git_sha = _git_sha()
 
@@ -622,9 +640,19 @@ def publish(env: str, dry_run: bool = False, only: str | None = None) -> int:
         live_index = _fetch_live_index(s3, bucket)
         if live_index is not None:
             live_entries = live_index.get("experiments", [])
+    dropped: list[str] = []
     final_entries = _compose_index_entries(
-        new_entries, live_entries, only_id=only, env=env
+        new_entries, live_entries, only_id=only, env=env,
+        on_drop=lambda e: dropped.append(str(e.get("id", "<no-id>"))),
     )
+    if dropped:
+        # Drift in the live index: an entry we would have carried forward had
+        # non-canonical keys. We drop it (don't re-publish corruption) but say so.
+        print(
+            f"   ⚠ dropped {len(dropped)} malformed live index entr(ies), "
+            f"not carry-forward safe: {', '.join(dropped)}",
+            file=sys.stderr,
+        )
 
     # Upload per-experiment files (only the ones we built) in parallel, then
     # index.json LAST so readers never see a partial publish. The executor join

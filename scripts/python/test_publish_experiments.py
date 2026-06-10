@@ -50,6 +50,32 @@ def test_is_sandbox(id_, expected):
     assert pe._is_sandbox(id_) is expected
 
 
+# ---------- _valid_carryforward ----------
+
+
+def test_valid_carryforward_accepts_canonical_entry():
+    e = _entry("opposition_research")
+    e["attachment_keys"] = ["opposition_research/attachments/roster.md"]
+    assert pe._valid_carryforward(e) is True
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        {"id": "Bad-Id"},  # fails the id pattern
+        {"id": "sandbox_x\n"},  # trailing newline must not pass (\\Z anchor)
+        {"manifest_key": "ATTACKER/manifest.json"},  # non-canonical manifest key
+        {"instruction_key": "ATTACKER/instruction.md"},  # non-canonical instr key
+        {"attachment_keys": ["../../etc/passwd"]},  # non-canonical attachment key
+        {"attachment_keys": "notalist"},  # wrong type
+    ],
+)
+def test_valid_carryforward_rejects_drift(mutate):
+    e = _entry("sandbox_x")
+    e.update(mutate)
+    assert pe._valid_carryforward(e) is False
+
+
 # ---------- _compose_index_entries ----------
 
 
@@ -169,6 +195,29 @@ def test_only_drops_malformed_carryforward_entry():
     assert [e["id"] for e in out] == ["sandbox_new"]  # bad entry dropped
 
 
+def test_dev_full_preserves_sandbox_entry_verbatim():
+    sb = _entry("sandbox_feliks", version=3)
+    out = pe._compose_index_entries(
+        [_entry("opposition_research")], [sb], only_id=None, env="dev"
+    )
+    preserved = next(e for e in out if e["id"] == "sandbox_feliks")
+    assert preserved == sb  # carried forward unchanged, not rebuilt
+
+
+def test_on_drop_callback_fires_for_each_dropped_entry():
+    dropped = []
+    bad = _entry("sandbox_bad")
+    bad["manifest_key"] = "ATTACKER/manifest.json"
+    pe._compose_index_entries(
+        [_entry("opposition_research")],
+        [bad],
+        only_id=None,
+        env="dev",
+        on_drop=lambda e: dropped.append(e["id"]),
+    )
+    assert dropped == ["sandbox_bad"]
+
+
 def test_dev_full_drops_malformed_sandbox_carryforward():
     bad = {
         "id": "sandbox_evil",
@@ -243,7 +292,7 @@ def test_fetch_live_index_valid():
     )
     with stub:
         out = pe._fetch_live_index(s3, "agent-experiment-metadata-dev")
-    assert out["experiments"][0]["id"] == "opposition_research"
+    assert out == {"experiments": [_entry("opposition_research")]}
 
 
 def test_fetch_live_index_access_denied_propagates():
@@ -252,6 +301,16 @@ def test_fetch_live_index_access_denied_propagates():
     s3, stub = _stubbed_s3()
     stub.add_client_error(
         "get_object", service_error_code="AccessDenied", http_status_code=403
+    )
+    with stub, pytest.raises(ClientError):
+        pe._fetch_live_index(s3, "agent-experiment-metadata-dev")
+
+
+def test_fetch_live_index_nosuchbucket_propagates():
+    # A missing bucket is not "fresh index" — it must surface, not return None.
+    s3, stub = _stubbed_s3()
+    stub.add_client_error(
+        "get_object", service_error_code="NoSuchBucket", http_status_code=404
     )
     with stub, pytest.raises(ClientError):
         pe._fetch_live_index(s3, "agent-experiment-metadata-dev")
