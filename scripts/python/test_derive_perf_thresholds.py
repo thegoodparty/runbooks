@@ -243,3 +243,33 @@ def test_refuses_ceilings_when_no_run_is_complete():
     with pytest.raises(SystemExit):
         require_complete_runs(present=[], n_rows=7, exp="x", noart=7)
     require_complete_runs(present=[{"cost": 1}], n_rows=7, exp="x", noart=6)  # ok
+
+
+def test_status_field_is_discovered_from_the_capped_sample_not_the_oversample(monkeypatch, tmp_path):
+    # discover_status_field must run AFTER cap_sample: the emitted status_field has to
+    # describe the same n rows that produce status_counts and the thresholds, or a
+    # mixed-key population makes the config disagree with its own counts.
+    import derive_perf_thresholds as dpt
+    rids = ["r1", "r2", "r3", "r4", "r5"]
+    bodies = {
+        "r1": '{"status": "found"}', "r2": '{"status": "found"}',
+        "r3": '{"briefing_status": "x"}', "r4": '{"briefing_status": "x"}', "r5": '{"briefing_status": "x"}',
+    }
+
+    def fake_aws(*args):
+        src, dst = args[2], args[3]
+        rid = src.split("/")[4]
+        body = TRACE_LINE if src.endswith(".jsonl") else bodies[rid]
+        with open(dst, "w") as f:
+            f.write(body)
+        return sp.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(dpt, "_list_runs", lambda bucket, exp, n: list(rids))
+    monkeypatch.setattr(dpt, "_aws", fake_aws)
+    monkeypatch.setattr(sys, "argv", ["derive_perf_thresholds.py", "myexp", "-n", "2"])
+    dpt.main()
+    cfg = read_cfg(tmp_path)
+    assert cfg["n"] == 2
+    # capped sample is r1,r2 (both "status"); the 2x oversample majority is briefing_status
+    assert cfg["status_field"] == "status"

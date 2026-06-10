@@ -178,8 +178,11 @@ def main():
     if not rows:
         sys.exit(f"ERROR: no usable runs sampled for {a.exp} in s3://{bucket}/{a.exp}/ "
                  f"({len(runs)} listed, {fetch_failures} fetch failures) — refusing to write a config")
-    status_field = discover_status_field(art for _rid, _m, art in rows)
     rows = cap_sample(rows, a.n)
+    # Discover AFTER capping so the emitted status_field describes the same n rows
+    # that produce status_counts and the thresholds (a mixed-key oversample could
+    # otherwise vote in a field the capped sample disagrees with).
+    status_field = discover_status_field(art for _rid, _m, art in rows)
     present, noart, statuses = aggregate_rows(rows, status_field)
     require_complete_runs(present, len(rows), a.exp, noart)
     fail_values = infer_fail_values(statuses, status_field)
