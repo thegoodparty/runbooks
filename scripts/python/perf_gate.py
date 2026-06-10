@@ -24,11 +24,22 @@ import argparse
 import glob
 import json
 import os
+import re
 import subprocess
 
 from eval_trajectory import score, _load
 
 NO_ARTIFACT = "NO_ARTIFACT"
+
+# The gate resolves each run's artifact from S3 by the run_id it derives from the trace FILENAME
+# (basename minus .jsonl). If traces are named anything other than <run_id>.jsonl, every lookup
+# misses and the whole arm reports a FALSE 100% NO_ARTIFACT. Trace files must be named by run_id.
+_RUN_ID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+
+
+def looks_like_run_id(stem: str) -> bool:
+    """True if a trace filename stem is a UUID-shaped run_id (so its S3 artifact can be found)."""
+    return bool(_RUN_ID_RE.match(stem))
 DEFAULT_THRESHOLDS = {"cost_max": 6.0, "turns_max": 80, "tool_errors_max": 2}
 # Default config is deliberately minimal: only NO_ARTIFACT is universal. Without a per-experiment
 # config the gate will NOT treat an arbitrary status string as a failure.
@@ -94,6 +105,17 @@ def main():
     if not exp:
         ap.error("need --exp or an 'experiment' in --config")
     status_field = a.status_field if a.status_field is not None else cfg.get("status_field")
+
+    trace_files = [f for f in sorted(glob.glob(os.path.join(a.trace_dir, "*.jsonl"))) if os.path.getsize(f)]
+    mislabeled = [os.path.basename(f) for f in trace_files if not looks_like_run_id(os.path.basename(f)[:-6])]
+    if mislabeled:
+        print("!! WARNING: these trace files are NOT named <run_id>.jsonl, so their S3 artifact")
+        print("!! lookup will MISS and report a FALSE NO_ARTIFACT. Rename traces by run_id:")
+        for name in mislabeled[:5]:
+            print(f"!!   {name}")
+        if len(mislabeled) > 5:
+            print(f"!!   ... and {len(mislabeled) - 5} more")
+        print("-" * 78)
 
     counts = {"PASS": 0, "FLAG": 0, "FAIL": 0}
     no_artifact = 0

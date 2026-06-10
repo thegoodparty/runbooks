@@ -38,6 +38,11 @@ done
 
 Traces carry no secrets in prod (the agent is broker-mediated, never holds keys); local-run traces can — don't vendor those.
 
+> **Two naming gotchas that produce silent, wrong results — read before an A/B:**
+>
+> 1. **A cloned experiment still writes the *original* filename.** If you clone `meeting_briefing` → `meeting_briefing_v2`, the instruction's hardcoded `Write the artifact to /workspace/output/meeting_briefing.json` carries over — so the treatment artifact lands at `…/meeting_briefing_v2/<rid>/logs/workspace/output/**meeting_briefing**.json`, NOT `output/meeting_briefing_v2.json`. The `output/$EXP.json` pull above will return **nothing** for the cloned arm and you'll wrongly conclude it produced no artifacts. **Pull the experiment-agnostic top-level `artifact.json` instead** (`s3://.../$EXP/$rid/artifact.json`) — the runner writes it for every run regardless of the internal filename, and it's what `perf_gate.py` reads.
+> 2. **Name trace files `<run_id>.jsonl`.** `perf_gate.py` derives the run_id from the trace *filename* to look up its artifact in S3. Name a trace anything else (e.g. by input label, for readability) and every lookup misses → a **false 100% NO_ARTIFACT FAIL** for the whole arm. `perf_gate.py` now prints a `WARNING` listing any non-run_id-named traces; don't ignore it.
+
 ## Step 2 — Trajectory eval
 
 ```bash
@@ -89,16 +94,26 @@ The rubric is graded by an LLM that never saw it being tuned (a *cold* judge), a
 
 ## Step 4 — A/B two prompt versions (the optimization loop)
 
-Treat the prompt as the **only** variable: clone the experiment to `<exp>_v2`, change only `instruction.md`, publish, dispatch the **same inputs** to both, and diff.
+Treat the prompt as the **only** variable: clone the experiment to `<exp>_v2`, change only `instruction.md`, publish, run the **same inputs** through both arms, and diff.
 
 1. **Clone + edit + publish** (see `books/convert-runbook-to-experiment.md` for the dir layout):
    ```bash
    cd experiments && cp -r <exp> <exp>_v2
    # set "id":"<exp>_v2" in <exp>_v2/manifest.json; edit ONLY <exp>_v2/instruction.md
    cd ../scripts/python && uv run pytest test_experiment_manifests.py -q
-   AWS_PROFILE=work uv run python publish_experiments.py --env=dev
+   AWS_PROFILE=work uv run python publish_experiments.py --env=dev   # --merge is the dev default; preserves others' work
    ```
-2. **Dispatch the same inputs to both** experiments (see `books/run-pmf-experiment-cloud.md` for the SQS message shape). Use 3–10 inputs; for a fair test, pick inputs whose outcome is stable (e.g. for meeting_briefing, a `briefing_ready` input needs a meeting still in the future, or it falls back to `awaiting_agenda`).
+2. **Pick your control source.** The control is whatever the *current* `instruction.md` produces; if a clean batch of recent runs on the inputs you want already exists in S3, you can **reuse those historical runs as the control** and only spawn the treatment — same inputs on both arms, half the dispatch cost. But treat an existing-data control as a **cheap screen, not the adopt-grade number**; two confounds ride along:
+   - **Time.** The control ran days or weeks earlier: a different "today" (any days-until-X math shifts), a world that may have moved under the input (results published, runoffs scheduled), and possibly a different runner/broker build or model alias. If the artifacts embed dates, read them — they tell you exactly when each arm ran.
+   - **Regression to the mean.** If you picked inputs *because* their historical runs were expensive, those runs were partly expensive by chance and will look cheaper on re-run **even with no prompt change**. Direction can still be trusted when the mechanism is visible in the traces (Step 4.5); the magnitude cannot, and it overstates the fleet-wide saving because the sample over-weights the tail.
+
+   **Before adopting on a large delta, re-dispatch a small fresh control batch (same inputs, same day) and quote that delta in the decision brief.** Skip the fresh control only for screens and small, mechanism-obvious changes.
+
+   **Sourcing realistic inputs (and recovering the authoritative params).** Lift a balanced, real input set from recent runs — but the artifact echoes back less than was dispatched (e.g. it stores `official_name`/`meeting_date`, not the full input). Recover the authoritative input from the run's record: depending on the experiment it appears either as a `tool_result` of the form `PARAMS_JSON: {…}` in `conversation.jsonl`, or inside the `<untrusted_data>{…}</untrusted_data>` block of the first message in `logs/session.jsonl` (note: that preamble *also* names the literal string `<untrusted_data>`, so match the **last** opening tag, not the first). Sample a few per path so every outcome/status is represented.
+
+   > **Schema-drift trap — historical params can be rejected by the current manifest (costs nothing, but blocks the run).** Inputs lifted from older runs may carry fields the *current* `input_schema` has since renamed or dropped; with `additionalProperties: false` the dispatch Lambda **rejects them before launching any Fargate task** (you'll see `input_schema validation failed … Additional properties are not allowed` in `/aws/lambda/pmf-engine-dispatch-<env>`). No cost is incurred, but nothing runs. Fix: prune each lifted input to exactly the keys the live manifest allows (fetch `s3://agent-experiment-metadata-<env>/<exp>/manifest.json`, recursively drop any key not in `properties` at each `additionalProperties:false` level). Renamed fields are usually pure duplicates of the new canonical field (e.g. old `projected_voter_turnout` == new `projected_turnout`), so pruning loses no information — confirm the new field carries the value before dropping the old one.
+
+   **Stale-date trap.** For date-bound experiments, filter to inputs whose outcome is still stable at *dispatch* time — e.g. for meeting_briefing keep only runs whose `meeting_date` is in the future, or a `briefing_ready` input re-runs as `awaiting_agenda` and silently confounds the A/B. If you reused historical runs as the control, the same shift can make the *control's* outcome no longer reproducible — another reason to confirm outcome parity (Step 4.4) before trusting the delta.
 3. **Collect both arms into two dirs** (`/tmp/eval/ctrl`, `/tmp/eval/treat`), filenames ending `__<input-label>.jsonl` so they match.
 4. **Diff:**
    ```bash
@@ -108,7 +123,28 @@ Treat the prompt as the **only** variable: clone the experiment to `<exp>_v2`, c
      --status-regex 'awaiting_agenda|agenda_provided_by_user|briefing_ready|no_meeting_found|error'
    ```
    It prints control-vs-treatment turns/cost/planning per input and an **outcome-parity check** — if any input lands a different `status` across arms, the comparison is confounded (the prompt changed *what* was produced, not just *how*), and the delta is meaningless until you fix it.
+
+   `eval_trajectory.py --ab` infers the outcome from a status *regex* over the trace text (rough — see the caveat in Step 2). For a `$`-framed table whose parity check uses the **true** artifact status, run `ab_savings.py` over your runs-map TSV (`exp, arm, path, label, run_id`) instead — it pulls each run's `artifact.json` from S3, prints per-input cost/turn savings, and **excludes outcome-mismatched pairs from the clean-pairs aggregate** so a confounded pair can't skew the headline number. The runs-map is where the **existing-data control** lands: put each historical control run on a `ctrl` row and each freshly-spawned treatment run on a `treat` row (same `label` pairs them). For an experiment with no status field, pass `--status-field ""`.
+   ```bash
+   uv run python ab_savings.py /tmp/eval/ab_runs.tsv --bucket gp-agent-artifacts-dev \
+     --status-field briefing_status \
+     --verbatim /tmp/eval/verbatim_v1_vs_v2.md     # also dump full artifacts for a human quality read
+   ```
+   `--verbatim` writes each input's **complete, untruncated** control-vs-treatment artifact side by side. Read it — a turn/cost win that quietly drops or degrades content is not a win, and the metric table alone won't show it. (In practice this read is where you catch things like a control bullet that was *factually wrong* — e.g. citing the wrong race — that the treatment correctly dropped.)
+
+   > **Status-less experiments: the parity check is vacuous.** With `--status-field ""` every run reads "ok", so **no pair is ever excluded** — the clean-pairs guarantee silently stops guarding. For these experiments apply a manual stability screen instead: drop any input whose anchor facts moved between the arms' run dates (an election that happened, a runoff that got scheduled, a result that got published), or your "clean" aggregate includes world-shift deltas the prompt didn't cause.
 5. **Gate on performance AND quality before promoting.** A turn/cost win is only real if the change introduces no new failures and quality holds. Run the **performance gate** (Step 2b) on both arms: the treatment must add no `NO_ARTIFACT` FAILs the control didn't have, and must not push runs over ceilings the control stayed under. Then run the **quality eval** (Step 3) on both arms and confirm parity. Promote the v2 edits only if both gates hold; treat the quality check as relative parity (it is reliable, not yet validated against human truth), and the performance no-artifact FAIL as a hard block.
+
+   **Audit the mechanism in the traces — a cheaper run that skipped required work is a regression, not a win.** Count the tool calls your change targets, per arm, per run (e.g. `WebSearch` calls vs the new budget, banned calls = 0), AND confirm the compliance steps the instruction still requires didn't silently drop (e.g. one `http.head` per distinct external URL cited, validator ran). This proves the saving comes from the intended behavior change rather than from the agent abandoning checks — and it's what lets you trust *direction* even when an existing-data control muddies magnitude.
+
+   **The change's author should not be the only quality judge.** The runbook author who wrote v2 knows what it's "supposed" to show and reads the verbatim with that bias. For an adopt decision, spawn blinded cold judges: give each judge one input's two artifacts with arm labels stripped and order randomized, ask which is better and why, and require the verdict to survive judges who don't know which arm is the treatment. Spot-verify any *new* factual claims the treatment introduced (head-check its cited URLs; the claims didn't exist in the control, so the old runs prove nothing about them).
+
+   > **Cloned-arm gate trap — point `perf_gate.py` at the clone's S3 prefix.** The gate looks up each run's artifact under `s3://<bucket>/<exp>/<run_id>/artifact.json`, deriving `<exp>` from the `--config` (the control's `perf.json`). Run it unchanged on the treatment traces and it looks under the **control** prefix, finds nothing, and reports a false **100% `NO_ARTIFACT` FAIL**. Keep the control's thresholds but override the prefix with `--exp`:
+   > ```bash
+   > # treatment arm: control thresholds, clone prefix
+   > uv run python perf_gate.py /tmp/eval/treat --config experiment-evals/<exp>/perf.json \
+   >   --exp <exp>_v2 --bucket gp-agent-artifacts-dev
+   > ```
 
 ## Step 5 (optional, not required) — Fleet-wide waste discovery via embeddings
 

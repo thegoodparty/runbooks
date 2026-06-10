@@ -6,7 +6,7 @@ opportunities_and_challenges have none. So the gate's one universal hard FAIL is
 artifact"; any status-based failure is per-experiment config (`fail_values`), and thresholds
 are per-experiment too. A run with no status field is judged on artifact-presence + ceilings.
 """
-from perf_gate import evaluate, DEFAULT_THRESHOLDS, NO_ARTIFACT
+from perf_gate import evaluate, looks_like_run_id, DEFAULT_THRESHOLDS, NO_ARTIFACT
 
 OK = {"cost": 3.0, "turns": 45, "tool_errors": 0}
 BRIEFING_CFG = {"fail_values": ["error"], "thresholds": DEFAULT_THRESHOLDS}
@@ -60,3 +60,17 @@ def test_per_experiment_thresholds_apply():
     # meeting_schedule is ~10x cheaper; a $2 run flags only under a tight per-exp ceiling.
     tight = {"fail_values": [], "thresholds": {"cost_max": 1.0, "turns_max": 80, "tool_errors_max": 2}}
     assert evaluate({"cost": 2.0, "turns": 30, "tool_errors": 0}, "found", tight)["verdict"] == "FLAG"
+
+
+# The gate resolves the artifact by run_id derived from the trace FILENAME. A trace named
+# anything other than <run_id>.jsonl makes every S3 lookup miss → a false 100% NO_ARTIFACT.
+# looks_like_run_id() lets main() warn instead of silently failing the whole arm.
+def test_uuid_run_id_filename_is_recognized():
+    assert looks_like_run_id("019ea8a3-bb03-7448-9235-b8616e9bf645")
+    assert looks_like_run_id("60ae671b-94ee-4b9d-9cc6-f744348cabe9")
+
+
+def test_label_named_trace_is_flagged_as_not_a_run_id():
+    # this is exactly the mistake that produced a fake 100% NO_ARTIFACT in practice
+    assert not looks_like_run_id("briefing_ready-andrew")
+    assert not looks_like_run_id("awaiting_agenda-nathan")
