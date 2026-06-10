@@ -1,0 +1,279 @@
+"""Tests for the single-experiment publish + dev sandbox-preservation logic
+added to publish_experiments.py.
+
+The index-composition policy (`_compose_index_entries`) is a pure function and
+gets the bulk of the coverage with no AWS. `_fetch_live_index` is exercised via
+botocore's Stubber (ships with boto3, no extra dep). The publish() guard rails
+(--only dev-only, unknown experiment) return before any S3 call, so they need
+no stubbing.
+"""
+
+import io
+import json
+
+import boto3
+import pytest
+from botocore.exceptions import ClientError
+from botocore.response import StreamingBody
+from botocore.stub import Stubber
+
+import publish_experiments as pe
+
+
+def _entry(id_: str, version: int = 1) -> dict:
+    return {
+        "id": id_,
+        "version": version,
+        "manifest_key": f"{id_}/manifest.json",
+        "instruction_key": f"{id_}/instruction.md",
+        "attachment_keys": [],
+        "hash": f"sha256:{id_}",
+    }
+
+
+# ---------- _is_sandbox ----------
+
+
+@pytest.mark.parametrize(
+    "id_,expected",
+    [
+        ("sandbox_oppo", True),
+        ("feliks_sandbox", True),
+        ("oppo_sandbox_v2", True),
+        ("opposition_research", False),
+        ("opportunities_and_challenges", False),
+        ("SANDBOX_x", False),  # marker is lowercase; ids are lowercase by contract
+        ("", False),  # the str("") fallback when an entry lacks an id
+    ],
+)
+def test_is_sandbox(id_, expected):
+    assert pe._is_sandbox(id_) is expected
+
+
+# ---------- _compose_index_entries ----------
+
+
+def test_only_inserts_new_entry_preserving_others():
+    live = [_entry("opposition_research"), _entry("sandbox_x")]
+    new = [_entry("sandbox_new")]
+    out = pe._compose_index_entries(new, live, only_id="sandbox_new", env="dev")
+    ids = [e["id"] for e in out]
+    assert ids == sorted(["opposition_research", "sandbox_x", "sandbox_new"])
+
+
+def test_only_replaces_existing_entry_and_keeps_rest():
+    live = [_entry("opposition_research", version=1), _entry("sandbox_x")]
+    new = [_entry("opposition_research", version=9)]
+    out = pe._compose_index_entries(
+        new, live, only_id="opposition_research", env="dev"
+    )
+    by_id = {e["id"]: e for e in out}
+    assert by_id["opposition_research"]["version"] == 9
+    assert "sandbox_x" in by_id
+    assert len(out) == 2
+
+
+def test_only_with_empty_live_index_just_publishes_the_one():
+    out = pe._compose_index_entries(
+        [_entry("sandbox_new")], [], only_id="sandbox_new", env="dev"
+    )
+    assert [e["id"] for e in out] == ["sandbox_new"]
+
+
+def test_dev_full_preserves_sandbox_drops_unknown():
+    live = [
+        _entry("opposition_research", version=1),
+        _entry("sandbox_feliks"),
+        _entry("ghost_experiment"),  # unknown, non-sandbox: must NOT be preserved
+    ]
+    new = [
+        _entry("opposition_research", version=2),
+        _entry("opportunities_and_challenges"),
+    ]
+    out = pe._compose_index_entries(new, live, only_id=None, env="dev")
+    ids = {e["id"] for e in out}
+    assert "sandbox_feliks" in ids  # preserved
+    assert "ghost_experiment" not in ids  # dropped
+    by_id = {e["id"]: e for e in out}
+    assert by_id["opposition_research"]["version"] == 2  # canonical, fresh
+
+
+def test_dev_full_canonical_wins_on_id_collision():
+    # A sandbox id that also exists canonically: canonical wins, no duplicate.
+    live = [_entry("sandbox_dup", version=1)]
+    new = [_entry("sandbox_dup", version=5)]
+    out = pe._compose_index_entries(new, live, only_id=None, env="dev")
+    assert len(out) == 1
+    assert out[0]["version"] == 5
+
+
+def test_dev_full_drops_non_sandbox_live_on_collision():
+    # A non-sandbox canonical id present in both: canonical (v2) wins, the
+    # live v1 is not preserved (non-sandbox live entries never survive a full
+    # dev publish), and there is no duplicate.
+    live = [_entry("opposition_research", version=1)]
+    new = [_entry("opposition_research", version=2)]
+    out = pe._compose_index_entries(new, live, only_id=None, env="dev")
+    assert len(out) == 1
+    assert out[0]["version"] == 2
+
+
+@pytest.mark.parametrize("env", ["qa", "prod"])
+def test_full_qa_prod_no_preservation(env):
+    live = [_entry("sandbox_x"), _entry("opposition_research", version=1)]
+    new = [_entry("opposition_research", version=2)]
+    out = pe._compose_index_entries(new, live, only_id=None, env=env)
+    ids = {e["id"] for e in out}
+    assert ids == {"opposition_research"}  # sandbox NOT preserved in qa/prod
+
+
+def test_compose_output_is_id_sorted_full():
+    new = [_entry("zeta"), _entry("alpha")]
+    out = pe._compose_index_entries(new, [], only_id=None, env="dev")
+    assert [e["id"] for e in out] == ["alpha", "zeta"]
+
+
+def test_compose_output_is_id_sorted_only():
+    # --only concatenates kept + new unsorted, so the final sort is load-bearing
+    # specifically on this path.
+    live = [_entry("zeta"), _entry("alpha")]
+    new = [_entry("middle")]
+    out = pe._compose_index_entries(new, live, only_id="middle", env="dev")
+    assert [e["id"] for e in out] == ["alpha", "middle", "zeta"]
+
+
+def test_compose_does_not_mutate_inputs():
+    live = [_entry("sandbox_x"), _entry("opposition_research")]
+    new = [_entry("opportunities_and_challenges")]
+    live_before = [dict(e) for e in live]
+    new_before = [dict(e) for e in new]
+    pe._compose_index_entries(new, live, only_id=None, env="dev")
+    assert live == live_before
+    assert new == new_before
+
+
+def test_only_drops_malformed_carryforward_entry():
+    # A drifted live entry whose keys aren't the canonical <id>/... shape is
+    # dropped rather than re-published.
+    bad = {
+        "id": "opposition_research",
+        "version": 1,
+        "manifest_key": "ATTACKER/manifest.json",
+        "instruction_key": "opposition_research/instruction.md",
+        "attachment_keys": [],
+        "hash": "sha256:bad",
+    }
+    out = pe._compose_index_entries(
+        [_entry("sandbox_new")], [bad], only_id="sandbox_new", env="dev"
+    )
+    assert [e["id"] for e in out] == ["sandbox_new"]  # bad entry dropped
+
+
+def test_dev_full_drops_malformed_sandbox_carryforward():
+    bad = {
+        "id": "sandbox_evil",
+        "version": 1,
+        "manifest_key": "sandbox_evil/manifest.json",
+        "instruction_key": "ATTACKER/instruction.md",  # non-canonical
+        "attachment_keys": [],
+        "hash": "sha256:bad",
+    }
+    out = pe._compose_index_entries(
+        [_entry("opposition_research")], [bad], only_id=None, env="dev"
+    )
+    assert [e["id"] for e in out] == ["opposition_research"]  # sandbox bad dropped
+
+
+def test_invalid_only_id_rejected(capsys):
+    rc = pe.publish(env="dev", only="../escape")
+    assert rc == 1
+    assert "not a valid experiment id" in capsys.readouterr().err
+
+
+# ---------- publish() guard rails (return before any S3 call) ----------
+
+
+@pytest.mark.parametrize("env", ["qa", "prod"])
+def test_only_rejected_for_qa_prod(env, capsys):
+    rc = pe.publish(env=env, only="sandbox_x")
+    assert rc == 1
+    assert "dev-only" in capsys.readouterr().err
+
+
+def test_only_unknown_experiment_rejected(capsys):
+    rc = pe.publish(env="dev", only="does_not_exist_xyz")
+    assert rc == 1
+    assert "no experiment dir" in capsys.readouterr().err
+
+
+def test_invalid_env_rejected(capsys):
+    rc = pe.publish(env="staging")
+    assert rc == 1
+    assert "must be one of" in capsys.readouterr().err
+
+
+# ---------- _fetch_live_index (Stubber) ----------
+
+
+def _stubbed_s3():
+    s3 = boto3.client("s3", region_name="us-west-2")
+    return s3, Stubber(s3)
+
+
+def _streaming(body: bytes) -> StreamingBody:
+    return StreamingBody(io.BytesIO(body), len(body))
+
+
+def test_fetch_live_index_absent_returns_none():
+    s3, stub = _stubbed_s3()
+    stub.add_client_error(
+        "get_object", service_error_code="NoSuchKey", http_status_code=404
+    )
+    with stub:
+        assert pe._fetch_live_index(s3, "agent-experiment-metadata-dev") is None
+
+
+def test_fetch_live_index_valid():
+    s3, stub = _stubbed_s3()
+    body = json.dumps({"experiments": [_entry("opposition_research")]}).encode()
+    stub.add_response(
+        "get_object",
+        {"Body": _streaming(body)},
+        {"Bucket": "agent-experiment-metadata-dev", "Key": "index.json"},
+    )
+    with stub:
+        out = pe._fetch_live_index(s3, "agent-experiment-metadata-dev")
+    assert out["experiments"][0]["id"] == "opposition_research"
+
+
+def test_fetch_live_index_access_denied_propagates():
+    # A non-absent ClientError (e.g. AccessDenied) must NOT be swallowed as
+    # "fresh bucket" — it has to surface so the publish fails loudly.
+    s3, stub = _stubbed_s3()
+    stub.add_client_error(
+        "get_object", service_error_code="AccessDenied", http_status_code=403
+    )
+    with stub, pytest.raises(ClientError):
+        pe._fetch_live_index(s3, "agent-experiment-metadata-dev")
+
+
+def test_fetch_live_index_corrupt_json_raises():
+    s3, stub = _stubbed_s3()
+    stub.add_response(
+        "get_object",
+        {"Body": _streaming(b"{ not json")},
+        {"Bucket": "agent-experiment-metadata-dev", "Key": "index.json"},
+    )
+    with stub, pytest.raises(RuntimeError, match="not valid JSON"):
+        pe._fetch_live_index(s3, "agent-experiment-metadata-dev")
+
+
+def test_fetch_live_index_missing_experiments_array_raises():
+    s3, stub = _stubbed_s3()
+    stub.add_response(
+        "get_object",
+        {"Body": _streaming(json.dumps({"published_at": "now"}).encode())},
+        {"Bucket": "agent-experiment-metadata-dev", "Key": "index.json"},
+    )
+    with stub, pytest.raises(RuntimeError, match="experiments"):
+        pe._fetch_live_index(s3, "agent-experiment-metadata-dev")
