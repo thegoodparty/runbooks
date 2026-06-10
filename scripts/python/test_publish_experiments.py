@@ -68,12 +68,25 @@ def test_valid_carryforward_accepts_canonical_entry():
         {"instruction_key": "ATTACKER/instruction.md"},  # non-canonical instr key
         {"attachment_keys": ["../../etc/passwd"]},  # non-canonical attachment key
         {"attachment_keys": "notalist"},  # wrong type
+        # Traversal INSIDE the canonical prefix — a bare startswith() check
+        # would accept these, so the suffix rules are load-bearing here.
+        {"attachment_keys": ["sandbox_x/attachments/../../etc/passwd"]},
+        {"attachment_keys": ["sandbox_x/attachments/.."]},
+        {"attachment_keys": ["sandbox_x/attachments/nested/file.md"]},  # not flat
+        {"attachment_keys": ["sandbox_x/attachments/"]},  # empty basename
+        {"attachment_keys": ["sandbox_x/attachments/a\nb"]},  # control char
     ],
 )
 def test_valid_carryforward_rejects_drift(mutate):
     e = _entry("sandbox_x")
     e.update(mutate)
     assert pe._valid_carryforward(e) is False
+
+
+def test_valid_carryforward_rejects_non_dict():
+    # A live `experiments` element that isn't an object is drift, not a crash.
+    assert pe._valid_carryforward("junk") is False
+    assert pe._valid_carryforward(None) is False
 
 
 # ---------- _compose_index_entries ----------
@@ -214,7 +227,7 @@ def test_dev_full_preserves_sandbox_entry_verbatim():
     assert preserved == sb  # carried forward unchanged, not rebuilt
 
 
-def test_on_drop_callback_fires_for_each_dropped_entry():
+def test_on_drop_callback_fires_with_reason():
     dropped = []
     bad = _entry("sandbox_bad")
     bad["manifest_key"] = "ATTACKER/manifest.json"
@@ -223,9 +236,45 @@ def test_on_drop_callback_fires_for_each_dropped_entry():
         [bad],
         only_id=None,
         env="dev",
-        on_drop=lambda e: dropped.append(e["id"]),
+        on_drop=lambda e, why: dropped.append((e["id"], why)),
     )
-    assert dropped == ["sandbox_bad"]
+    assert dropped == [("sandbox_bad", "manifest_key is not canonical")]
+
+
+@pytest.mark.parametrize("only_id", [None, "sandbox_new"])
+def test_non_dict_live_entry_dropped_not_crashed(only_id):
+    # A corrupt live index whose experiments array holds a string/null must be
+    # dropped as drift (and surfaced), not blow up on `.get()`.
+    dropped = []
+    out = pe._compose_index_entries(
+        [_entry("sandbox_new")],
+        ["junk", None, _entry("sandbox_keep")],
+        only_id=only_id,
+        env="dev",
+        on_drop=lambda e, why: dropped.append((e, why)),
+    )
+    assert [e["id"] for e in out] == ["sandbox_keep", "sandbox_new"]
+    assert dropped == [("junk", "not a JSON object"), (None, "not a JSON object")]
+
+
+@pytest.mark.parametrize("only_id", [None, "sandbox_new"])
+def test_duplicate_live_ids_deduped_first_wins(only_id):
+    # Drifted duplicates in the live index must not be amplified into the
+    # fresh index — keep the first, drop and surface the rest.
+    dup_a = _entry("sandbox_dupe", version=1)
+    dup_b = _entry("sandbox_dupe", version=2)
+    dropped = []
+    out = pe._compose_index_entries(
+        [_entry("sandbox_new")],
+        [dup_a, dup_b],
+        only_id=only_id,
+        env="dev",
+        on_drop=lambda e, why: dropped.append((e["version"], why)),
+    )
+    kept = [e for e in out if e["id"] == "sandbox_dupe"]
+    assert len(kept) == 1
+    assert kept[0]["version"] == 1  # first wins
+    assert dropped == [(2, "duplicate id in live index")]
 
 
 def test_dev_full_drops_malformed_sandbox_carryforward():
@@ -335,6 +384,28 @@ def test_fetch_live_index_corrupt_json_raises():
     )
     with stub, pytest.raises(RuntimeError, match="not valid JSON"):
         pe._fetch_live_index(s3, "agent-experiment-metadata-dev")
+
+
+def test_publish_warns_on_dropped_live_entries(monkeypatch, capsys):
+    """The on_drop wiring in publish(): a drifted live entry must surface as an
+    operator-facing stderr warning, not vanish silently. S3 is stubbed out —
+    this exercises the wiring, not the upload path."""
+    drifted = _entry("sandbox_drifted")
+    drifted["manifest_key"] = "ATTACKER/manifest.json"
+    uploads: list[str] = []
+    monkeypatch.setattr(pe.boto3, "client", lambda *a, **k: object())
+    monkeypatch.setattr(
+        pe, "_fetch_live_index", lambda s3, bucket: {"experiments": [drifted]}
+    )
+    monkeypatch.setattr(
+        pe, "_upload", lambda s3, bucket, key, body, ct: uploads.append(key)
+    )
+    rc = pe.publish(env="dev")
+    err = capsys.readouterr().err
+    assert rc == 0
+    assert "dropped 1 malformed live index entr" in err
+    assert "sandbox_drifted (manifest_key is not canonical)" in err
+    assert uploads[-1] == "index.json"  # atomic switch still written last
 
 
 def test_fetch_live_index_missing_experiments_array_raises():

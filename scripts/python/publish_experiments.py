@@ -54,6 +54,7 @@ import hashlib
 import json
 import re
 import sys
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -91,30 +92,51 @@ def _is_sandbox(experiment_id: str) -> bool:
     return SANDBOX_MARKER in experiment_id
 
 
-def _valid_carryforward(entry: dict) -> bool:
-    """True only if a live index entry is safe to carry forward: well-formed id
-    and the canonical `<id>/manifest.json` / `<id>/instruction.md` keys this
-    publisher emits. Anything else is drift/corruption and is dropped rather
-    than re-published (a freshly built entry is always canonical, so this only
-    ever filters entries we did not author this run).
+def _carryforward_problem(entry: object) -> str | None:
+    """Return None if a live index entry is safe to carry forward, else a short
+    reason string (surfaced in the operator-facing drop warning).
+
+    Safe means: well-formed id and the canonical `<id>/manifest.json` /
+    `<id>/instruction.md` keys this publisher emits. Anything else is
+    drift/corruption and is dropped rather than re-published (a freshly built
+    entry is always canonical, so this only ever filters entries we did not
+    author this run).
     """
+    if not isinstance(entry, dict):
+        return "not a JSON object"
     eid = entry.get("id")
     if not isinstance(eid, str) or not _EXPERIMENT_ID_RE.match(eid):
-        return False
+        return "id does not match the experiment-id pattern"
     if entry.get("manifest_key") != f"{eid}/manifest.json":
-        return False
+        return "manifest_key is not canonical"
     if entry.get("instruction_key") != f"{eid}/instruction.md":
-        return False
+        return "instruction_key is not canonical"
     # attachment_keys must all be canonical `<id>/attachments/<basename>` so the
     # guarantee is self-contained rather than relying on the broker to re-check
-    # prefixes at read time.
+    # prefixes at read time. A prefix check alone is not enough: the suffix must
+    # be a single flat filename — no `/`, no `.`/`..`, no control chars — or a
+    # drifted key like `<id>/attachments/../../x` would be re-published with the
+    # publisher's blessing (mirrors `_validate_attachments` on the disk side).
     attachment_keys = entry.get("attachment_keys", [])
     if not isinstance(attachment_keys, list):
-        return False
+        return "attachment_keys is not a list"
     prefix = f"{eid}/attachments/"
-    return all(
-        isinstance(ak, str) and ak.startswith(prefix) for ak in attachment_keys
-    )
+    for ak in attachment_keys:
+        if not isinstance(ak, str) or not ak.startswith(prefix):
+            return "attachment key outside the canonical attachments prefix"
+        basename = ak[len(prefix):]
+        if (
+            not basename
+            or "/" in basename
+            or basename in (".", "..")
+            or any(ord(c) < 0x20 or ord(c) == 0x7F for c in basename)
+        ):
+            return "attachment key suffix is not a flat safe filename"
+    return None
+
+
+def _valid_carryforward(entry: object) -> bool:
+    return _carryforward_problem(entry) is None
 
 # Total bytes cap across all attachments for a single experiment. Bounds the
 # broker manifest payload (it streams all attachments in one envelope) and the
@@ -453,11 +475,11 @@ def _fetch_live_index(s3, bucket: str) -> dict | None:
 
 def _compose_index_entries(
     new_entries: list[dict],
-    live_entries: list[dict],
+    live_entries: list[object],
     *,
     only_id: str | None,
     env: str,
-    on_drop=None,
+    on_drop: Callable[[object, str], None] | None = None,
 ) -> list[dict]:
     """Decide the final `experiments` list to write to index.json.
 
@@ -468,11 +490,12 @@ def _compose_index_entries(
       an id collision.
     - full publish, qa/prod: canonical entries only (no preservation).
 
-    Carried-forward live entries are filtered through `_valid_carryforward`, so
-    a drifted/corrupt live entry is dropped rather than re-published. Freshly
-    built entries are always canonical and are never filtered. `on_drop`, if
-    given, is called with each candidate entry that is dropped, so the caller
-    can surface the drift instead of losing it silently.
+    Carried-forward live entries are filtered through `_carryforward_problem`,
+    so a drifted/corrupt live entry (including a non-dict array element or a
+    duplicate id) is dropped rather than re-published. Freshly built entries
+    are always canonical and are never filtered. `on_drop`, if given, is called
+    with each dropped candidate and the reason, so the caller can surface the
+    drift instead of losing it silently.
 
     No I/O of its own (the only side effect is the `on_drop` callback), so the
     policy is unit-testable without S3.
@@ -483,23 +506,44 @@ def _compose_index_entries(
     if only_id is not None and env != "dev":
         raise ValueError(f"--only merge is dev-only; got env={env!r}")
 
+    def _drop(entry: object, why: str) -> None:
+        if on_drop is not None:
+            on_drop(entry, why)
+
     def _carry(candidates: list[dict]) -> list[dict]:
         kept: list[dict] = []
+        seen_ids: set[str] = set()
         for e in candidates:
-            if _valid_carryforward(e):
-                kept.append(e)
-            elif on_drop is not None:
-                on_drop(e)
+            problem = _carryforward_problem(e)
+            if problem is None and e["id"] in seen_ids:
+                # The live index should be unique by id; if drift produced
+                # duplicates, keep the first and drop the rest rather than
+                # amplifying the corruption into the fresh index.
+                problem = "duplicate id in live index"
+            if problem is not None:
+                _drop(e, problem)
+                continue
+            seen_ids.add(e["id"])
+            kept.append(e)
         return kept
 
+    # A live `experiments` element that isn't even an object is drift; drop it
+    # (surfaced via on_drop) before any per-path `.get()` access can crash.
+    live_dicts: list[dict] = []
+    for e in live_entries:
+        if isinstance(e, dict):
+            live_dicts.append(e)
+        else:
+            _drop(e, "not a JSON object")
+
     if only_id is not None:
-        kept = _carry([e for e in live_entries if e.get("id") != only_id])
+        kept = _carry([e for e in live_dicts if e.get("id") != only_id])
         merged = kept + new_entries
     elif env == "dev":
         canonical_ids = {e.get("id") for e in new_entries}
         candidates = [
             e
-            for e in live_entries
+            for e in live_dicts
             if _is_sandbox(str(e.get("id", ""))) and e.get("id") not in canonical_ids
         ]
         merged = new_entries + _carry(candidates)
@@ -648,9 +692,13 @@ def publish(env: str, dry_run: bool = False, only: str | None = None) -> int:
         if live_index is not None:
             live_entries = live_index.get("experiments", [])
     dropped: list[str] = []
+
+    def _record_drop(entry: object, why: str) -> None:
+        eid = entry.get("id", "<no-id>") if isinstance(entry, dict) else "<not-an-object>"
+        dropped.append(f"{eid} ({why})")
+
     final_entries = _compose_index_entries(
-        new_entries, live_entries, only_id=only, env=env,
-        on_drop=lambda e: dropped.append(str(e.get("id", "<no-id>"))),
+        new_entries, live_entries, only_id=only, env=env, on_drop=_record_drop,
     )
     if dropped:
         # Drift in the live index: an entry we would have carried forward had
