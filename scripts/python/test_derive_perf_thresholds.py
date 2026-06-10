@@ -221,3 +221,22 @@ def test_config_is_env_scoped_and_stamped_with_derived_at(monkeypatch, tmp_path,
     import re
     for cfg in (dev, prod):
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00", cfg["derived_at"])
+
+
+def test_sample_is_capped_at_requested_n():
+    # The 2x oversample exists to survive missing files; the runs that feed the
+    # config must be trimmed back to -n or the recorded n is ~2x the operator's intent.
+    from derive_perf_thresholds import cap_sample
+    rows = [("r%d" % i, {}, {"status": "x"}) for i in range(9)]
+    assert len(cap_sample(rows, 5)) == 5
+    assert len(cap_sample(rows, 20)) == 9
+
+
+def test_refuses_ceilings_when_no_run_is_complete():
+    # rows exist but none has trace + valid artifact: percentiles would collapse to
+    # cost_max 0 and every future healthy run would FLAG. Refuse instead.
+    import pytest
+    from derive_perf_thresholds import require_complete_runs
+    with pytest.raises(SystemExit):
+        require_complete_runs(present=[], n_rows=7, exp="x", noart=7)
+    require_complete_runs(present=[{"cost": 1}], n_rows=7, exp="x", noart=6)  # ok

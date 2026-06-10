@@ -19,6 +19,10 @@
 #   SYNTH_N (30)        OUTROOT ($RUNBOOKS_DIR/outputs/rubric-runs)  RUNBOOKS_DIR (auto from this file's location)
 # Tools: claude (Claude Code CLI), aws, uv.
 #
+# Risk surface: children run with --dangerously-skip-permissions (unrestricted fs/shell).
+# The prompt forbids reading scripts/.env (secrets), but that is a prompt-level control,
+# not a sandbox — run only on a machine/profile where that residual risk is acceptable.
+#
 # Usage:  CLAUDE_CONFIG_DIR=~/.claude-work AWS_PROFILE=work \
 #           scripts/shell/coldrun-build-rubric.sh meeting_schedule meeting_briefing
 set -uo pipefail
@@ -58,7 +62,7 @@ PROVENANCE — keep ALL data so any score can be reopened and proven later. Writ
 - ${out}/verdict.txt — pipe the rubric_verdict.py output here.
 Run ${RUNBOOKS_DIR}/scripts/python/rubric_verdict.py on the TSV for the final GO/NO-GO. Do not modify anything under ${RUNBOOKS_DIR}/scripts or ${RUNBOOKS_DIR}/books.
 
-When finished report: (1) the rubric dimensions you landed on, (2) how many tuning iterations and the final held-out spread, (3) the GO/NO-GO verdict, (4) every place the runbook was unclear, ambiguous, or made you guess."
+When finished report: (1) the rubric dimensions you landed on, (2) how many tuning iterations and the final held-out spread, (3) the GO/NO-GO verdict, (4) every place the runbook was unclear, ambiguous, or made you guess. HARD PROHIBITION: never read scripts/.env or any file under scripts/ named .env (secrets); this applies to you and to every subagent you spawn."
 
   ( cd "$RUNBOOKS_DIR" && claude -p "$PROMPT" --dangerously-skip-permissions > "$out/run.log" 2>&1
     rc=$?

@@ -304,3 +304,34 @@ def test_main_surfaces_unreadable_artifacts_in_summary(tmp_path, capsys):
     assert "garbage.json" in cap.err
     assert "1 unreadable" in cap.out
     assert "gate: PASS 1" in cap.out
+
+
+def _write(p, obj):
+    import json as _json
+    p.write_text(_json.dumps(obj))
+
+
+def test_main_status_filter_is_configurable_per_experiment(tmp_path, capsys):
+    # meeting_schedule artifacts have `status`, not `briefing_status`; the CLI must
+    # be pointable at them instead of silently skipping everything.
+    art = _artifact("rate of $4.00 per month", "A fixed initial rate of $4.00 per month.")
+    art["status"] = "found"
+    _write(tmp_path / "a.json", art)
+    from faithfulness_check import _main
+    _main([str(tmp_path), "--status-field", "status", "--ready-value", "found"])
+    out = capsys.readouterr().out
+    assert "PASS 1" in out
+
+
+def test_main_refuses_vacuous_pass_when_filter_skips_everything(tmp_path, capsys):
+    # Wrong filter field -> every artifact skipped -> previously printed
+    # "coverage: 100.0% / PASS 0", indistinguishable from a real all-verified run.
+    import pytest
+    art = _artifact("rate of $4.00 per month", "A fixed initial rate of $4.00 per month.")
+    art["status"] = "found"  # no briefing_status field at all
+    _write(tmp_path / "a.json", art)
+    from faithfulness_check import _main
+    with pytest.raises(SystemExit) as e:
+        _main([str(tmp_path)])
+    assert e.value.code == 2
+    assert "skipped" in capsys.readouterr().err.lower()

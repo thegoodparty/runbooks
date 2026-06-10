@@ -20,7 +20,7 @@ import json
 import sys
 
 from eval_trajectory import score
-from perf_gate import evaluate, artifact_status, NO_ARTIFACT, list_run_ids, s3_text
+from perf_gate import evaluate, artifact_status, NO_ARTIFACT, lacks_valid_artifact, list_run_ids, s3_text
 
 TOL_NO_ARTIFACT = 0.10  # alarm if the live no-artifact rate exceeds baseline by more than this
 TOL_FLAG = 0.20         # alarm if the live FLAG rate exceeds this
@@ -43,13 +43,6 @@ def env_mismatch(cfg_env, cli_env) -> bool:
     A baseline derived on one env must never gate another (prod 13% vs dev 33%
     no-artifact baselines differ materially)."""
     return bool(cfg_env) and cfg_env != cli_env
-
-
-def lacks_valid_artifact(status) -> bool:
-    """The agreed no-artifact numerator, matching derive's baseline definition: the
-    artifact is absent OR unparseable (a corrupt artifact is no valid artifact).
-    Denominator = ALL sampled run ids, including traceless ones."""
-    return status in (NO_ARTIFACT, "BAD_JSON")
 
 
 def _latest_run_ids(bucket, exp, n):

@@ -186,3 +186,22 @@ def test_bad_json_artifact_is_a_hard_fail_like_no_artifact():
     r = evaluate({"cost": 0.5, "turns": 10, "tool_errors": 0}, "BAD_JSON")
     assert r["verdict"] == "FAIL"
     assert any("artifact" in x for x in r["reasons"])
+
+
+def test_lacks_valid_artifact_counts_bad_json_with_no_artifact():
+    # One shared definition for "no valid artifact" so the gate summary, derive
+    # baseline, and monitor live rate all count the same thing.
+    from perf_gate import lacks_valid_artifact
+    assert lacks_valid_artifact("NO_ARTIFACT") is True
+    assert lacks_valid_artifact("BAD_JSON") is True
+    assert lacks_valid_artifact("found") is False
+    assert lacks_valid_artifact(None) is False
+
+
+def test_artifact_status_non_object_json_is_bad_json(monkeypatch):
+    # Valid JSON that isn't an object (null, array) must not crash .get() mid-batch.
+    from perf_gate import artifact_status
+    _patch_aws(monkeypatch, 0, "null")
+    assert artifact_status("rid", "b", "e", "status") == "BAD_JSON"
+    _patch_aws(monkeypatch, 0, "[1, 2]")
+    assert artifact_status("rid", "b", "e", "status") == "BAD_JSON"

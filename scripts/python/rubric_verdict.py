@@ -103,6 +103,12 @@ def main():
         print("usage: rubric_verdict.py <scores.tsv>")
         sys.exit(2)
     rows, skipped = load(sys.argv[1])
+    if not rows:
+        # Zero briefings assessed is categorically different from unanimous DQ:
+        # nothing was validated, so a GO here would approve an unvalidated rubric.
+        print(f"error: zero data rows in {sys.argv[1]} — refusing to gate on an empty sample",
+              file=sys.stderr)
+        sys.exit(2)
     if skipped:
         print(f"warning: skipped {skipped} non-data line(s) in {sys.argv[1]}", file=sys.stderr)
     if skipped > 1:

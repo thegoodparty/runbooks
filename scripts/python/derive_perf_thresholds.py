@@ -74,6 +74,23 @@ def no_valid_artifact(art) -> bool:
     return art is None or art == "BAD"
 
 
+def cap_sample(rows, n):
+    """Trim the 2x oversample back to the operator's -n so the recorded n and the
+    p95 population match the intent (the sample is shuffled, so trimming is unbiased)."""
+    return rows[:n]
+
+
+def require_complete_runs(present, n_rows, exp, noart):
+    """Refuse to emit ceilings when NO sampled run has both a trace and a valid
+    artifact — pct([]) collapses to cost_max 0 and every future healthy run FLAGs."""
+    if not present:
+        raise SystemExit(
+            f"ERROR: 0 of {n_rows} sampled {exp} runs have both a trace and a valid artifact "
+            f"(no-valid-artifact count: {noart}) — refusing to write ceilings from an empty "
+            f"distribution; investigate the failures first"
+        )
+
+
 def classify_run(has_trace: bool, art) -> str:
     """Population definition shared with perf_monitor: every sampled run is in the
     no-artifact denominator, traceless or not. "no_valid_artifact" = artifact absent
@@ -161,7 +178,9 @@ def main():
         sys.exit(f"ERROR: no usable runs sampled for {a.exp} in s3://{bucket}/{a.exp}/ "
                  f"({len(runs)} listed, {fetch_failures} fetch failures) — refusing to write a config")
     status_field = discover_status_field(art for _rid, _m, art in rows)
+    rows = cap_sample(rows, a.n)
     present, noart, statuses = aggregate_rows(rows, status_field)
+    require_complete_runs(present, len(rows), a.exp, noart)
     fail_values = infer_fail_values(statuses, status_field)
 
     costs = [m["cost"] for m in present]

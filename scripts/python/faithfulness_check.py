@@ -152,14 +152,23 @@ def _main(argv):
     if not argv:
         print(__doc__)
         sys.exit(2)
-    gate_type = "agenda_packet"
-    if "--gate-source-type" in argv:
-        i = argv.index("--gate-source-type")
-        if i + 1 >= len(argv):
-            print(__doc__)
-            sys.exit(2)
-        gate_type = argv[i + 1]
-        argv = argv[:i] + argv[i + 2 :]
+    def _flag(name, default):
+        if name in argv:
+            i = argv.index(name)
+            if i + 1 >= len(argv):
+                print(__doc__)
+                sys.exit(2)
+            val = argv[i + 1]
+            del argv[i:i + 2]
+            return val
+        return default
+
+    gate_type = _flag("--gate-source-type", "agenda_packet")
+    # The ready-filter is experiment-shaped (meeting_briefing: briefing_status ==
+    # briefing_ready; meeting_schedule: status == found). Without these flags a
+    # mismatched field would skip every artifact and report a vacuous PASS.
+    status_field = _flag("--status-field", "briefing_status")
+    ready_value = _flag("--ready-value", "briefing_ready")
     target = argv[0]
     files = sorted(glob.glob(f"{target}/*.json")) if target and not target.endswith(".json") else [target]
 
@@ -171,7 +180,7 @@ def _main(argv):
             load_failed += 1
             print(f"  unreadable artifact: {f} ({e})", file=sys.stderr)
             continue
-        if art.get("briefing_status") != "briefing_ready":
+        if art.get(status_field) != ready_value:
             skipped += 1
             continue
         res = faithfulness_gate(art, gate_source_type=gate_type)
@@ -184,6 +193,14 @@ def _main(argv):
             for u in res["unverified"]:
                 print(f"  {short}  {u['claim_id']}  missing: {u['missing']}")
 
+    if not (passed + dq) and skipped:
+        print(
+            f"error: all {skipped} artifact(s) were skipped by the status filter "
+            f"({status_field!r} != {ready_value!r}) — wrong --status-field/--ready-value for "
+            f"this experiment, or no ready artifacts; refusing to report a vacuous PASS",
+            file=sys.stderr,
+        )
+        sys.exit(2)
     cov = (total_checked - total_unverified) / total_checked if total_checked else 1.0
     print("-" * 56)
     print(

@@ -202,3 +202,17 @@ def test_main_exit_code_encodes_go_no_go(
         rubric_verdict.main()
     assert e.value.code == expected_code
     assert expected_verdict in capsys.readouterr().out
+
+
+def test_main_refuses_to_gate_on_zero_data_rows(tmp_path, monkeypatch, capsys):
+    # An empty/header-only scores file must NOT print GO: zero briefings assessed
+    # is categorically different from unanimous DQ — nothing was validated at all.
+    import sys
+    import pytest
+    tsv = tmp_path / "empty.tsv"
+    tsv.write_text("uuid\tbatch\tjudgeA\tjudgeB\n")
+    monkeypatch.setattr(sys, "argv", ["rubric_verdict.py", str(tsv)])
+    with pytest.raises(SystemExit) as e:
+        rubric_verdict.main()
+    assert e.value.code == 2
+    assert "zero" in capsys.readouterr().err.lower()

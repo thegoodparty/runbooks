@@ -42,6 +42,8 @@ def fetch_artifact(bucket: str, exp: str, rid: str, status_field: str | None = N
         art = json.loads(body)
     except json.JSONDecodeError:
         return "BAD_JSON", None
+    if not isinstance(art, dict):
+        return "BAD_JSON", None  # valid JSON but not an object (null/array)
     return (art.get(status_field) if status_field else None), art
 
 

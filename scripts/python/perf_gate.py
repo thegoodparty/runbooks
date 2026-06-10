@@ -106,6 +106,12 @@ def list_run_ids(bucket: str, exp: str) -> list[str]:
     return [i for i in ids if looks_like_run_id(i)]
 
 
+def lacks_valid_artifact(status) -> bool:
+    """One definition of "no valid artifact" (absent OR unparseable) shared by the
+    gate summary, derive's baseline, and the monitor's live rate."""
+    return status in (NO_ARTIFACT, "BAD_JSON")
+
+
 def artifact_status(rid: str, bucket: str, exp: str, status_field: str | None):
     """NO_ARTIFACT if the run produced none; else the value of status_field (or None).
     Raises (via s3_text) when the fetch fails for any reason other than a missing object."""
@@ -116,6 +122,8 @@ def artifact_status(rid: str, bucket: str, exp: str, status_field: str | None):
         art = json.loads(body)
     except json.JSONDecodeError:
         return "BAD_JSON"
+    if not isinstance(art, dict):
+        return "BAD_JSON"  # valid JSON but not an object (null/array): no usable artifact
     if not status_field:
         return None
     return art.get(status_field)
@@ -166,7 +174,7 @@ def main():
         status = artifact_status(rid, bucket, exp, status_field)
         r = evaluate(m, status, cfg)
         counts[r["verdict"]] += 1
-        no_artifact += status == NO_ARTIFACT
+        no_artifact += lacks_valid_artifact(status)
         print(f"{rid[:13]:14s}{str(status)[:16]:17s}{r['verdict']:8s}{(m.get('cost') or 0):>7.2f}"
               f"{str(m.get('turns')):>6s}{m.get('tool_errors', 0):>5d}  {'; '.join(r['reasons'])}")
     n = sum(counts.values())
@@ -174,7 +182,7 @@ def main():
     print(f"exp={exp}  status_field={status_field}  fail_values={cfg.get('fail_values')}")
     print(f"runs: {n}  PASS={counts['PASS']}  FLAG={counts['FLAG']}  FAIL={counts['FAIL']}")
     if n:
-        print(f"no-artifact failure rate: {no_artifact}/{n} = {100*no_artifact/n:.0f}%")
+        print(f"no-valid-artifact failure rate: {no_artifact}/{n} = {100*no_artifact/n:.0f}%")
     print(f"thresholds: {cfg.get('thresholds')}")
 
 

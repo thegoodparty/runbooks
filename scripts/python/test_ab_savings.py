@@ -310,3 +310,11 @@ def test_pct_delta_guards_zero_denominator():
     assert pct_delta(5.0, 0.0) == "n/a"     # zero control: no meaningful %
     assert pct_delta(3.0, 6.0) == "-50%"    # savings
     assert pct_delta(9.0, 6.0) == "+50%"    # regression
+
+
+def test_fetch_artifact_non_object_json_is_bad_json(monkeypatch):
+    import ab_savings
+    monkeypatch.setattr(ab_savings, "s3_text", lambda b, k: "[1, 2, 3]")
+    status, art = ab_savings.fetch_artifact("b", "e", "rid", "status")
+    assert status == "BAD_JSON"
+    assert art is None

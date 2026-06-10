@@ -12,7 +12,7 @@ The performance gate is the **objective head**: its FAIL line (a run that produc
 
 ## Prerequisites
 
-**books/.env variables**: `$AWS_PROFILE` (`work`), `$AWS_REGION` (`us-west-2`)
+**books/.env variables**: `$AWS_PROFILE`, `$AWS_REGION` (your org's profile/region — do not assume a name; export both before any block below)
 **Tools**: AWS CLI, `uv`, and an agent runtime that can spawn subagents (the quality judges). No API key needed — the judges are cold subagents, not a script calling an LLM API.
 **Where runs live**: `s3://gp-agent-artifacts-<env>/<experiment>/<run_id>/` →
   `logs/workspace/conversation.jsonl` (the trace) and the top-level `artifact.json` (the artifact — the canonical copy; `logs/workspace/output/<experiment>.json` holds the same bytes but its name does not survive experiment cloning, see the naming gotchas below).
@@ -20,19 +20,20 @@ The performance gate is the **objective head**: its FAIL line (a run that produc
 ## Step 1 — Pull traces + artifacts for the runs you want to assess
 
 ```bash
+export AWS_PROFILE=... AWS_REGION=...   # from books/.env — do not assume a profile name
 EXP=meeting_briefing ENV=prod
 rm -rf /tmp/eval/traces /tmp/eval/artifacts && mkdir -p /tmp/eval/traces /tmp/eval/artifacts
-AWS_PROFILE=work aws sts get-caller-identity > /dev/null || { echo "AWS auth failed — fix credentials before pulling"; }
+aws sts get-caller-identity > /dev/null || { echo "AWS auth failed — fix credentials before pulling"; }
 
 # A specific run, or a sample of recent runs (UUIDv7 prefixes are time-ordered):
-RUN_IDS=$(AWS_PROFILE=work aws s3api list-objects-v2 --bucket gp-agent-artifacts-$ENV \
+RUN_IDS=$(aws s3api list-objects-v2 --bucket gp-agent-artifacts-$ENV \
   --prefix "$EXP/" --delimiter "/" --query 'CommonPrefixes[].Prefix' --output text \
   | tr '\t' '\n' | sed "s#$EXP/##;s#/##" | grep -E '^[0-9a-f]{8}-[0-9a-f]{4}-' | sort | tail -20)
 
 for rid in $RUN_IDS; do
-  AWS_PROFILE=work aws s3 cp "s3://gp-agent-artifacts-$ENV/$EXP/$rid/logs/workspace/conversation.jsonl" \
+  aws s3 cp "s3://gp-agent-artifacts-$ENV/$EXP/$rid/logs/workspace/conversation.jsonl" \
     "/tmp/eval/traces/$rid.jsonl" --quiet 2>/dev/null
-  AWS_PROFILE=work aws s3 cp "s3://gp-agent-artifacts-$ENV/$EXP/$rid/artifact.json" \
+  aws s3 cp "s3://gp-agent-artifacts-$ENV/$EXP/$rid/artifact.json" \
     "/tmp/eval/artifacts/$rid.json" --quiet 2>/dev/null
 done
 ```
@@ -65,7 +66,7 @@ Per-run + aggregate: `turns`, `steps`, `cost`, `tool_errors`, `exact_dups` (verb
 
 ```bash
 cd scripts/python
-AWS_PROFILE=work AWS_REGION=us-west-2 uv run python perf_gate.py /tmp/eval/traces \
+uv run python perf_gate.py /tmp/eval/traces \
   --exp meeting_briefing --bucket gp-agent-artifacts-$ENV   # bucket must match the env you pulled in Step 1
 ```
 
@@ -105,7 +106,7 @@ Treat the prompt as the **only** variable: clone the experiment to `<exp>_v2`, c
    cd experiments && cp -r <exp> <exp>_v2
    # set "id":"<exp>_v2" in <exp>_v2/manifest.json; edit ONLY <exp>_v2/instruction.md
    cd ../scripts/python && uv run pytest test_experiment_manifests.py -q
-   AWS_PROFILE=work uv run python publish_experiments.py --env=dev   # publishes the repo's FULL experiment set — coordinate on shared dev
+   uv run python publish_experiments.py --env=dev   # publishes the repo's FULL experiment set — coordinate on shared dev
    ```
 2. **Pick your control source.** The control is whatever the *current* `instruction.md` produces; if a clean batch of recent runs on the inputs you want already exists in S3, you can **reuse those historical runs as the control** and only spawn the treatment — same inputs on both arms, half the dispatch cost. But treat an existing-data control as a **cheap screen, not the adopt-grade number**; two confounds ride along:
    - **Time.** The control ran days or weeks earlier: a different "today" (any days-until-X math shifts), a world that may have moved under the input (results published, runoffs scheduled), and possibly a different runner/broker build or model alias. If the artifacts embed dates, read them — they tell you exactly when each arm ran.
