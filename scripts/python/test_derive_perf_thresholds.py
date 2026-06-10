@@ -105,7 +105,10 @@ def test_corrupt_artifact_counts_as_no_valid_artifact():
     from derive_perf_thresholds import no_valid_artifact
     assert no_valid_artifact(None) is True
     assert no_valid_artifact("BAD") is True
+    assert no_valid_artifact([1, 2]) is True      # array artifact: no usable status/fields
+    assert no_valid_artifact("null") is True       # any non-dict parse result
     assert no_valid_artifact({"status": "found"}) is False
+    assert no_valid_artifact({}) is False          # empty object is still an object
 
 
 def test_classify_cp_separates_genuinely_absent_from_infra_error():
@@ -164,7 +167,7 @@ def test_classify_run_population_definition():
     assert classify_run(True, "BAD") == "no_valid_artifact"
     assert classify_run(False, "BAD") == "no_valid_artifact"
     assert classify_run(True, {"status": "found"}) == "complete"
-    assert classify_run(True, [1, 2]) == "complete"
+    assert classify_run(True, [1, 2]) == "no_valid_artifact"   # non-dict JSON: same as perf_gate BAD_JSON
     assert classify_run(False, {"status": "found"}) == "artifact_only"
 
 

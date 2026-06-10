@@ -68,10 +68,11 @@ def discover_status_field(artifacts):
 
 
 def no_valid_artifact(art) -> bool:
-    """True when a run produced no usable artifact: missing entirely (None) or
-    unparseable JSON ("BAD"). Both count toward the no-artifact baseline and
-    stay out of the cost/turns distribution."""
-    return art is None or art == "BAD"
+    """True when a run produced no usable artifact: missing (None), unparseable
+    ("BAD"), or parseable but not a JSON object (array/null — the same class
+    perf_gate counts as BAD_JSON). All count toward the no-artifact baseline and
+    stay out of the cost/turns distribution, keeping baseline and live gate aligned."""
+    return not isinstance(art, dict)
 
 
 def cap_sample(rows, n):
