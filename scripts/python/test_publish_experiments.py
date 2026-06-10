@@ -145,6 +145,16 @@ def test_dev_full_drops_non_sandbox_live_on_collision():
 
 
 @pytest.mark.parametrize("env", ["qa", "prod"])
+def test_compose_rejects_only_id_outside_dev(env):
+    # publish() guards --only at the CLI; the policy function must also refuse,
+    # so a future caller can't merge a partial publish into qa/prod.
+    with pytest.raises(ValueError, match="dev-only"):
+        pe._compose_index_entries(
+            [_entry("sandbox_x")], [], only_id="sandbox_x", env=env
+        )
+
+
+@pytest.mark.parametrize("env", ["qa", "prod"])
 def test_full_qa_prod_no_preservation(env):
     live = [_entry("sandbox_x"), _entry("opposition_research", version=1)]
     new = [_entry("opposition_research", version=2)]

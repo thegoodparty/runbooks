@@ -15,7 +15,7 @@ publish where one experiment was updated and another wasn't.
 The contract documented by the meta-schema + each `manifest.json` is the
 source of truth; a hand-edited `experiments/index.json` would silently lose
 any extra fields on the next publish (the script only emits a fixed set:
-`{id, version, manifest_key, instruction_key, hash}`).
+`{id, version, manifest_key, instruction_key, attachment_keys, hash}`).
 
 Usage:
     AWS_PROFILE=work uv run python publish_experiments.py --env=dev
@@ -41,8 +41,10 @@ set with no preservation, so a partial/mixed state can never reach prod and
 sandbox experiments can never leak past dev. Promote real experiments by
 merging branches.
 
-In CI: GH Actions assumes role `agent-experiment-metadata-publish-{env}` via
-OIDC (no long-lived credentials).
+In CI: GH Actions assumes an AWS role via OIDC (no long-lived credentials) —
+see `.github/workflows/publish-experiments.yml` for the role ARN. Note: a dev
+publish now also needs `s3:GetObject` on the bucket's `index.json` (it reads
+the live index to merge/preserve), not just `s3:PutObject`.
 """
 
 from __future__ import annotations
@@ -475,6 +477,11 @@ def _compose_index_entries(
     No I/O of its own (the only side effect is the `on_drop` callback), so the
     policy is unit-testable without S3.
     """
+    # publish() already rejects --only for qa/prod at the CLI boundary; enforce
+    # the same invariant here so no future caller can merge a partial publish
+    # into a qa/prod index by skipping that guard.
+    if only_id is not None and env != "dev":
+        raise ValueError(f"--only merge is dev-only; got env={env!r}")
 
     def _carry(candidates: list[dict]) -> list[dict]:
         kept: list[dict] = []
