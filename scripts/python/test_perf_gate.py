@@ -127,10 +127,12 @@ def test_artifact_status_auth_failure_raises_instead_of_faking_no_artifact(monke
         artifact_status("rid", "bucket", "exp", "status")
 
 
-def test_artifact_status_empty_body_is_no_artifact(monkeypatch):
-    from perf_gate import artifact_status, NO_ARTIFACT
-    _patch_aws(monkeypatch, 0, "   \n")
-    assert artifact_status("rid", "bucket", "exp", "status") == NO_ARTIFACT
+def test_artifact_status_empty_body_is_bad_json_not_no_artifact(monkeypatch):
+    # A zero-byte artifact.json EXISTS (200, empty body): that is a corrupt artifact,
+    # not a missing one — it must not inflate the no-artifact rate as a fake 404.
+    from perf_gate import artifact_status
+    _patch_aws(monkeypatch, 0, "")
+    assert artifact_status("rid", "bucket", "exp", "status") == "BAD_JSON"
 
 
 def test_artifact_status_unparseable_body_is_bad_json(monkeypatch):

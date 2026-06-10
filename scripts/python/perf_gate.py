@@ -92,7 +92,9 @@ def s3_text(bucket: str, key: str) -> str | None:
         if any(m in err for m in _ABSENT_MARKERS):
             return None
         raise RuntimeError(f"S3 fetch failed for s3://{bucket}/{key} (NOT a missing object): {err[:300]}")
-    return p.stdout if p.stdout.strip() else None
+    # Return the body verbatim: a zero-byte 200 means the object EXISTS but is empty —
+    # callers must treat that as corrupt (BAD_JSON), never as absent (NO_ARTIFACT).
+    return p.stdout
 
 
 def list_run_ids(bucket: str, exp: str) -> list[str]:

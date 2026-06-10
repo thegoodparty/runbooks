@@ -240,3 +240,24 @@ def test_ab_mode_prints_unpaired_traces_instead_of_silent_drop(tmp_path, capsys,
     assert "!! unpaired (excluded): " in out
     assert "orphan" in out
     assert "clean paired inputs (parity + complete): 1/1" in out
+
+
+def test_ab_parity_line_says_not_checked_without_status_regex(tmp_path, capsys):
+    # Without --status-regex every status is None; printing "OK (all inputs match)"
+    # would claim a check that never ran.
+    import sys
+    import eval_trajectory as et
+    for d, turns in (("ctrl", 5), ("treat", 4)):
+        (tmp_path / d).mkdir()
+        (tmp_path / d / f"{d}__city-a.jsonl").write_text(
+            json.dumps({"type": "result", "num_turns": turns, "total_cost_usd": 1.0}) + "\n")
+    sys_argv = ["eval_trajectory.py", "--ab", str(tmp_path / "ctrl"), str(tmp_path / "treat")]
+    old = sys.argv
+    try:
+        sys.argv = sys_argv
+        et.main()
+    finally:
+        sys.argv = old
+    out = capsys.readouterr().out
+    assert "OK (all inputs match)" not in out
+    assert "not checked" in out.lower()

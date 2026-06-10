@@ -193,11 +193,14 @@ def _main(argv):
             for u in res["unverified"]:
                 print(f"  {short}  {u['claim_id']}  missing: {u['missing']}")
 
-    if not (passed + dq) and skipped:
+    if not (passed + dq):
+        # Nothing was assessed — empty dir, all skipped by the filter, or all unreadable.
+        # Exit non-zero in every case: a vacuous "gate: PASS 0" is indistinguishable from
+        # a genuine all-verified run to anything checking the exit code.
         print(
-            f"error: all {skipped} artifact(s) were skipped by the status filter "
-            f"({status_field!r} != {ready_value!r}) — wrong --status-field/--ready-value for "
-            f"this experiment, or no ready artifacts; refusing to report a vacuous PASS",
+            f"error: zero artifacts assessed ({skipped} skipped by status filter "
+            f"{status_field!r} != {ready_value!r}, {load_failed} unreadable, "
+            f"{len(files)} file(s) found) — refusing to report a vacuous PASS",
             file=sys.stderr,
         )
         sys.exit(2)

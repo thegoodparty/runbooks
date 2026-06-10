@@ -225,7 +225,10 @@ def main():
         print(f"treatment turns={tt:5d}  cost=${tc:6.2f}")
         if ct:
             print(f"delta     turns={100*(ct-tt)/ct:+.0f}% (negative = treatment worse)   cost={100*(cc-tc)/max(1e-9,cc):+.0f}%")
-        print(f"outcome parity: {'OK (all inputs match)' if parity else 'BROKEN — fix before trusting the delta'}")
+        if a.status_regex:
+            print(f"outcome parity: {'OK (all inputs match)' if parity else 'BROKEN — fix before trusting the delta'}")
+        else:
+            print("outcome parity: NOT CHECKED (no --status-regex; use ab_savings.py for true-status parity)")
     else:
         rows = run_dir(a.dir, rules, a.status_regex)
         _print_table(rows)

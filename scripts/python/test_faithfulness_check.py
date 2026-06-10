@@ -335,3 +335,13 @@ def test_main_refuses_vacuous_pass_when_filter_skips_everything(tmp_path, capsys
         _main([str(tmp_path)])
     assert e.value.code == 2
     assert "skipped" in capsys.readouterr().err.lower()
+
+
+def test_main_refuses_vacuous_pass_on_empty_directory(tmp_path, capsys):
+    # No files at all must not exit 0 with "gate: PASS 0" — indistinguishable
+    # from a genuine all-verified run to a CI gate checking the exit code.
+    import pytest
+    from faithfulness_check import _main
+    with pytest.raises(SystemExit) as e:
+        _main([str(tmp_path)])
+    assert e.value.code == 2
