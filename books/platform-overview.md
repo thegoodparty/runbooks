@@ -55,7 +55,7 @@ Most product code now lives in a single npm-workspaces monorepo: **omni** (`theg
 ```
 Users → goodparty.org (Vercel: gp-webapp — product app for candidates & elected officials)
          ├── middleware proxies /api/v1/* to gp-api (injects JWT from cookies)
-         ├── direct GET to election-api for public election data (no auth)
+         ├── election data reaches the app via gp-api (proxied; no direct election-api calls)
          └── candidate-sites (Vercel) for candidate pages → calls gp-api
 
 Staff → gp-admin (Vercel, single deploy) → gp-api via @goodparty_org/sdk + Clerk M2M
@@ -128,7 +128,7 @@ Guard detail and decorators: `gp-api/src/authentication/CLAUDE.md`.
 
 | App | Config File | Env Vars |
 |-----|------------|----------|
-| gp-webapp | `gp-webapp/appEnv.ts` | `NEXT_PUBLIC_API_BASE` (per-PR override to `https://pr-<N>.preview.goodparty.org`), `NEXT_PUBLIC_ELECTION_API_BASE`, `NEXT_PUBLIC_OLD_API_BASE` |
+| gp-webapp | `gp-webapp/appEnv.ts` | `NEXT_PUBLIC_API_BASE` (per-PR override to `https://pr-<N>.preview.goodparty.org`), `NEXT_PUBLIC_OLD_API_BASE`. `NEXT_PUBLIC_ELECTION_API_BASE` is still defined (exported as `ELECTION_API_ROOT`) but currently has no consumers — election data is proxied through gp-api |
 | gp-admin | per-env config + Clerk org | Talks to gp-api via the SDK; one Vercel deploy switches env by active Clerk org |
 | candidate-sites | `candidate-sites/appEnv.ts` | `NEXT_PUBLIC_API_BASE` (default: `localhost:3000/v1`) |
 
@@ -226,7 +226,7 @@ District (state + L2 type/name, unique constraint)
 
 **Election code logic**: `determineElectionCode(date, state)` classifies election dates — General (even year, first Tues after first Mon in Nov), ConsolidatedGeneral (LA/MS/NJ/VA odd years, KS 4-year cycle), everything else LocalOrMunicipal.
 
-**Deploy**: Docker → ECR → Pulumi → ECS Fargate (`packages/election-api/deploy/`). Local port 3001. Aurora Serverless v2. Not part of the full-stack PR-preview pairing (webapp does not call it directly).
+**Deploy**: Docker → ECR → Pulumi → ECS Fargate (`packages/election-api/deploy/`). Local port 3001. Aurora Serverless v2. Not part of the full-stack PR-preview pairing — gp-webapp doesn't call it directly (election data is proxied through gp-api), and there is no per-PR election-api stack; PR previews use the shared dev election-api.
 
 ### gp-ai-projects — AI Services (external repo)
 
