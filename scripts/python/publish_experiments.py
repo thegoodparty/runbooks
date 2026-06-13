@@ -15,21 +15,36 @@ publish where one experiment was updated and another wasn't.
 The contract documented by the meta-schema + each `manifest.json` is the
 source of truth; a hand-edited `experiments/index.json` would silently lose
 any extra fields on the next publish (the script only emits a fixed set:
-`{id, version, manifest_key, instruction_key, hash}`).
+`{id, version, manifest_key, instruction_key, attachment_keys, hash}`).
 
 Usage:
     AWS_PROFILE=work uv run python publish_experiments.py --env=dev
 
-The publisher always publishes the FULL set of experiments under
-`experiments/<id>/`. There is intentionally no per-experiment filter — the
-git branch is the curation surface (dev branch → dev S3, qa branch → qa S3,
-main branch → prod S3). A partial publish would have to either truncate
-`index.json` (silently unpublishing other experiments) or merge against the
-live index (mixing CI bytes with whatever was last pushed). Neither
-behaviour is safe; promote experiments by merging branches instead.
+By default the publisher publishes the FULL set of experiments under
+`experiments/<id>/`, regenerating `index.json` wholesale. The git branch is
+the curation surface (develop → dev S3, qa → qa S3, master → prod S3).
 
-In CI: GH Actions assumes role `agent-experiment-metadata-publish-{env}` via
-OIDC (no long-lived credentials).
+Two dev-only affordances relax the wholesale model for pre-merge testing:
+
+  --only <id>   Publish a single experiment to dev. Uploads just that
+                experiment's files, then merges its entry into the LIVE
+                index.json (insert if new, replace if existing), preserving
+                every other live entry. Lets you iterate on one experiment,
+                or stand up a brand-new one, without a full publish.
+
+  sandbox       On a full dev publish, any LIVE index entry whose id contains
+                "sandbox" is carried forward instead of dropped, so CI's
+                develop publish does not clobber personal scratch experiments.
+
+Both are gated to --env=dev. qa and prod always publish the full canonical
+set with no preservation, so a partial/mixed state can never reach prod and
+sandbox experiments can never leak past dev. Promote real experiments by
+merging branches.
+
+In CI: GH Actions assumes an AWS role via OIDC (no long-lived credentials) —
+see `.github/workflows/publish-experiments.yml` for the role ARN. Note: a dev
+publish now also needs `s3:GetObject` on the bucket's `index.json` (it reads
+the live index to merge/preserve), not just `s3:PutObject`.
 """
 
 from __future__ import annotations
@@ -37,7 +52,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
@@ -51,6 +68,75 @@ EXPERIMENTS_DIR = REPO_ROOT / "experiments"
 META_SCHEMA_PATH = EXPERIMENTS_DIR / "_schema" / "manifest.schema.json"
 
 VALID_ENVS = {"dev", "qa", "prod"}
+
+# Experiments whose id contains this marker are personal/scratch experiments.
+# On a FULL dev publish they are preserved (carried forward from the live
+# index) rather than dropped, so CI's develop publish can't clobber someone's
+# in-progress sandbox. Dev-only: qa/prod never preserve, so a sandbox id can
+# never leak past dev. Substring match (not a prefix) so `sandbox_oppo`,
+# `feliks_sandbox`, etc. all qualify.
+SANDBOX_MARKER = "sandbox"
+
+# Experiment ids are constrained to this pattern by the meta-schema (and the
+# dispatch lambda's loader). We re-check it here when (a) accepting a --only
+# target and (b) carrying a live index entry forward, so a malformed id can't
+# become an S3 key path and drift/corruption in the live index can't propagate
+# into a freshly published index.
+# Anchor with \Z, not $: in Python `$` also matches just before a trailing
+# newline, so `^...$` would accept "sandbox_x\n" and let a newline leak into an
+# S3 key / path. \Z anchors at the true end of string.
+_EXPERIMENT_ID_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}\Z")
+
+
+def _is_sandbox(experiment_id: str) -> bool:
+    return SANDBOX_MARKER in experiment_id
+
+
+def _carryforward_problem(entry: object) -> str | None:
+    """Return None if a live index entry is safe to carry forward, else a short
+    reason string (surfaced in the operator-facing drop warning).
+
+    Safe means: well-formed id and the canonical `<id>/manifest.json` /
+    `<id>/instruction.md` keys this publisher emits. Anything else is
+    drift/corruption and is dropped rather than re-published (a freshly built
+    entry is always canonical, so this only ever filters entries we did not
+    author this run).
+    """
+    if not isinstance(entry, dict):
+        return "not a JSON object"
+    eid = entry.get("id")
+    if not isinstance(eid, str) or not _EXPERIMENT_ID_RE.match(eid):
+        return "id does not match the experiment-id pattern"
+    if entry.get("manifest_key") != f"{eid}/manifest.json":
+        return "manifest_key is not canonical"
+    if entry.get("instruction_key") != f"{eid}/instruction.md":
+        return "instruction_key is not canonical"
+    # attachment_keys must all be canonical `<id>/attachments/<basename>` so the
+    # guarantee is self-contained rather than relying on the broker to re-check
+    # prefixes at read time. A prefix check alone is not enough: the suffix must
+    # be a single flat filename — no `/`, no `.`/`..`, no control chars — or a
+    # drifted key like `<id>/attachments/../../x` would be re-published with the
+    # publisher's blessing (mirrors `_validate_attachments` on the disk side).
+    attachment_keys = entry.get("attachment_keys", [])
+    if not isinstance(attachment_keys, list):
+        return "attachment_keys is not a list"
+    prefix = f"{eid}/attachments/"
+    for ak in attachment_keys:
+        if not isinstance(ak, str) or not ak.startswith(prefix):
+            return "attachment key outside the canonical attachments prefix"
+        basename = ak[len(prefix):]
+        if (
+            not basename
+            or "/" in basename
+            or basename in (".", "..")
+            or any(ord(c) < 0x20 or ord(c) == 0x7F for c in basename)
+        ):
+            return "attachment key suffix is not a flat safe filename"
+    return None
+
+
+def _valid_carryforward(entry: object) -> bool:
+    return _carryforward_problem(entry) is None
 
 # Total bytes cap across all attachments for a single experiment. Bounds the
 # broker manifest payload (it streams all attachments in one envelope) and the
@@ -310,15 +396,18 @@ def _publishable_manifest_bytes(manifest_path: Path, defs: dict) -> bytes:
     return json.dumps(inlined, indent=2, sort_keys=True).encode() + b"\n"
 
 
-def _build_index(
-    env: str, dirs: list[Path], meta: dict
-) -> tuple[dict, dict[str, list[tuple[str, bytes]]]]:
-    """Build index.json — every experiment in `dirs` becomes an entry.
+def _build_entries(
+    dirs: list[Path], meta: dict
+) -> tuple[list[dict], dict[str, list[tuple[str, bytes]]]]:
+    """Build the index.json entries for every experiment in `dirs`.
 
-    Returns both the index dict AND a per-experiment attachments map. The
-    map lets `publish()` upload the EXACT bytes that fed the hash digest;
-    re-reading from disk at upload time created a TOCTOU window where a
-    concurrent edit could ship bytes that don't match the published digest.
+    Returns the entries list AND a per-experiment attachments map. The map lets
+    `publish()` upload the EXACT bytes that fed the hash digest; re-reading from
+    disk at upload time created a TOCTOU window where a concurrent edit could
+    ship bytes that don't match the published digest.
+
+    `publish()` wraps these entries in the index envelope (published_at /
+    git_sha) so that envelope is constructed in exactly one place.
 
     The hash field covers the *published* manifest bytes (post-$ref-inlining)
     + instruction + every attachment body. Attachments contribute to the hash
@@ -346,12 +435,121 @@ def _build_index(
             "attachment_keys": attachment_keys,
             "hash": _hash_pair(manifest_bytes, instruction_bytes, attachments),
         })
-    index = {
-        "published_at": datetime.now(timezone.utc).isoformat(),
-        "git_sha": _git_sha(),
-        "experiments": entries,
-    }
-    return index, attachments_by_id
+    return entries, attachments_by_id
+
+
+def _fetch_live_index(s3, bucket: str) -> dict | None:
+    """GET the live index.json. Returns the parsed dict, or None when the
+    index does not exist yet (fresh bucket).
+
+    Raises on a corrupt/malformed live index rather than returning None:
+    silently proceeding would let a --only or dev publish clobber every other
+    entry it was supposed to preserve.
+    """
+    try:
+        resp = s3.get_object(Bucket=bucket, Key="index.json")
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "")
+        if code in ("NoSuchKey", "404"):
+            return None
+        print(
+            f"  ✗ S3 GetObject failed for s3://{bucket}/index.json: {e}",
+            file=sys.stderr,
+        )
+        raise
+    body = resp["Body"].read()
+    try:
+        payload = json.loads(body)
+    except (json.JSONDecodeError, ValueError) as e:
+        raise RuntimeError(
+            f"live index s3://{bucket}/index.json is not valid JSON; refusing "
+            f"to publish (a merge would clobber other entries): {e}"
+        ) from e
+    if not isinstance(payload, dict) or not isinstance(payload.get("experiments"), list):
+        raise RuntimeError(
+            f"live index s3://{bucket}/index.json is missing an 'experiments' "
+            "array; refusing to publish (would clobber other entries)"
+        )
+    return payload
+
+
+def _compose_index_entries(
+    new_entries: list[dict],
+    live_entries: list[object],
+    *,
+    only_id: str | None,
+    env: str,
+    on_drop: Callable[[object, str], None] | None = None,
+) -> list[dict]:
+    """Decide the final `experiments` list to write to index.json.
+
+    - `--only <id>` (dev): keep every live entry except <id>, then add the
+      freshly built entry for <id> (insert or replace). Preserves all others.
+    - full publish, dev: canonical entries, plus any live entry whose id is a
+      sandbox (`_is_sandbox`) and is not already canonical. Canonical wins on
+      an id collision.
+    - full publish, qa/prod: canonical entries only (no preservation).
+
+    Carried-forward live entries are filtered through `_carryforward_problem`,
+    so a drifted/corrupt live entry (including a non-dict array element or a
+    duplicate id) is dropped rather than re-published. Freshly built entries
+    are always canonical and are never filtered. `on_drop`, if given, is called
+    with each dropped candidate and the reason, so the caller can surface the
+    drift instead of losing it silently.
+
+    No I/O of its own (the only side effect is the `on_drop` callback), so the
+    policy is unit-testable without S3.
+    """
+    # publish() already rejects --only for qa/prod at the CLI boundary; enforce
+    # the same invariant here so no future caller can merge a partial publish
+    # into a qa/prod index by skipping that guard.
+    if only_id is not None and env != "dev":
+        raise ValueError(f"--only merge is dev-only; got env={env!r}")
+
+    def _drop(entry: object, why: str) -> None:
+        if on_drop is not None:
+            on_drop(entry, why)
+
+    def _carry(candidates: list[dict]) -> list[dict]:
+        kept: list[dict] = []
+        seen_ids: set[str] = set()
+        for e in candidates:
+            problem = _carryforward_problem(e)
+            if problem is None and e["id"] in seen_ids:
+                # The live index should be unique by id; if drift produced
+                # duplicates, keep the first and drop the rest rather than
+                # amplifying the corruption into the fresh index.
+                problem = "duplicate id in live index"
+            if problem is not None:
+                _drop(e, problem)
+                continue
+            seen_ids.add(e["id"])
+            kept.append(e)
+        return kept
+
+    # A live `experiments` element that isn't even an object is drift; drop it
+    # (surfaced via on_drop) before any per-path `.get()` access can crash.
+    live_dicts: list[dict] = []
+    for e in live_entries:
+        if isinstance(e, dict):
+            live_dicts.append(e)
+        else:
+            _drop(e, "not a JSON object")
+
+    if only_id is not None:
+        kept = _carry([e for e in live_dicts if e.get("id") != only_id])
+        merged = kept + new_entries
+    elif env == "dev":
+        canonical_ids = {e.get("id") for e in new_entries}
+        candidates = [
+            e
+            for e in live_dicts
+            if _is_sandbox(str(e.get("id", ""))) and e.get("id") not in canonical_ids
+        ]
+        merged = new_entries + _carry(candidates)
+    else:
+        merged = new_entries
+    return sorted(merged, key=lambda e: str(e.get("id", "")))
 
 
 def _git_sha() -> str:
@@ -382,33 +580,68 @@ def _upload(s3, bucket: str, key: str, body: bytes, content_type: str) -> None:
         raise
 
 
-def publish(env: str, dry_run: bool = False) -> int:
+def publish(env: str, dry_run: bool = False, only: str | None = None) -> int:
     if env not in VALID_ENVS:
         print(f"error: --env must be one of {sorted(VALID_ENVS)}", file=sys.stderr)
         return 1
-
-    bucket = f"agent-experiment-metadata-{env}"
-    dirs = _experiment_dirs()
-    if not dirs:
+    # --only is a dev-only affordance. qa/prod must publish the full canonical
+    # set via branch promotion so a partial/mixed state can never reach prod.
+    if only is not None and env != "dev":
         print(
-            f"error: no experiment dirs found under {EXPERIMENTS_DIR}",
+            "error: --only is dev-only. qa/prod publish the full canonical set "
+            "via branch promotion (no partial/mixed prod state).",
             file=sys.stderr,
         )
         return 1
 
-    print(f"== validating {len(dirs)} experiment(s) against meta-schema ==")
+    bucket = f"agent-experiment-metadata-{env}"
+
+    if only is not None:
+        # Validate before any filesystem touch: the id pattern (same as the
+        # meta-schema / lambda) rejects path separators, dotfiles, and _schema,
+        # so `--only` can never resolve outside experiments/ or become a bad key.
+        if not _EXPERIMENT_ID_RE.match(only):
+            print(
+                f"error: --only '{only}' is not a valid experiment id "
+                f"(must match {_EXPERIMENT_ID_RE.pattern})",
+                file=sys.stderr,
+            )
+            return 1
+        target = EXPERIMENTS_DIR / only
+        if not target.is_dir():
+            available = ", ".join(d.name for d in _experiment_dirs())
+            print(
+                f"error: no experiment dir 'experiments/{only}/'. "
+                f"Available: {available}",
+                file=sys.stderr,
+            )
+            return 1
+        dirs = [target]
+    else:
+        dirs = _experiment_dirs()
+        if not dirs:
+            print(
+                f"error: no experiment dirs found under {EXPERIMENTS_DIR}",
+                file=sys.stderr,
+            )
+            return 1
+
+    scope_label = f"experiment '{only}'" if only else f"{len(dirs)} experiment(s)"
+    print(f"== validating {scope_label} against meta-schema ==")
     meta = _load_meta_schema()
     _validate_all(meta, dirs)
 
-    index, attachments_by_id = _build_index(env, dirs, meta)
+    new_entries, attachments_by_id = _build_entries(dirs, meta)
     defs = meta.get("$defs", {})
+    git_sha = _git_sha()
 
-    print(f"\n== publish target: s3://{bucket}/  (env={env}, git={index['git_sha']}) ==")
-    print(f"   {len(index['experiments'])} experiment(s) to publish")
+    mode = f"--only {only}" if only else "full set"
+    print(f"\n== publish target: s3://{bucket}/  (env={env}, mode={mode}, git={git_sha}) ==")
+    print(f"   {len(new_entries)} experiment(s) to upload")
 
     if dry_run:
         print("\n[DRY RUN] would upload (manifest.json + instruction.md + attachments per experiment):")
-        for entry in index["experiments"]:
+        for entry in new_entries:
             # `entry['hash']` is "sha256:<64 hex chars>"; an unconditional
             # [:23] slice cut the prefix mid-word ("sha256:xxxxxxxxxxxxxxxx").
             # Strip prefix, slice the hex, then re-tag explicitly.
@@ -430,17 +663,58 @@ def publish(env: str, dry_run: bool = False) -> int:
                     f"     (attachments subtotal: {att_total:,} bytes of "
                     f"{ATTACHMENTS_TOTAL_SIZE_LIMIT_BYTES:,} cap)"
                 )
-        print("\n[DRY RUN] would write index.json LAST as atomic switch")
+        if only is not None:
+            print(
+                f"\n[DRY RUN] index.json: would MERGE entry '{only}' into the live "
+                "index, preserving all other live entries."
+            )
+        elif env == "dev":
+            print(
+                "\n[DRY RUN] index.json: would write the full canonical set, "
+                "PRESERVING any live 'sandbox' entries."
+            )
+        else:
+            print("\n[DRY RUN] index.json: would write the full canonical set (wholesale).")
         return 0
 
     s3 = boto3.client("s3")
 
-    # Upload per-experiment files in parallel, then index.json LAST so readers
-    # never see a partial publish. The executor join (`as_completed` loop)
-    # surfaces any per-file failures BEFORE we commit the atomic switch.
+    # Compose the final index. For --only (dev) and full dev publishes we merge
+    # against the LIVE index so we don't clobber other experiments / sandbox
+    # scratch. qa/prod take the canonical set verbatim (wholesale).
+    #
+    # This GET-merge-PUT is not atomic: a concurrent publish between the read
+    # and the index write can lose this merge. Accepted for dev (re-run if a
+    # develop CI publish races you); qa/prod don't merge, so no race there.
+    live_entries: list[dict] = []
+    if only is not None or env == "dev":
+        live_index = _fetch_live_index(s3, bucket)
+        if live_index is not None:
+            live_entries = live_index.get("experiments", [])
+    dropped: list[str] = []
+
+    def _record_drop(entry: object, why: str) -> None:
+        eid = entry.get("id", "<no-id>") if isinstance(entry, dict) else "<not-an-object>"
+        dropped.append(f"{eid} ({why})")
+
+    final_entries = _compose_index_entries(
+        new_entries, live_entries, only_id=only, env=env, on_drop=_record_drop,
+    )
+    if dropped:
+        # Drift in the live index: an entry we would have carried forward had
+        # non-canonical keys. We drop it (don't re-publish corruption) but say so.
+        print(
+            f"   ⚠ dropped {len(dropped)} malformed live index entr(ies), "
+            f"not carry-forward safe: {', '.join(dropped)}",
+            file=sys.stderr,
+        )
+
+    # Upload per-experiment files (only the ones we built) in parallel, then
+    # index.json LAST so readers never see a partial publish. The executor join
+    # (`as_completed` loop) surfaces any per-file failures BEFORE the switch.
     with ThreadPoolExecutor(max_workers=10) as ex:
         futures = []
-        for entry in index["experiments"]:
+        for entry in new_entries:
             exp_dir = EXPERIMENTS_DIR / entry["id"]
             # Inline $refs so the published manifest is self-contained — the
             # Lambda's Draft7Validator has no resolver for the meta-schema.
@@ -467,16 +741,25 @@ def publish(env: str, dry_run: bool = False) -> int:
         for f in as_completed(futures):
             f.result()  # surface failures before writing index.json
 
-    for entry in index["experiments"]:
+    for entry in new_entries:
         att_count = len(entry["attachment_keys"])
         att_summary = f" + {att_count} attachment(s)" if att_count else ""
         print(f"   ✓ {entry['id']} v{entry['version']}{att_summary}")
 
+    preserved_count = len(final_entries) - len(new_entries)
+    if preserved_count > 0:
+        print(f"   ↳ preserved {preserved_count} existing index entr(ies)")
+
+    index_out = {
+        "published_at": datetime.now(timezone.utc).isoformat(),
+        "git_sha": git_sha,
+        "experiments": final_entries,
+    }
     print("\n== writing index.json (atomic switch) ==")
     _upload(s3, bucket, "index.json",
-            (json.dumps(index, indent=2) + "\n").encode(),
+            (json.dumps(index_out, indent=2) + "\n").encode(),
             "application/json")
-    print(f"   ✓ s3://{bucket}/index.json ({len(index['experiments'])} experiments live)")
+    print(f"   ✓ s3://{bucket}/index.json ({len(final_entries)} experiments live)")
     return 0
 
 
@@ -485,8 +768,14 @@ def main() -> int:
     parser.add_argument("--env", required=True, help="Target env: dev | qa | prod")
     parser.add_argument("--dry-run", action="store_true",
                         help="Validate + show what would publish, do not touch S3")
+    parser.add_argument(
+        "--only", metavar="EXPERIMENT_ID", default=None,
+        help="Publish just this one experiment (dev only). Uploads its files "
+             "and merges its entry into the live index.json, preserving every "
+             "other entry. Inserts if new, replaces if existing.",
+    )
     args = parser.parse_args()
-    return publish(env=args.env, dry_run=args.dry_run)
+    return publish(env=args.env, dry_run=args.dry_run, only=args.only)
 
 
 if __name__ == "__main__":
