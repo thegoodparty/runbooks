@@ -25,7 +25,7 @@ The EO's full name, their office, and their jurisdiction (city or district). Opt
 This workflow provisions what it can on its own. The only required input is the EO's name and office; the items below are either automatic or optional.
 
 **Config (all optional, defaults used if unset)**: `$ROADMAP_OUTPUT_DIR` (default `./roadmap-output`), `$COMPLETED_ROADMAPS_DRIVE_FOLDER`, `$CHROME_BIN` (default: macOS Chrome path).
-**Tools (automatic)**: web search/fetch (built in); `pandoc` and Google Chrome for the PDF step. Step 0 installs `pandoc` if it is missing. Install `poppler` (`pdftotext`) too if you need to read numbers out of source PDFs (election results are often published as PDFs).
+**Tools (automatic)**: web search/fetch (built in); `pandoc` and a Chromium browser (Google Chrome or Microsoft Edge) for the PDF step. On Windows, run the script from Git Bash or WSL. Step 0 installs `pandoc` if it is missing. Install `poppler` (`pdftotext`) too if you need to read numbers out of source PDFs (election results are often published as PDFs).
 **Optional access**: HubSpot (only to enrich with CRM fields if connected) and Google Drive (only to auto-upload the PDFs). Neither is required; without them the roadmap still generates and the PDFs land in the output folder.
 **Companion book**: `books/roadmap-scoring-rubric.md` (used in Step 5)
 **Script**: `scripts/shell/generate-roadmap-pdf.sh` (used in Step 6)
@@ -33,7 +33,7 @@ This workflow provisions what it can on its own. The only required input is the 
 ### Step 0 — Setup check (first run only)
 Before Step 1, self-provision so the rest runs unattended:
 - **pandoc**: if not on PATH, install it (`brew install pandoc` on macOS, or the platform equivalent).
-- **Chrome**: confirm Google Chrome is installed; if its path is non-standard, set `$CHROME_BIN`.
+- **Browser**: confirm Google Chrome or Microsoft Edge is installed. The script auto-detects common locations on macOS, Linux, and Windows; set `$CHROME_BIN` if yours is elsewhere.
 - **poppler (optional)**: install if you expect to verify figures from source PDFs (`brew install poppler` gives you `pdftotext`).
 - **Optional logins**: only if the user wants CRM enrichment or auto-upload, prompt them to log into HubSpot and/or Google once. Otherwise skip.
 
@@ -106,7 +106,7 @@ Run the PDF script for the EO:
 scripts/shell/generate-roadmap-pdf.sh <eo-slug> "$ROADMAP_OUTPUT_DIR/<eo-slug>/pdfs"
 ```
 
-Pass the EO's actual `pdfs` directory as the second argument. If you did not set `$ROADMAP_OUTPUT_DIR`, give the full path to the output folder you used so the PDFs land next to the markdown, not in a default location. It converts each markdown variant to clean HTML with `pandoc`, then to PDF with headless Chrome. Content starts at the first heading with no title block and no page headers/footers.
+Pass the EO's `pdfs` directory as the second argument; a relative path is fine (the script resolves it to an absolute path before handing it to the browser). It converts each markdown variant to clean HTML with `pandoc`, then to PDF with headless Chrome or Edge. Content starts at the first heading with no title block and no page headers/footers.
 
 ### Step 7 — Deliver the PDFs
 The finished PDFs are in the output folder. If Google Drive is connected, upload both to the completed-roadmaps folder (`$COMPLETED_ROADMAPS_DRIVE_FOLDER`), updating in place when replacing an existing file so shared links keep working. If Drive is not connected, leave the PDFs in the output folder for the requester to share.
@@ -146,6 +146,8 @@ The finished PDFs are in the output folder. If Google Drive is connected, upload
 | Problem | Fix |
 |---|---|
 | Score lands in REVIEW (5.0-6.9), usually thin Context | Common in small jurisdictions with no published votes or local press. Deepen Steps 2 research; if no primary sources exist, label gaps explicitly rather than inflating. |
-| PDF has a title block or page headers/footers | Confirm the script passes `--metadata pagetitle` (not `title`) to pandoc and `--no-pdf-header-footer` to Chrome. |
+| PDF has a title block or page headers/footers | Confirm the script passes `--metadata pagetitle` (not `title`) to pandoc and `--no-pdf-header-footer` to the browser. |
+| PDF opens to a browser error page ("can't be reached") | Caused by a relative `file://` path; the current script absolutizes the path to prevent this. If you hit it, pass an absolute pdfs directory. |
+| On Windows: no browser found, or PDFs fail | Run the script from Git Bash or WSL. If auto-detect misses the browser, set `$CHROME_BIN` to your `chrome.exe` or `msedge.exe` path. |
 | Drive link broke after re-upload | Update the file in place instead of deleting and re-creating it. |
 | Two EOs in one jurisdiction scored inconsistently | Re-run the calibration anchor (see scoring book) before the batch; recalibrate if drift exceeds 0.5. |
