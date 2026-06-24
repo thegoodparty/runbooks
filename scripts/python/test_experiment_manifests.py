@@ -77,6 +77,75 @@ def test_output_schema_is_valid_jsonschema_draft7(manifest_path: Path):
     Draft7Validator.check_schema(manifest["output_schema"])
 
 
+_MISSING = object()
+
+
+def _resolve_json_pointer(root: dict | list, pointer: str):
+    if pointer in ("", "/"):
+        return root
+    parts = pointer.lstrip("/").split("/")
+    node = root
+    for part in parts:
+        part = part.replace("~1", "/").replace("~0", "~")
+        if isinstance(node, dict) and part in node:
+            node = node[part]
+        elif isinstance(node, list):
+            try:
+                node = node[int(part)]
+            except (ValueError, IndexError):
+                return _MISSING
+        else:
+            return _MISSING
+    return node
+
+
+def _walk_internal_refs(schema: dict):
+    """Yield every (json-pointer-path, $ref-value) pair for $refs of the form '#/...'.
+
+    External refs (anything else) are ignored — they're a separate concern.
+    """
+    def walk(node, path: str):
+        if isinstance(node, dict):
+            ref = node.get("$ref")
+            if isinstance(ref, str) and ref.startswith("#"):
+                yield path, ref
+            for k, v in node.items():
+                yield from walk(v, f"{path}/{k}")
+        elif isinstance(node, list):
+            for i, item in enumerate(node):
+                yield from walk(item, f"{path}/{i}")
+    yield from walk(schema, "")
+
+
+def _check_internal_refs(schema: dict, schema_name: str) -> list[str]:
+    errors = []
+    for path, ref in _walk_internal_refs(schema):
+        target = _resolve_json_pointer(schema, ref.lstrip("#"))
+        if target is _MISSING:
+            errors.append(f"  {schema_name}{path}: $ref={ref}")
+    return errors
+
+
+@pytest.mark.parametrize("manifest_path", _all_manifest_paths(), ids=lambda p: p.parent.name)
+def test_schema_internal_refs_resolve(manifest_path: Path):
+    """Every internal `$ref` (`#/...`) in input_schema and output_schema must resolve
+    to an existing pointer target. gp-api's `scripts/generate-agent-job-types.ts`
+    dereferences each schema standalone before feeding it to json-schema-to-typescript;
+    a missing pointer there aborts type generation for the whole monorepo.
+
+    This has broken type generation twice (see "inline schema" in git history).
+    Catch it at PR time, before the bad manifest is published.
+    """
+    manifest = json.loads(manifest_path.read_text())
+    errors = _check_internal_refs(manifest["input_schema"], "input_schema")
+    errors += _check_internal_refs(manifest["output_schema"], "output_schema")
+    if errors:
+        pytest.fail(
+            f"{manifest_path.relative_to(REPO_ROOT)}: $refs that do not resolve "
+            f"within their schema:\n" + "\n".join(errors)
+        )
+
+
 def _good_manifest() -> dict:
     paths = _all_manifest_paths()
     assert paths, "need at least one manifest as a starting point for negative tests"
